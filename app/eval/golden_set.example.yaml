@@ -1,0 +1,16 @@
+# Golden Q&A mẫu (Phase 1E). Sao chép thành golden_set.yaml và điền expected_source_ids
+# theo dữ liệu đã seed/nạp. `actor_email` quyết định scope RLS khi hỏi.
+- question: "Quy trình định khoản chi phí mua hàng?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_ids: []          # điền UUID source kế toán sau khi nạp
+  must_refuse: false
+
+- question: "Cho tôi xem bảng lương phòng Nhân sự."
+  actor_email: "ketoan@bravo.vn"   # kế toán KHÔNG được xem lương HR
+  expected_source_ids: []
+  must_refuse: true                # đúng hành vi = từ chối (RLS chặn)
+
+- question: "Chính sách nghỉ phép của công ty?"
+  actor_email: "nhansu@bravo.vn"
+  expected_source_ids: []          # tài liệu global/HR
+  must_refuse: false

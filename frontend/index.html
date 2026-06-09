@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BRAVO AI Copilot</title>
+  <style>
+    :root { --sienna:#c2652a; --bg:#faf5ee; --border:#d8d0c8; --rose:#8c3c3c; }
+    * { box-sizing:border-box; } body { font-family:system-ui,Segoe UI,Roboto,sans-serif;
+      background:var(--bg); color:#3a302a; margin:0; padding:0; }
+    .wrap { max-width:760px; margin:0 auto; padding:28px; }
+    h1 { font-weight:700; letter-spacing:-.02em; } .sub { color:#8a7d70; margin-top:-12px; }
+    .card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:20px;
+      margin:16px 0; box-shadow:0 2px 16px rgba(58,48,42,.04); }
+    input, textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px;
+      font:inherit; margin:6px 0; background:#fff; }
+    button { background:var(--sienna); color:#fff; border:0; border-radius:8px; padding:10px 18px;
+      font:inherit; cursor:pointer; } button:disabled { opacity:.5; }
+    .muted { color:#8a7d70; font-size:.9em; } .cite { border-left:3px solid var(--sienna);
+      padding:6px 10px; margin:6px 0; background:#faf5ee; border-radius:4px; font-size:.88em; }
+    .refuse { color:var(--rose); } pre { white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>BRAVO AI Copilot</h1>
+    <p class="sub">Hỏi tri thức nội bộ — trong đúng phạm vi quyền của bạn, có dẫn chứng.</p>
+
+    <div class="card" id="loginCard">
+      <h3>Đăng nhập</h3>
+      <input id="email" placeholder="email (vd ketoan@bravo.vn)" value="ketoan@bravo.vn" />
+      <input id="password" type="password" placeholder="mật khẩu" value="ketoan123" />
+      <button id="loginBtn">Đăng nhập</button>
+      <p class="muted" id="who"></p>
+    </div>
+
+    <div class="card" id="askCard" style="display:none">
+      <h3>Hỏi</h3>
+      <textarea id="q" rows="3" placeholder="vd: Quy trình định khoản chi phí mua hàng?"></textarea>
+      <button id="askBtn">Gửi</button>
+      <div id="answer"></div>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Tien/Workspace/bravo/**)",
+      "Read(//d/Tien/Workspace/arkon/**)",
+      "Read(//d/Tien/Workspace/docsgpt/**)",
+      "Read(//d/Tien/Workspace/letta/**)",
+      "Bash(ls *)",
+      "Bash(rg *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Glob(**)",
+      "Grep(**)"
+    ],
+    "deny": [
+      "Write(//d/Tien/Workspace/arkon/**)",
+      "Write(//d/Tien/Workspace/docsgpt/**)",
+      "Write(//d/Tien/Workspace/letta/**)",
+      "Edit(//d/Tien/Workspace/arkon/**)",
+      "Edit(//d/Tien/Workspace/docsgpt/**)",
+      "Edit(//d/Tien/Workspace/letta/**)"
+    ]
+  },
+  "enabledPlugins": {
+    "claude-md-management@claude-plugins-official": true
+  }
+}

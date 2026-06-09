@@ -1,0 +1,48 @@
+# BRAVO AI Copilot — local/dev stack (modular monolith + infra services, ADR-0007).
+# On-prem target: this same compose runs air-gapped (no external calls in product path).
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: bravo
+      POSTGRES_PASSWORD: bravo
+      POSTGRES_DB: bravo
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bravo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  api:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    env_file: .env
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  worker:
+    build: .
+    command: arq app.worker.WorkerSettings
+    env_file: .env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  # Local LLM server (Qwen2.5-32B, ADR-0009). Uncomment when GPU available.
+  # vllm:
+  #   image: vllm/vllm-openai:latest
+  #   command: --model Qwen/Qwen2.5-32B-Instruct-AWQ --quantization awq --port 8001
+  #   ports: ["8001:8001"]
+  #   deploy: { resources: { reservations: { devices: [{ capabilities: [gpu] }] } } }
+
+volumes:
+  pgdata:

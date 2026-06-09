@@ -1,0 +1,54 @@
+[project]
+name = "bravo-ai-copilot"
+version = "0.1.0"
+description = "BRAVO AI Copilot — Enterprise Knowledge & Financial Analytics Hub (on-prem RAG on BRAVO ERP)"
+requires-python = ">=3.11"
+dependencies = [
+    # Web / API
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    # DB + vector
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29",
+    "pgvector>=0.3",
+    "alembic>=1.13",
+    # Auth
+    "python-jose[cryptography]>=3.3",
+    "passlib[bcrypt]>=1.7",
+    # Ingestion (docsgpt-derived, MIT) — digital docs only, NO OCR in MVP (ADR-0009)
+    "docling>=2.0",
+    "tiktoken>=0.7",
+    # RAG: local embedding (bge-m3, ADR-0009) + hybrid BM25 (findings/J)
+    "sentence-transformers>=3.0",
+    "FlagEmbedding>=1.2",
+    "rank-bm25>=0.2.2",
+    # LLM router: local (vLLM/Ollama OpenAI-compatible) + cloud opt-in (ADR-0003)
+    "httpx>=0.27",
+    "openai>=1.40",
+    # Worker
+    "arq>=0.26",
+    "redis>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    # Eval (findings/J): RAGAS/DeepEval gate in CI
+    "ragas>=0.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

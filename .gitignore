@@ -1,0 +1,37 @@
+# Claude local overrides (per-developer)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Secrets & env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.next/
+out/
+
+# Data / models (never commit corpora or local LLM weights)
+data/
+models/
+*.gguf
+*.faiss
+storage/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
