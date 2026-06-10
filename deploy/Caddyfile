@@ -1,0 +1,16 @@
+# Thay demo.example.com bằng tên miền của bạn (A record -> IP tĩnh của VM).
+# Caddy tự xin chứng chỉ Let's Encrypt (HTTPS) — cần cổng 80/443 mở + DNS đã trỏ đúng.
+demo.example.com {
+    encode gzip
+    reverse_proxy api:8000
+
+    # Chặn rò tài liệu API ở demo công khai (mở lại nếu cần).
+    @docs path /docs /redoc /openapi.json
+    respond @docs 404
+
+    header {
+        Strict-Transport-Security "max-age=31536000"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+}

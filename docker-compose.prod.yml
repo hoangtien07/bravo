@@ -1,0 +1,31 @@
+# Production/demo OVERLAY — adds Caddy (auto-HTTPS) + removes public DB/API ports.
+# Use:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Only Caddy is internet-facing (80/443); Postgres/Redis/API stay on the internal network.
+services:
+  postgres:
+    ports: []          # NOT exposed to the internet (was 5432 for local dev)
+    restart: unless-stopped
+  redis:
+    ports: []
+    restart: unless-stopped
+  api:
+    ports: []          # reached only by Caddy via the compose network (api:8000)
+    environment:
+      ENV: production
+    restart: unless-stopped
+  worker:
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    depends_on: [api]
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
