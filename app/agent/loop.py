@@ -317,14 +317,26 @@ class AgentSession:
     # --- terminal helpers ---------------------------------------------------------
     async def _finish_answer(self, answer: str, engine_values: list[MetricResult],
                              citations: list[str]) -> dict:
-        """Verify-gate (WP-B) BEFORE returning: any number not from the engine -> masked."""
-        verdict = verify_numbers(answer, engine_values)
-        safe = verdict.safe_answer if not verdict.grounded else answer
+        """Verify-gate (WP-B, invariant #3) — applied to FINANCIAL numbers only.
+
+        The number-mask gate is a FINANCIAL-ANALYTICS control: it runs only when the agent
+        actually consulted the metric engine this turn (engine_values present) — then EVERY
+        number in the answer must trace to an engine value (strict, invariant #3). A pure
+        KB/narrative answer (no engine values) is NOT number-gated: its prose numbers (list
+        steps, 'Điều 5', years, amounts quoted from the cited document) are not engine claims.
+        Such an answer is grounded iff it was produced from retrieved context (has citations).
+        """
+        if engine_values:
+            verdict = verify_numbers(answer, engine_values)
+            safe = verdict.safe_answer if not verdict.grounded else answer
+            grounded, unmatched = verdict.grounded, verdict.unmatched
+        else:
+            safe, grounded, unmatched = answer, bool(citations), []
         await self._safe_recall_add("assistant", safe)
         return {
             "answer": safe,
-            "grounded": verdict.grounded,
-            "unmatched": verdict.unmatched,
+            "grounded": grounded,
+            "unmatched": unmatched,
             "citations": citations,
             "routed_cloud": getattr(self, "_routed_cloud", False),
             "session_id": str(self.session_id),

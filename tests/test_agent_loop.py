@@ -229,6 +229,22 @@ async def test_two_step_kb_trajectory(monkeypatch, patch_retrieve):
 
 
 @pytest.mark.asyncio
+async def test_kb_answer_with_prose_numbers_not_masked(monkeypatch, patch_retrieve):
+    """KB/narrative answer (NO engine values) keeps its prose numbers — the number-mask gate
+    is financial-only: it runs only when a metric tool actually produced values. List steps
+    ('1.', '2.') must NOT be masked, and the answer is grounded via retrieved context."""
+    _mock_llm(monkeypatch, [
+        json.dumps({"action": "answer",
+                    "answer": "Quy trình gồm 3 bước: 1. Lập đề nghị; 2. Duyệt; 3. Định khoản."}),
+    ])
+    sess = AgentSession(_FakeDB(), _identity(admin=True))
+    out = await sess.step("Quy trình định khoản gồm mấy bước?")
+    assert "[số chưa kiểm chứng]" not in out["answer"]
+    assert "1." in out["answer"] and "3." in out["answer"]
+    assert out["grounded"] is True          # grounded via context (citations), not number-gate
+
+
+@pytest.mark.asyncio
 async def test_max_steps_exceeded_stops_and_audits(monkeypatch, patch_retrieve):
     """LLM keeps calling a tool forever -> budget stops the loop + writes an audit row."""
     _mock_llm(monkeypatch, [
