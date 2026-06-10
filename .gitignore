@@ -35,3 +35,9 @@ storage/
 Thumbs.db
 .idea/
 .vscode/
+
+# Runtime
+server.log
+*.log
+.venv/
+data/

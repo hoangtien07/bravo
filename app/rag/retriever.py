@@ -107,12 +107,16 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
 
 
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
-                   candidate_k: int = 150, use_rerank: bool = True) -> list[Retrieved]:
+                   candidate_k: int = 150, use_rerank: bool | None = None) -> list[Retrieved]:
     """Full hybrid pipeline (findings/J): vector + lexical -> RRF -> cross-encoder rerank.
 
-    All branches enforce RLS in-query. Rerank can be disabled (e.g. when the reranker
-    model is unavailable in dev).
+    All branches enforce RLS in-query. Rerank defaults to settings.rerank_enabled
+    (OFF in the cloud demo since ViRanker is a local model).
     """
+    if use_rerank is None:
+        from app.config import get_settings
+        use_rerank = get_settings().rerank_enabled
+
     dense = await vector_search(db, identity, query, k=candidate_k)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
     fused = rrf_fuse(dense, lexical)

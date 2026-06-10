@@ -29,7 +29,8 @@
 - [ ] `/rls-check` xanh cho mọi endpoint.
 
 ### 1B. Ingestion (chuyển thể docsgpt) + provenance
-- [x] `app/ingestion/parser.py` — Docling parse PDF/DOCX/XLSX (native, **no OCR**), giữ cấu trúc bảng + provenance (page/heading; XLSX cell = TODO).
+- [x] `app/ingestion/parser.py` + **`pdf_parser.py` (pypdf)** — dispatch: PDF→pypdf (tiếng Việt sạch, page provenance, **đã test trên corpus BRAVO 10 thật**), khác→Docling (optional). **No OCR** (screenshot bỏ qua).
+- [x] **Corpus MVP = 19 chương cẩm nang BRAVO 10** (`UserGuide_B10_TV_PDF/`, scope global) — script `scripts/ingest_userguide.py`. *(Scope KB hiện chốt ở đây; mở rộng sau khi có kết quả tốt.)*
 - [x] Provenance `page_number`/`heading_path`/`is_table` gắn vào `ParsedBlock` (trong parser — khoảng trống docsgpt đã lấp). *(sheet/cell XLSX còn TODO.)*
 - [x] `app/ingestion/chunker.py` — heading-aligned, tách bảng riêng.
 - [x] `app/ingestion/pipeline.py` — embed (bge-m3) → pgvector. *(resumable = TODO.)*

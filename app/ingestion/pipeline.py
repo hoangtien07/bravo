@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import Chunk, Source
+from app.database.models import Chunk, Source, SourceDepartment
 from app.ingestion.chunker import chunk as chunk_blocks
 from app.ingestion.parser import parse
 from app.rag.embedding import embed
@@ -20,7 +21,10 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
     source = await db.get(Source, source_id)
     if source is None:
         raise ValueError(f"Source {source_id} not found")
-    dept_ids = [d.id for d in source.departments]  # empty => global
+    # Explicit query (avoid lazy relationship load in async context). Empty => global.
+    dept_ids = list((await db.execute(
+        select(SourceDepartment.department_id).where(SourceDepartment.source_id == source_id)
+    )).scalars().all())
 
     blocks = chunk_blocks(parse(path))
     vectors = embed([b.text for b in blocks])

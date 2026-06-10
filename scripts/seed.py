@@ -7,13 +7,11 @@ from __future__ import annotations
 
 import asyncio
 
-from passlib.context import CryptContext
 from sqlalchemy import select
 
 from app.database import async_session_factory
 from app.database.models import Department, Employee, EmployeeDepartment
-
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from app.security.passwords import hash_password
 
 VIEWER_PERMS = ["doc:read:own_dept"]
 CONTRIB_PERMS = ["doc:read:own_dept", "doc:create:own_dept"]
@@ -31,7 +29,7 @@ async def _get_or_create_dept(db, name: str, sensitive: bool) -> Department:
 async def _upsert_employee(db, email, name, password, perms, admin=False, depts=()):
     emp = (await db.execute(select(Employee).where(Employee.email == email))).scalar_one_or_none()
     if emp is None:
-        emp = Employee(email=email, full_name=name, password_hash=_pwd.hash(password),
+        emp = Employee(email=email, full_name=name, password_hash=hash_password(password),
                        is_admin=admin, permissions=perms)
         db.add(emp)
         await db.flush()

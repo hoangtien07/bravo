@@ -36,7 +36,15 @@ def _page_of(item) -> int | None:
 
 
 def parse(path: str | Path) -> list[ParsedBlock]:
-    """Parse a digital document into provenance-bearing blocks."""
+    """Parse a digital document into provenance-bearing blocks.
+
+    Dispatch: PDF -> lightweight pypdf parser (clean Vietnamese, page provenance,
+    proven on the BRAVO 10 corpus); other formats -> Docling.
+    """
+    if str(path).lower().endswith(".pdf"):
+        from app.ingestion.pdf_parser import parse_pdf
+        return parse_pdf(path)
+
     from docling.document_converter import DocumentConverter  # lazy import
 
     converter = DocumentConverter()  # OCR disabled by default; table structure on

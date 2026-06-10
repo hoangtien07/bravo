@@ -52,8 +52,9 @@ def chunk_scope_filter(identity: Identity, action: str = "read") -> "ColumnEleme
     - `doc:read:own_dept`     -> chunk is global (empty department_ids) OR overlaps user depts.
     - No permission           -> deny all.
     """
-    from sqlalchemy import or_, true
-    from sqlalchemy.dialects.postgresql import array
+    from sqlalchemy import cast, func, or_, true
+    from sqlalchemy.dialects.postgresql import ARRAY, array
+    from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
     from app.database.models import Chunk
 
@@ -65,11 +66,11 @@ def chunk_scope_filter(identity: Identity, action: str = "read") -> "ColumnEleme
         return Chunk.id.is_(None)
 
     # own_dept: global rows (empty array) OR array overlap with user's departments.
-    is_global = Chunk.department_ids == []  # noqa: E711 — array-empty check in SQL
+    is_global = func.cardinality(Chunk.department_ids) == 0
     if not identity.department_ids:
         return is_global
-    overlaps = Chunk.department_ids.op("&&")(array(identity.department_ids, type_=Chunk.department_ids.type.item_type))
-    return or_(is_global, overlaps)
+    dept_array = cast(array(identity.department_ids), ARRAY(PGUUID(as_uuid=True)))
+    return or_(is_global, Chunk.department_ids.op("&&")(dept_array))
 
 
 def source_scope_filter(identity: Identity, action: str = "read") -> "ColumnElement[bool]":
