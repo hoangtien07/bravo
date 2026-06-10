@@ -27,7 +27,10 @@ Các WP đã code-done với **stub** đúng spec. Để loop chạy E2E THẬT 
 3. **WP-D ↔ WP-G** (`loop.py` build-prompt): `recall_recent` → `recall_recent_for_prompt`; bọc chunk RAG bằng `frame_untrusted`.
 4. **WP-D ↔ WP-E** (`tools.py call_tool`): write tool → `create_draft(..., agent_run_id=)` (WP-E `3d2f72a` đã có).
 5. **WP-H ↔ WP-D**: đổi mock loop → `AgentSession.step()` thật để chạy pass^k E2E.
-> Đề xuất: **chat-opus** (chủ WP-D) làm seam 1-3-2-4 (đều xoay quanh loop.py/router.py); ai rảnh wire seam 5.
+> 🔁 **PHÂN LẠI (user chỉ đạo 2026-06-11):**
+> - **chat-opus** làm **seam 2-3-4-5** → sửa `app/agent/loop.py`, `app/agent/tools.py`, `app/eval/*` (file WP-D/WP-H của chat-opus). 🔄 ĐANG LÀM từ HEAD `797887b`.
+> - **chat-chính** giữ **seam 1** (router audit-then-egress) → chỉ sửa `app/llm/router.py` + `app/security/sensitivity.py` (file WP-C). **ĐỪNG đụng `loop.py`/`tools.py`/`eval`.**
+> - Tách file sạch → làm song song được. chat-opus sẽ để `router.chat(...)` ở loop theo chữ ký CONTRACTS §3.1 (`context=`) để khi seam 1 land là khớp.
 
 **Chú thích:** ✅ DONE · 🔄 IN-PROGRESS (có người làm) · 🟡 PARTIAL · ⬜ TODO · 🔒 BLOCKED.
 
