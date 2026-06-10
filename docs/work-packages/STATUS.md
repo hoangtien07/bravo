@@ -20,8 +20,11 @@
 
 > ✅ **8/8 WP code xong.** Full suite **96 passed, 4 skipped** (docling+ragas chưa cài). HEAD = `797887b`.
 
-## 🔧 Tích hợp (seam wiring) — ✅ XONG HẾT (`8c95139` + seam-1 `c694404`)
-> **Loop chạy E2E THẬT** (retrieve RLS → frame_untrusted → router cloud-egress audited → verify-gate → answer+citations). Tất cả 5 seam đã wire (chi tiết ở khối "PHÂN LẠI" bên dưới). Danh sách gốc giữ lại để tham chiếu:
+## 🔧 Tích hợp (seam wiring) — ✅ XONG HẾT (`8c95139` + seam-1 `c694404`); endpoint agentic `997b74f`
+> **Loop chạy E2E THẬT** (retrieve RLS → frame_untrusted → router cloud-egress audited → verify-gate → answer+citations). Tất cả 5 seam đã wire (chi tiết ở khối "PHÂN LẠI" bên dưới).
+> **🆕 `997b74f` (chat-opus):** loop agentic giờ **expose qua HTTP** — `POST /api/agent/ask` (`app/api/routes_agent.py` + đăng ký ở `app/api/__init__.py`). Frontend có toggle **"Chế độ agentic"** (badge local/cloud + verify). **Verify-gate đổi thành FINANCIAL-ONLY**: chỉ mask số khi metric engine có giá trị (strict, invariant #3); câu KB thuần KHÔNG bị mask nhầm số văn xuôi (bước 1./2., năm…) — `grounded` theo citations. Demo: KB grounded+cited; câu số liệu ABSTAIN (không bịa). Full suite **102 passed / 4 skipped**.
+> **Demo:** `uvicorn app.main:app --port 8000` → http://localhost:8000 · login `*@bravo.vn` / **`demo123`** (đã fix default UI sai, `50c5a88`). ⚠️ `--reload` hay để lại process mồ côi giữ port 8000 → nếu code mới không ăn, kill hết `python.exe` rồi chạy lại 1 instance.
+> Danh sách seam gốc giữ lại để tham chiếu:
 1. **WP-C router audit-then-egress** (`app/llm/router.py`): đổi `chat(messages, *, context=...)` tự `classify_context` + ghi `AuditLog(llm.egress)` TRƯỚC khi gọi cloud, fail-closed. *(WP-C core xong; phần router này "gộp WP-D hoặc WP-C" — CHƯA ai nhận.)* → loop hiện gọi `router.chat(sensitive=None)`.
 2. **WP-D ↔ WP-F** (`app/agent/loop.py`): thay stub `_stub_metric_lookup` → `semantic.answer(q, MockDataSource, identity, plan_fn)` (WP-F `1e58848` đã có).
 3. **WP-D ↔ WP-G** (`loop.py` build-prompt): `recall_recent` → `recall_recent_for_prompt`; bọc chunk RAG bằng `frame_untrusted`.
