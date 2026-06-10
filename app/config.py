@@ -48,8 +48,11 @@ class Settings(BaseSettings):
 
     # Demo: allow non-sensitive tasks (KB user-guide Q&A) to use the cloud LLM.
     demo_allow_cloud_answers: bool = False
-    # Cross-encoder rerank (ViRanker) — local model; OFF for the cloud demo.
+    # Rerank — biggest retrieval-quality lever (findings/J).
+    #   provider "viranker" -> local cross-encoder (production)
+    #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
     rerank_enabled: bool = False
+    rerank_provider: str = "viranker"
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"

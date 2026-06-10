@@ -26,7 +26,11 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
         select(SourceDepartment.department_id).where(SourceDepartment.source_id == source_id)
     )).scalars().all())
 
-    blocks = chunk_blocks(parse(path))
+    blocks = parse(path)
+    if str(path).lower().endswith(".pdf"):
+        from app.ingestion.heading_chunker import heading_chunk
+        blocks = heading_chunk(blocks)  # section-level chunks (heading + start page)
+    blocks = chunk_blocks(blocks)       # split over-long sections + drop tiny ones
     vectors = embed([b.text for b in blocks])
 
     for b, vec in zip(blocks, vectors, strict=True):

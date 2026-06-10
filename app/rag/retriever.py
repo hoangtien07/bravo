@@ -124,7 +124,16 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     if not use_rerank or not fused:
         return fused[:top_n]
 
-    # Cross-encoder rerank over the fused candidates (top-N kept).
+    from app.config import get_settings
+    provider = get_settings().rerank_provider
+
+    if provider == "llm":
+        # Listwise rerank top candidates via the cloud chat model (demo).
+        pool = fused[:25]
+        order = await _rerank.llm_rerank(query, [r.content for r in pool], top_n)
+        return [pool[i] for i in order][:top_n]
+
+    # Cross-encoder rerank (ViRanker, local) over the fused candidates.
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
