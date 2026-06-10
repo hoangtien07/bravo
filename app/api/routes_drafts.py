@@ -56,6 +56,8 @@ async def approve(draft_id: uuid.UUID,
                   db: AsyncSession = Depends(get_db)) -> DraftOut:
     try:
         return _out(await draft_queue.approve_draft(db, identity, draft_id))
+    except PermissionError as exc:  # anti-self-approval / maker-checker (WP-E)
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
 

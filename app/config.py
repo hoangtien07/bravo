@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 720
     mcp_token_pepper: str = "change-me"
+    # Maker-checker (WP-E): mặc định CẤM người tạo tự duyệt draft của mình (SOX/ISA).
+    allow_self_approval: bool = False
 
     # LLM Router — local default (ADR-0003 / ADR-0009)
     llm_local_base_url: str = "http://localhost:8001/v1"

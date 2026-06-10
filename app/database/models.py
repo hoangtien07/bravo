@@ -119,12 +119,37 @@ class Chunk(Base):
 # --- Drafts (non-invasive write path) & audit ---
 class Draft(Base):
     __tablename__ = "drafts"
+    # Idempotency (WP-E): cùng agent_run + payload_hash chỉ tạo MỘT draft (chống trùng khi resume).
+    __table_args__ = (UniqueConstraint("agent_run_id", "payload_hash", name="uq_draft_run_hash"),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     kind: Mapped[str] = mapped_column(String(50))  # journal_entry | wiki_edit | ...
     payload: Mapped[dict] = mapped_column(JSONB)
     payload_hash: Mapped[str] = mapped_column(String(64))  # pin args (findings/J anti-drift)
     status: Mapped[str] = mapped_column(String(30), default="pending")  # pending|approved|rejected
     created_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"))
+    # RLS scope (WP-E): NULL = global; else list_pending lọc theo department người duyệt.
+    department_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentRun(Base):
+    """Durable agent run — HITL paused-run resumable (WP-E / ADR-0010).
+
+    Trên Postgres LỚP AI (KHÔNG chạm SQL Server ERP gốc — invariant #2). checkpoint_state lưu
+    messages + retrieved-context + metric-results để resume DÙNG LẠI (cái human duyệt = cái thực
+    thi), KHÔNG re-retrieve. lease_* chống 2 worker resume cùng run (Postgres-native, KHÔNG
+    Temporal/Dapr — ADR-0013).
+    """
+    __tablename__ = "agent_runs"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="running")  # running|paused_for_approval|done|failed
+    checkpoint_state: Mapped[dict] = mapped_column(JSONB, default=dict)
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -141,17 +166,30 @@ class MemoryBlock(Base):
 
 
 class ConversationMessage(Base):
-    """Recall memory: conversation history."""
+    """Recall memory: conversation history.
+
+    `trust_level` (WP-G): "trusted" for user/assistant turns the agent itself produced;
+    "untrusted" for content derived from documents/ERP/tool-output that may carry
+    injected instructions. The prompt builder frames untrusted content as DATA, never
+    as behaviour-changing instructions (Invariant #1/#3). `source` records provenance.
+    """
     __tablename__ = "conversation_messages"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     role: Mapped[str] = mapped_column(String(20))  # user|assistant|tool|system
     content: Mapped[str] = mapped_column(Text)
+    trust_level: Mapped[str] = mapped_column(String(20), default="trusted")  # trusted|untrusted
+    source: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ArchivalPassage(Base):
-    """Archival memory: long-term, vector-searchable. Scoped for RLS like chunks."""
+    """Archival memory: long-term, vector-searchable. Scoped for RLS like chunks.
+
+    Passages are almost always derived from external documents/ERP, hence default
+    `trust_level="untrusted"`: their content must be framed as DATA when recalled into
+    a prompt, never obeyed as instructions (memory-poisoning defense — WP-G).
+    """
     __tablename__ = "archival_passages"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
@@ -159,6 +197,9 @@ class ArchivalPassage(Base):
     embedding: Mapped[list[float]] = mapped_column(Vector(_DIM))
     tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
     department_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    # WP-G: archival content is document/ERP-derived -> untrusted by default.
+    trust_level: Mapped[str] = mapped_column(String(20), default="untrusted")  # trusted|untrusted
+    source: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
 
 class AuditLog(Base):
