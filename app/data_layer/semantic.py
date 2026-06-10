@@ -12,9 +12,12 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from app.data_layer import money
+
+if TYPE_CHECKING:
+    from app.security.rls import Identity
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,10 @@ class Metric:
     id: str
     description: str
     required_params: tuple[str, ...] = ()
+    # RLS scope-binding (WP-F/ADR-0013): cột scope metric phải lọc theo (department/unit/period).
+    # BẮT BUỘC khi register — thiếu => fail-at-load (chống rò scope số liệu khi nối ERP thật).
+    scope_columns: tuple[str, ...] = ()
+    variant: str | None = None  # nhãn nghĩa: "thuần|gộp", "đã_VAT|chưa_VAT", "dồn_tích|tiền_mặt"
 
 
 @dataclass(frozen=True)
@@ -51,9 +58,15 @@ class MetricResult:
 
 
 class DataSource(Protocol):
-    """Computes an approved metric deterministically. Real impl reads ERP views (read-only)."""
+    """Computes an approved metric deterministically + applies RLS via `identity`.
 
-    def fetch(self, metric_id: str, params: Mapping[str, object]) -> tuple[float, str]: ...
+    Real impl (BravoErpDataSource) reads ERP views read-only; demo impl (MockDataSource)
+    reads a YAML fixture. BOTH return a MetricResult value-object and enforce scope on
+    `identity` (sensitive metric -> chỉ phòng có quyền). (WP-F / ADR-0013)
+    """
+
+    def fetch(self, metric_id: str, params: Mapping[str, object],
+              identity: "Identity") -> MetricResult: ...
 
 
 class MetricRegistry:
@@ -61,6 +74,11 @@ class MetricRegistry:
         self._metrics: dict[str, Metric] = {}
 
     def register(self, m: Metric) -> None:
+        if not m.scope_columns:  # fail-at-load: metric không khai RLS scope -> không cho đăng ký
+            raise ValueError(
+                f"Metric '{m.id}' thiếu scope_columns — phải khai RLS scope "
+                "(department/unit/period) trước khi register (WP-F/ADR-0013)."
+            )
         self._metrics[m.id] = m
 
     def get(self, metric_id: str) -> Metric | None:
@@ -76,16 +94,19 @@ REGISTRY = MetricRegistry()
 # REGISTRY.register(Metric("doanh_thu_thuan", "Doanh thu thuần theo kỳ/đơn vị", ("ky",)))
 
 
-def execute(mq: MetricQuery, source: DataSource) -> MetricResult:
-    """Run an approved metric deterministically. Raises if metric unknown or params missing."""
+def execute(mq: MetricQuery, source: DataSource, identity: "Identity") -> MetricResult:
+    """Run an approved metric deterministically. Raises if metric unknown or params missing.
+
+    Whitelist + ABSTAIN: metric ngoài registry -> ValueError (không SQL tự do). Số liệu +
+    RLS do `source.fetch(..., identity)` lo (source trả MetricResult value-object).
+    """
     metric = REGISTRY.get(mq.metric_id)
     if metric is None:
         raise ValueError(f"Metric không được duyệt: {mq.metric_id} (ABSTAIN, không SQL tự do)")
     missing = [p for p in metric.required_params if p not in mq.params]
     if missing:
         raise ValueError(f"Thiếu tham số {missing} cho metric {mq.metric_id}")
-    value, prov = source.fetch(mq.metric_id, mq.params)
-    return MetricResult(metric_id=mq.metric_id, value=money.D(value), provenance=prov)
+    return source.fetch(mq.metric_id, mq.params, identity)
 
 
 # The LLM mapping: question -> MetricQuery | None. Injected so it routes through the
@@ -93,9 +114,10 @@ def execute(mq: MetricQuery, source: DataSource) -> MetricResult:
 PlanFn = Callable[[str], "MetricQuery | None"]
 
 
-def answer(question: str, source: DataSource, plan_fn: PlanFn) -> MetricResult | None:
-    """Plan (LLM picks metric) -> execute (engine computes). None => abstain (no bịa số)."""
+def answer(question: str, source: DataSource, identity: "Identity",
+           plan_fn: PlanFn) -> MetricResult | None:
+    """Plan (LLM picks metric) -> execute (engine computes + RLS). None => abstain (no bịa số)."""
     mq = plan_fn(question)
     if mq is None:
         return None
-    return execute(mq, source)
+    return execute(mq, source, identity)
