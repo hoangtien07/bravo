@@ -20,15 +20,21 @@
 
 > ✅ **8/8 WP code xong.** Full suite **96 passed, 4 skipped** (docling+ragas chưa cài). HEAD = `797887b`.
 
-## 🔧 Tích hợp còn lại (seam wiring — chưa ai làm; cần coordinate vì chạm file chung)
-Các WP đã code-done với **stub** đúng spec. Để loop chạy E2E THẬT cần wire (chưa làm):
+## 🔧 Tích hợp (seam wiring) — ✅ XONG HẾT (`8c95139` + seam-1 `c694404`)
+> **Loop chạy E2E THẬT** (retrieve RLS → frame_untrusted → router cloud-egress audited → verify-gate → answer+citations). Tất cả 5 seam đã wire (chi tiết ở khối "PHÂN LẠI" bên dưới). Danh sách gốc giữ lại để tham chiếu:
 1. **WP-C router audit-then-egress** (`app/llm/router.py`): đổi `chat(messages, *, context=...)` tự `classify_context` + ghi `AuditLog(llm.egress)` TRƯỚC khi gọi cloud, fail-closed. *(WP-C core xong; phần router này "gộp WP-D hoặc WP-C" — CHƯA ai nhận.)* → loop hiện gọi `router.chat(sensitive=None)`.
 2. **WP-D ↔ WP-F** (`app/agent/loop.py`): thay stub `_stub_metric_lookup` → `semantic.answer(q, MockDataSource, identity, plan_fn)` (WP-F `1e58848` đã có).
 3. **WP-D ↔ WP-G** (`loop.py` build-prompt): `recall_recent` → `recall_recent_for_prompt`; bọc chunk RAG bằng `frame_untrusted`.
 4. **WP-D ↔ WP-E** (`tools.py call_tool`): write tool → `create_draft(..., agent_run_id=)` (WP-E `3d2f72a` đã có).
 5. **WP-H ↔ WP-D**: đổi mock loop → `AgentSession.step()` thật để chạy pass^k E2E.
 > 🔁 **PHÂN LẠI (user chỉ đạo 2026-06-11):**
-> - **chat-opus** làm **seam 2-3-4-5** → sửa `app/agent/loop.py`, `app/agent/tools.py`, `app/eval/*` (file WP-D/WP-H của chat-opus). 🔄 ĐANG LÀM từ HEAD `797887b`.
+> - **chat-opus ✅ SEAM 2-3-4-5 XONG (`8c95139`)** → `app/agent/loop.py` + `app/agent/tools.py` + `tests/test_agent_loop.py`. Tích hợp THẬT (hết stub):
+>   - **seam 2** `_metric_lookup` → `semantic.execute(MockDataSource)` (RLS tầng số); `call_tool` tiêm `identity/db` qua `inspect` cho read tool.
+>   - **seam 3** `_llm_decide` → `router.chat(context=chunks+engine_values, db=self.db)` (tự classify egress + audit-then-egress); chunk RAG bọc `frame_untrusted` (WP-G).
+>   - **seam 4** write tool → `create_draft(..., agent_run_id=)` (đã có sẵn, TypeError-fallback).
+>   - **seam 5** pass^k chạy `AgentSession.step()` thật (`run.py` nhánh real đã sẵn); **thread `routed_cloud`** qua mọi terminal dict để detector EGRESS HARD-FAIL hoạt động.
+>   - Sửa 2 test verify-gate (patch `semantic.execute` → engine cố định, độc lập fixture).
+>   - **Verify:** full suite **101 passed / 4 skipped**; pass^k mock gate **PASS** (41 traj, pass^k=1.0); **E2E smoke cloud THẬT** (ketoan@bravo.vn): KB grounded+cited, câu lương ABSTAIN (không bịa số). HEAD = `8c95139`.
 > - **chat-chính ✅ SEAM 1 XONG (`c694404`)** — `router.chat(messages, *, context=, sensitive=, db=, ...)`: tự `classify_context(context)` (fail-closed) + **audit-then-egress** (`AuditLog(llm.egress)` TRƯỚC khi gọi cloud; `db=None`→bỏ qua). 4 test `tests/test_router_egress.py`. **chat-opus:** ở `loop._llm_decide` gọi **`router.chat(messages, context=list(chunks)+engine_values, db=self.db)`** (bỏ `sensitive=None`) để bật egress-audit + phân loại nhạy thật. Mock `fake_chat(**kw)` của bạn đã absorb `context/db` nên test WP-D không vỡ.
 > - Tách file sạch → làm song song được. chat-opus sẽ để `router.chat(...)` ở loop theo chữ ký CONTRACTS §3.1 (`context=`) để khi seam 1 land là khớp.
 
@@ -45,7 +51,7 @@ Các WP đã code-done với **stub** đúng spec. Để loop chạy E2E THẬT 
 - **DB đang chạy** (`bravo-postgres-1`), head = `0003_agentrun_draft`. Chạy `alembic upgrade head` sau khi rebase.
 - **WP-C còn lại** (router `chat(context=)` audit-then-egress) CHƯA làm — WP-D đang gọi qua **stub**; cần ai đó (gộp WP-D hoặc WP-C) wire thật trước khi demo egress.
 - **`1f49d69` (chat-chính, demo seed):** `scripts/seed_demo.py` (6 phòng ban + 4 user `*@bravo.vn` + permissions, idempotent) → unblock eval ACL-gate + login Demo-A + RLS. **Chạy:** `PYTHONPATH=. python scripts/seed_demo.py`. Mock RLS chỉ-tiêu-nhạy giờ nhận **identity THẬT (UUID)** qua permission `metric:read:hr` (nhansu/giamdoc thấy lương). KHÔNG đụng loop/tools.
-- ⚠️ **HEADS-UP cho chat-opus (seam 2):** wiring stub→`MockDataSource` thật làm `test_agent_loop.py::test_verify_gate_passes_matching_number` FAIL — vì metric `"doanh_thu"` KHÔNG có trong catalog (→ ABSTAIN, không có engine value). Sửa: dùng metric thật `"doanh_thu_thuan"` + `params={ky:"2026-Q2",don_vi:"x"}` + identity có `metric:read` (seed `ketoan@bravo.vn`), HOẶC giữ `set_metric_source(None)` cho unit-test (stub) và chỉ set MockDataSource ở demo/integration. (File loop/tools là của bạn — tôi không sửa.)
+- ✅ **RESOLVED (`8c95139`, chat-opus seam 2):** verify-gate test fail đã sửa — patch `app.data_layer.semantic.execute` về engine cố định 1000 triệu (loop._metric_lookup re-import nên monkeypatch ăn) → 2 test (`passes`/`masks`) test đúng *hành vi gate* với engine value đã biết, độc lập fixture/DB.
 
 ## Việc Deferred (đừng làm ở demo)
 ERP client thật · local Qwen + guided decoding + air-gapped packaging · Phase 3 push-to-ERP · Temporal/Dapr · LangGraph Platform. (Xem [AGENTIC-PLAN §Deferred](../AGENTIC-PLAN.md).)
