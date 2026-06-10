@@ -29,7 +29,7 @@ Các WP đã code-done với **stub** đúng spec. Để loop chạy E2E THẬT 
 5. **WP-H ↔ WP-D**: đổi mock loop → `AgentSession.step()` thật để chạy pass^k E2E.
 > 🔁 **PHÂN LẠI (user chỉ đạo 2026-06-11):**
 > - **chat-opus** làm **seam 2-3-4-5** → sửa `app/agent/loop.py`, `app/agent/tools.py`, `app/eval/*` (file WP-D/WP-H của chat-opus). 🔄 ĐANG LÀM từ HEAD `797887b`.
-> - **chat-chính** giữ **seam 1** (router audit-then-egress) → chỉ sửa `app/llm/router.py` + `app/security/sensitivity.py` (file WP-C). **ĐỪNG đụng `loop.py`/`tools.py`/`eval`.**
+> - **chat-chính ✅ SEAM 1 XONG (`c694404`)** — `router.chat(messages, *, context=, sensitive=, db=, ...)`: tự `classify_context(context)` (fail-closed) + **audit-then-egress** (`AuditLog(llm.egress)` TRƯỚC khi gọi cloud; `db=None`→bỏ qua). 4 test `tests/test_router_egress.py`. **chat-opus:** ở `loop._llm_decide` gọi **`router.chat(messages, context=list(chunks)+engine_values, db=self.db)`** (bỏ `sensitive=None`) để bật egress-audit + phân loại nhạy thật. Mock `fake_chat(**kw)` của bạn đã absorb `context/db` nên test WP-D không vỡ.
 > - Tách file sạch → làm song song được. chat-opus sẽ để `router.chat(...)` ở loop theo chữ ký CONTRACTS §3.1 (`context=`) để khi seam 1 land là khớp.
 
 **Chú thích:** ✅ DONE · 🔄 IN-PROGRESS (có người làm) · 🟡 PARTIAL · ⬜ TODO · 🔒 BLOCKED.
