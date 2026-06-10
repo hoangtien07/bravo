@@ -1,0 +1,79 @@
+# Mock financial data cho Demo B — GIẢ, gắn nhãn DEMO. Chế độ kế toán TT99/2025.
+# Dùng bởi WP-F (app/data_layer/mock_source.py). KHÔNG phải số liệu thật của doanh nghiệp nào.
+# Hồ sơ: "Công ty CP Thép Xây Dựng DEMO" (ngành Sản xuất Thép xây dựng).
+meta:
+  entity: "Công ty CP Thép Xây Dựng DEMO"
+  che_do_ke_toan: "TT99/2025"
+  currency: "VND"
+  is_demo: true
+
+# Phòng ban cho RLS demo (sensitive=true -> ghim local + chỉ phòng có quyền thấy).
+departments:
+  - { id: "ban_giam_doc", name: "Ban Giám đốc", sensitive: false }
+  - { id: "ke_toan",      name: "Phòng Kế toán", sensitive: true }
+  - { id: "kinh_doanh",   name: "Phòng Kinh doanh", sensitive: false }
+  - { id: "nhan_su",      name: "Phòng Nhân sự", sensitive: true }
+
+# Người dùng demo (cho RLS): ai thấy metric nào.
+users:
+  - { username: "giamdoc",  departments: ["ban_giam_doc"], scope: "all" }
+  - { username: "ketoan",   departments: ["ke_toan"] }
+  - { username: "kinhdoanh",departments: ["kinh_doanh"] }
+  - { username: "nhansu",   departments: ["nhan_su"] }
+
+# Metric: value + scale (verify-gate chặn tỷ↔triệu) + variant (nhãn nghĩa) + dept (RLS).
+# value tính theo `scale` (vd 52.8 với scale "tỷ" = 52.8 tỷ VND).
+metrics:
+  doanh_thu_thuan:
+    variant: "thuần; chưa VAT; dồn tích (TK 511)"
+    dept: "ke_toan"
+    by_period: { "2026-Q1": 45.2, "2026-Q2": 52.8 }
+    scale: "tỷ"
+  gia_von_hang_ban:
+    variant: "TK 632"
+    dept: "ke_toan"
+    by_period: { "2026-Q1": 36.0, "2026-Q2": 41.1 }
+    scale: "tỷ"
+  loi_nhuan_gop:
+    variant: "DT thuần − GVHB"
+    dept: "ke_toan"
+    by_period: { "2026-Q1": 9.2, "2026-Q2": 11.7 }
+    scale: "tỷ"
+  cong_no_phai_thu:
+    variant: "số dư TK 131"
+    dept: "ke_toan"
+    by_period: { "2026-Q2": 18.3 }
+    scale: "tỷ"
+  cong_no_qua_han:
+    variant: "phải thu quá hạn >30 ngày"
+    dept: "ke_toan"
+    by_period: { "2026-Q2": 2.1 }
+    scale: "tỷ"
+  ton_kho_cuoi_ky:
+    variant: "TK 15x"
+    dept: "ke_toan"
+    by_period: { "2026-Q2": 22.5 }
+    scale: "tỷ"
+  so_du_tien:
+    variant: "TK 111 + 112"
+    dept: "ke_toan"
+    by_period: { "2026-Q2": 8.9 }
+    scale: "tỷ"
+  # NHẠY: chỉ nhan_su/giamdoc thấy; ghim local (egress).
+  quy_luong_thang:
+    variant: "tổng quỹ lương tháng"
+    dept: "nhan_su"
+    sensitive: true
+    by_period: { "2026-01": 3.4 }
+    scale: "tỷ"
+
+# Top-N (cho metric xếp hạng).
+cong_no_theo_khach_hang:
+  dept: "ke_toan"
+  scale: "tỷ"
+  rows: [ { kh: "Khách A", value: 5.2 }, { kh: "Khách B", value: 3.8 }, { kh: "Khách C", value: 2.4 } ]
+
+# Bất thường cài sẵn (cho demo soi bất thường — LLM chỉ xếp hạng/diễn giải, KHÔNG tự tính).
+anomalies:
+  - { loai: "hoa_don_trung", mo_ta: "2 hoá đơn cùng NCC + số tiền + ngày", chung_tu: "HD-2026-0421/0422", value: 0.85, scale: "tỷ" }
+  - { loai: "but_toan_so_tron", mo_ta: "Bút toán số tròn lớn ngoài giờ", chung_tu: "PKT-2026-0118", value: 1.0, scale: "tỷ" }

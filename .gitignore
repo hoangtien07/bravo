@@ -29,6 +29,8 @@ models/
 *.gguf
 *.faiss
 storage/
+# Enterprise corpus for Demo A (PDF/DOCX ~129MB) — ship out-of-band, ingest locally
+file_system/
 
 # OS / editor
 .DS_Store

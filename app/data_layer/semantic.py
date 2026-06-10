@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Protocol
+
+from app.data_layer import money
 
 
 @dataclass(frozen=True)
@@ -29,9 +32,22 @@ class MetricQuery:
 
 @dataclass(frozen=True)
 class MetricResult:
+    """Value-object số liệu (WP-B / ADR-0012). Mang ĐƠN VỊ + BỘI SỐ để verify-gate
+    chặn nhầm tỷ↔triệu. Tiền là Decimal. value tính theo `scale` (vd value=12.5, scale='tỷ')."""
     metric_id: str
-    value: float
+    value: Decimal
     provenance: str  # e.g. "metric:doanh_thu_thuan params={ky:2026-Q1}" -> drill-down
+    unit: str = "VND"
+    scale: str | None = None       # "đồng"|"nghìn"|"triệu"|"tỷ" — None = đã ở đơn vị cơ sở
+    currency: str | None = "VND"
+    period: str | None = None
+    entity: str | None = None
+    variant: str | None = None     # "thuần|gộp", "đã_VAT|chưa_VAT", "dồn_tích|tiền_mặt"
+    is_demo: bool = False
+
+    def base_value(self) -> Decimal:
+        """Giá trị quy về đơn vị cơ sở (đồng) — dùng cho verify-gate so sánh."""
+        return money.D(self.value) * money.scale_factor(self.scale)
 
 
 class DataSource(Protocol):
@@ -69,7 +85,7 @@ def execute(mq: MetricQuery, source: DataSource) -> MetricResult:
     if missing:
         raise ValueError(f"Thiếu tham số {missing} cho metric {mq.metric_id}")
     value, prov = source.fetch(mq.metric_id, mq.params)
-    return MetricResult(metric_id=mq.metric_id, value=float(value), provenance=prov)
+    return MetricResult(metric_id=mq.metric_id, value=money.D(value), provenance=prov)
 
 
 # The LLM mapping: question -> MetricQuery | None. Injected so it routes through the

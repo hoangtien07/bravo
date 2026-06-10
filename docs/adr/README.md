@@ -17,6 +17,12 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0007](0007-code-strategy.md) | Chiến lược code: lõi greenfield hợp nhất, modular-monolith; mượn pattern/chuyển thể | Accepted | 2026-06-08 |
 | [0008](0008-arkon-license-ownership.md) | arkon = chỉ học pattern, **VIẾT LẠI** — không tái dùng code (gỡ rủi ro PolyForm) | Accepted | 2026-06-09 |
 | [0009](0009-local-model-stack.md) | Bộ model cục bộ: Qwen2.5-32B + bge-m3 + VietOCR | Accepted | 2026-06-08 |
+| [0010](0010-agent-loop-architecture.md) | Agent loop: Constrained Agentic — single-agent, deterministic-backbone, control-flow-in-code | Accepted | 2026-06-11 |
+| [0011](0011-egress-classification-audit.md) | Phân loại độ nhạy tự động & audit-then-egress cho Model Router | Accepted | 2026-06-11 |
+| [0012](0012-verify-gate-number-integrity.md) | Verify-gate value-object & toàn vẹn số liệu (nối gate vào loop, đơn vị, Decimal) | Accepted | 2026-06-11 |
+| [0013](0013-reuse-vs-rewrite-and-topology.md) | Reuse-vs-rewrite & topology: BALANCED_REUSE (reuse library proven, hand-roll glue invariant, modular-monolith) | Accepted | 2026-06-11 |
+
+> ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 đã Accepted nhưng **CHƯA implement** (BLOCKING Phase 2 số). Lộ trình code song song: [../work-packages/](../work-packages/) · [../AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
 
 ## Quyết định đang chờ (backlog — sẽ thành ADR khi chốt)
 Tham chiếu [../ARCHITECTURE.md §5](../ARCHITECTURE.md) và [../VISION.md §8](../VISION.md):
@@ -28,3 +34,12 @@ Tham chiếu [../ARCHITECTURE.md §5](../ARCHITECTURE.md) và [../VISION.md §8]
 - Mức dùng pipeline biên soạn (MRP) vs RAG trực tiếp theo loại nội dung.
 - Cơ chế tích hợp ERP: đồng bộ phòng ban/quyền với ERP vs tự quản trị; danh mục view/API đọc được duyệt.
 - Reranker cục bộ: có/không.
+
+### Backlog ADR cho agentic (theo [../AGENTIC-PLAN.md](../AGENTIC-PLAN.md))
+- Guided/constrained decoding (XGrammar/CRANE) cho Qwen cục bộ — chốt khi triển khai LLM local (có GPU).
+- AgentRun durable (Postgres-native, lease/idempotency) — chốt khi tới Phase 3.
+- Journal-entry validator contract (ΣNợ=ΣCó/kỳ khoá sổ) — điều kiện khởi động Phase 3.
+- Semantic-layer RLS scope-binding bắt buộc (bổ sung [0005](0005-no-free-form-sql.md)).
+- Chuẩn mực kế toán áp dụng (TT99/2025 mặc định) + năm tài chính per-metric/draft.
+- Eval pass^k governance (k≥8, HARD-FAIL set) — mở rộng cổng ra ROADMAP.
+- Revision [0009](0009-local-model-stack.md): VRAM theo tải agentic (trọng số + KV-cache + headroom); pilot 14B-AWQ.

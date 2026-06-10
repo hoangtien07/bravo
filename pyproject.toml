@@ -17,10 +17,15 @@ dependencies = [
     # Auth
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7",
-    # Ingestion — digital docs only, NO OCR in MVP (ADR-0009). pypdf = lightweight PDF
-    # parser, proven clean on Vietnamese BRAVO 10 corpus. Docling optional (DOCX/XLSX).
+    # Ingestion (ADR-0013 BALANCED_REUSE): Docling = dep CHÍNH cho bóc bảng giữ cấu trúc
+    # + provenance page/sheet/cell (do_table_structure=True, do_ocr=False — không kéo OCR).
+    # pypdf = fast-path cho PDF text-thuần (tiếng Việt sạch, BRAVO 10). NO OCR scan (ADR-0009).
+    "docling>=2.0",
     "pypdf>=4.0",
     "tiktoken>=0.7",
+    # Agent loop (ADR-0010/0013): Pydantic AI = library structured-output (self-host, KHÔNG
+    # sở hữu control-flow). KHÔNG LangGraph/Temporal ở MVP (chỉ khi đo reliability_horizon).
+    "pydantic-ai-slim>=0.0.14",
     # RAG: local embedding (bge-m3, ADR-0009) + hybrid BM25 (findings/J)
     "sentence-transformers>=3.0",
     "FlagEmbedding>=1.2",
@@ -34,8 +39,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Heavier parser for DOCX/XLSX/table-rich docs (not needed for the PDF-only MVP).
-docling = ["docling>=2.0"]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
