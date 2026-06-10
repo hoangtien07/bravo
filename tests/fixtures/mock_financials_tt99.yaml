@@ -64,6 +64,7 @@ metrics:
     variant: "tổng quỹ lương tháng"
     dept: "nhan_su"
     sensitive: true
+    required_permission: "metric:read:hr"   # identity THẬT (UUID dept) được cấp qua permission
     by_period: { "2026-01": 3.4 }
     scale: "tỷ"
 

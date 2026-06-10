@@ -32,12 +32,21 @@ class NoDemoData(ValueError):
     """Không có dữ liệu DEMO cho metric/kỳ này -> caller ABSTAIN."""
 
 
-def _allowed(identity: "Identity", dept: str | None) -> bool:
+def _allowed(identity: "Identity", m: dict) -> bool:
+    """RLS chỉ tiêu nhạy: admin · metric:read:all · đúng required_permission · (legacy) đúng dept.
+
+    `required_permission` cho phép identity THẬT (department_ids là UUID, không khớp dept-code
+    trong fixture) vẫn được cấp quyền qua permission (vd nhan_su có 'metric:read:hr'). Đường
+    dept-code giữ lại cho unit-test/identity demo dùng mã chuỗi."""
     if getattr(identity, "is_admin", False):
         return True
-    if "metric:read:all" in getattr(identity, "permissions", frozenset()):
+    perms = getattr(identity, "permissions", frozenset())
+    if "metric:read:all" in perms:
         return True
-    return dept in (getattr(identity, "department_ids", None) or [])
+    rp = m.get("required_permission")
+    if rp and rp in perms:
+        return True
+    return m.get("dept") in (getattr(identity, "department_ids", None) or [])
 
 
 class MockDataSource:
@@ -54,8 +63,8 @@ class MockDataSource:
         if m is None:
             raise NoDemoData(f"Không có dữ liệu DEMO cho chỉ tiêu: {metric_id}")
 
-        # RLS tầng số: chỉ tiêu nhạy -> chỉ phòng có quyền.
-        if m.get("sensitive", False) and not _allowed(identity, m.get("dept")):
+        # RLS tầng số: chỉ tiêu nhạy -> chỉ phòng/permission có quyền.
+        if m.get("sensitive", False) and not _allowed(identity, m):
             raise AccessDenied(
                 f"Bạn không có quyền xem chỉ tiêu nhạy '{metric_id}' (thuộc {m.get('dept')})."
             )

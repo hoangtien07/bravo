@@ -41,6 +41,18 @@ def test_sensitive_metric_allowed_for_owner_and_admin():
     assert src.fetch("quy_luong_thang", {"ky": "2026-01", "don_vi": "x"}, _GIAMDOC).value == Decimal("3.4")
 
 
+def test_sensitive_metric_allowed_via_permission_for_real_uuid_identity():
+    """Identity THẬT (department_ids là UUID) được cấp 'metric:read:hr' -> xem được lương.
+    Identity UUID KHÔNG có permission -> bị chặn (dept-code không khớp UUID)."""
+    src = MockDataSource()
+    hr = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
+                  permissions=frozenset({"metric:read:hr"}))
+    assert src.fetch("quy_luong_thang", {"ky": "2026-01", "don_vi": "x"}, hr).value == Decimal("3.4")
+    no = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()])
+    with pytest.raises(AccessDenied):
+        src.fetch("quy_luong_thang", {"ky": "2026-01", "don_vi": "x"}, no)
+
+
 def test_no_demo_data_period_abstains():
     src = MockDataSource()
     with pytest.raises(NoDemoData):
