@@ -60,6 +60,14 @@ def _identity(perms=frozenset(), admin=False):
                     permissions=frozenset(perms), is_admin=admin)
 
 
+def _fixed_metric_1000(mq, source, identity):
+    """Deterministic engine for verify-gate tests, independent of the YAML fixture:
+    any metric -> 1000 triệu. Patches semantic.execute (loop._metric_lookup re-imports it),
+    so the gate is tested against a KNOWN engine value, not the real mock data."""
+    return MetricResult(metric_id=mq.metric_id, value=Decimal("1000"), provenance="test",
+                        unit="VND", scale="triệu", is_demo=True)
+
+
 @pytest.fixture
 def patch_retrieve(monkeypatch):
     async def fake_retrieve(db, identity, query, top_n=6, **kw):
@@ -265,6 +273,7 @@ async def test_verify_gate_masks_unmatched_numbers(monkeypatch, patch_retrieve):
         # LLM tries to state 9999 triệu which the engine never produced -> must be masked.
         json.dumps({"action": "answer", "answer": "Doanh thu là 9999 triệu đồng."}),
     ])
+    monkeypatch.setattr("app.data_layer.semantic.execute", _fixed_metric_1000)
     sess = AgentSession(_FakeDB(), _identity(perms={"metric:read"}))
     out = await sess.step("doanh thu kỳ này?")
     assert out["grounded"] is False
@@ -280,6 +289,7 @@ async def test_verify_gate_passes_matching_number(monkeypatch, patch_retrieve):
                     "args": {"metric_id": "doanh_thu", "params": {}}}),
         json.dumps({"action": "answer", "answer": "Doanh thu là 1000 triệu đồng."}),
     ])
+    monkeypatch.setattr("app.data_layer.semantic.execute", _fixed_metric_1000)
     sess = AgentSession(_FakeDB(), _identity(perms={"metric:read"}))
     out = await sess.step("doanh thu kỳ này?")
     assert out["grounded"] is True

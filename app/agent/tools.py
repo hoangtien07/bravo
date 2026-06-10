@@ -101,9 +101,18 @@ async def call_tool(name: str, args: dict, identity: Identity, *, db=None,
         return {"status": "pending_approval", "draft_id": str(draft.id), "is_write": True,
                 "message": "Đã tạo bản nháp chờ người duyệt (KHÔNG tự thực thi)."}
 
-    # Read path: execute deterministically.
+    # Read path: execute deterministically. Inject identity/db for tools that need them
+    # (e.g. metric_lookup -> semantic.execute applies RLS at the data tier). We only pass
+    # what the fn declares, so plain tools keep `fn(**args)`. LLM args can't override these
+    # (the tool json_schema never exposes identity/db).
     try:
-        result = tool.fn(**args)
+        params = inspect.signature(tool.fn).parameters
+        kw = dict(args)
+        if "identity" in params:
+            kw["identity"] = identity
+        if "db" in params:
+            kw["db"] = db
+        result = tool.fn(**kw)
         if inspect.isawaitable(result):
             result = await result
         return {"status": "ok", "result": result}
