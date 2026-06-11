@@ -7,11 +7,12 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import Chunk, Source
+from app.database.models import Chunk, Source, SourceDepartment
 from app.ingestion.chunker import chunk as chunk_blocks
-from app.ingestion.parser import parse
+from app.ingestion.parser import detect_kind, parse
 from app.rag.embedding import embed
 
 
@@ -20,9 +21,21 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
     source = await db.get(Source, source_id)
     if source is None:
         raise ValueError(f"Source {source_id} not found")
-    dept_ids = [d.id for d in source.departments]  # empty => global
+    # Explicit query (avoid lazy relationship load in async context). Empty => global.
+    dept_ids = list((await db.execute(
+        select(SourceDepartment.department_id).where(SourceDepartment.source_id == source_id)
+    )).scalars().all())
 
-    blocks = chunk_blocks(parse(path))
+    kind = detect_kind(path)
+    blocks = parse(path)
+    # Text-PDFs: re-segment per-page blocks into heading-bounded sections (better
+    # retrieval + section-level citations). Docling kinds (pdf_table/docx/xlsx) already
+    # emit semantic blocks with their own provenance — pass straight to the chunker so
+    # tables stay whole (is_table) and sheet/cell provenance is preserved.
+    if kind == "pdf_text":
+        from app.ingestion.heading_chunker import heading_chunk
+        blocks = heading_chunk(blocks)  # section-level chunks (heading + start page)
+    blocks = chunk_blocks(blocks)       # split over-long sections + drop tiny ones
     vectors = embed([b.text for b in blocks])
 
     for b, vec in zip(blocks, vectors, strict=True):

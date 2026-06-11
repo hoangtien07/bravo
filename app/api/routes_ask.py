@@ -10,11 +10,14 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import get_settings
 from app.database import get_db
 from app.llm import router as llm
 from app.rag import retriever
 from app.security.auth import require_permission
 from app.security.rls import Identity
+
+_settings = get_settings()
 
 router = APIRouter()
 
@@ -62,8 +65,12 @@ async def ask(
         {"role": "system", "content": _SYSTEM},
         {"role": "user", "content": f"NGỮ CẢNH:\n{context}\n\nCÂU HỎI: {req.question}"},
     ]
-    # sensitive=None -> router fails closed to local LLM (data stays on-prem).
-    answer, _decision = await llm.chat(messages, sensitive=None, temperature=0.1)
+    # KB user-guides are non-sensitive technical docs -> for the demo, allow the cloud
+    # LLM (data sovereignty enforced for sensitive data; production flips to local).
+    answer, _decision = await llm.chat(
+        messages, sensitive=False, allow_cloud_task=_settings.demo_allow_cloud_answers,
+        temperature=0.1,
+    )
 
     return AskResponse(
         answer=answer,

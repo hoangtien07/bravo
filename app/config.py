@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 720
     mcp_token_pepper: str = "change-me"
+    # Maker-checker (WP-E): mặc định CẤM người tạo tự duyệt draft của mình (SOX/ISA).
+    allow_self_approval: bool = False
 
     # LLM Router — local default (ADR-0003 / ADR-0009)
     llm_local_base_url: str = "http://localhost:8001/v1"
@@ -35,9 +37,24 @@ class Settings(BaseSettings):
     cloud_model: str = ""
     cloud_api_key: str = ""
 
-    # Embedding (ADR-0009: bge-m3)
+    # Embedding — provider switch for the DEMO (machine too weak for local models).
+    #   "local"            -> bge-m3 (ADR-0009, production default)
+    #   "openai_compatible"-> cloud embeddings API (demo; corpus is non-sensitive guides)
+    embedding_provider: str = "local"
     embedding_model: str = "BAAI/bge-m3"
     embedding_dim: int = 1024
+    # Cloud embedding (used when embedding_provider == openai_compatible)
+    cloud_embedding_base_url: str = ""
+    cloud_embedding_model: str = ""
+    cloud_embedding_api_key: str = ""
+
+    # Demo: allow non-sensitive tasks (KB user-guide Q&A) to use the cloud LLM.
+    demo_allow_cloud_answers: bool = False
+    # Rerank — biggest retrieval-quality lever (findings/J).
+    #   provider "viranker" -> local cross-encoder (production)
+    #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
+    rerank_enabled: bool = False
+    rerank_provider: str = "viranker"
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"

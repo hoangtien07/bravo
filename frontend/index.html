@@ -29,7 +29,7 @@
     <div class="card" id="loginCard">
       <h3>Đăng nhập</h3>
       <input id="email" placeholder="email (vd ketoan@bravo.vn)" value="ketoan@bravo.vn" />
-      <input id="password" type="password" placeholder="mật khẩu" value="ketoan123" />
+      <input id="password" type="password" placeholder="mật khẩu" value="demo123" />
       <button id="loginBtn">Đăng nhập</button>
       <p class="muted" id="who"></p>
     </div>
@@ -37,6 +37,10 @@
     <div class="card" id="askCard" style="display:none">
       <h3>Hỏi</h3>
       <textarea id="q" rows="3" placeholder="vd: Quy trình định khoản chi phí mua hàng?"></textarea>
+      <label class="muted" style="display:block;margin:4px 0 10px">
+        <input type="checkbox" id="agentic" style="width:auto;margin-right:6px" />
+        Chế độ agentic (verify-gate số liệu · tạo nháp · audit egress)
+      </label>
       <button id="askBtn">Gửi</button>
       <div id="answer"></div>
     </div>

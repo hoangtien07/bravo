@@ -43,10 +43,41 @@ def decide(sensitive: bool | None, allow_cloud_task: bool = False) -> RoutingDec
     return RoutingDecision("cloud", _settings.cloud_model, "non-sensitive + cloud allowed")
 
 
-async def chat(messages: list[dict], *, sensitive: bool | None = None,
-               allow_cloud_task: bool = False, **kwargs) -> tuple[str, RoutingDecision]:
-    """Route a chat completion. Returns (text, decision). Audit `decision` on egress."""
+async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
+    """Audit-then-egress (ADR-0011 / WP-C): ghi AuditLog TRƯỚC khi prompt rời mạng ra cloud.
+
+    Nếu ghi audit lỗi -> raise (db.commit propagate) -> KHÔNG egress (fail-closed). db=None
+    (vd unit-test) -> bỏ qua. prompt_hash để truy vết, không lưu nội dung thô.
+    """
+    if db is None:
+        return
+    import hashlib
+    import json as _json
+
+    from app.database.models import AuditLog
+
+    prompt_hash = hashlib.sha256(
+        _json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    db.add(AuditLog(action="llm.egress",
+                    detail={"provider": d.backend, "model": d.model, "prompt_hash": prompt_hash}))
+    await db.commit()
+
+
+async def chat(messages: list[dict], *, context: list | None = None,
+               sensitive: bool | None = None, allow_cloud_task: bool = False,
+               db=None, **kwargs) -> tuple[str, RoutingDecision]:
+    """Route a chat completion. Returns (text, decision).
+
+    WP-C: nếu caller KHÔNG truyền `sensitive` nhưng có `context` (chunks + metric-results),
+    router TỰ phân loại độ nhạy (fail-closed) — không tin tham số thủ công. Mọi lời gọi cloud
+    được audit TRƯỚC khi gọi (audit-then-egress).
+    """
+    if sensitive is None and context is not None:
+        from app.security.sensitivity import classify_context
+        sensitive = classify_context(context)
     d = decide(sensitive, allow_cloud_task)
     client = _cloud if d.backend == "cloud" else _local
+    if d.backend == "cloud":
+        await _audit_egress(db, d, messages)  # fail-closed: audit trước, lỗi audit -> không egress
     resp = await client.chat.completions.create(model=d.model, messages=messages, **kwargs)
     return resp.choices[0].message.content or "", d

@@ -17,9 +17,19 @@ dependencies = [
     # Auth
     "python-jose[cryptography]>=3.3",
     "passlib[bcrypt]>=1.7",
-    # Ingestion (docsgpt-derived, MIT) — digital docs only, NO OCR in MVP (ADR-0009)
+    # Ingestion (ADR-0013 BALANCED_REUSE): Docling = dep CHÍNH cho bóc bảng giữ cấu trúc
+    # + provenance page/sheet/cell (do_table_structure=True, do_ocr=False — không kéo OCR).
+    # pypdf = fast-path cho PDF text-thuần (tiếng Việt sạch, BRAVO 10). NO OCR scan (ADR-0009).
+    # Docling NẶNG (kéo torch + tải model table-structure lần đầu). Bake OFFLINE cho demo
+    # cloud/on-prem: trong image build chạy `python -c "from docling.document_converter
+    # import DocumentConverter; DocumentConverter()"` (warm tải model), đặt DOCLING_ARTIFACTS_
+    # PATH/HF_HOME vào layer cache, set HF_HUB_OFFLINE=1 ở runtime — không tải mạng lúc chạy.
     "docling>=2.0",
+    "pypdf>=4.0",
     "tiktoken>=0.7",
+    # Agent loop (ADR-0010/0013): Pydantic AI = library structured-output (self-host, KHÔNG
+    # sở hữu control-flow). KHÔNG LangGraph/Temporal ở MVP (chỉ khi đo reliability_horizon).
+    "pydantic-ai-slim>=0.0.14",
     # RAG: local embedding (bge-m3, ADR-0009) + hybrid BM25 (findings/J)
     "sentence-transformers>=3.0",
     "FlagEmbedding>=1.2",

@@ -35,6 +35,15 @@ app/
 3. **Zero-hallucination:** `routes_ask` từ chối khi không có ngữ cảnh; trích dẫn provenance; số liệu → data_layer (LLM không tính — Phase 2).
 4. **Chủ quyền dữ liệu:** `app/llm/router.py` mặc định local, fail-closed; dữ liệu nhạy ghim local.
 
+## Nạp corpus & chạy thử (BRAVO 10 user guide — KB MVP)
+```bash
+python -m scripts.seed                 # phòng ban + user mẫu
+python -m scripts.ingest_userguide     # nạp 19 cẩm nang BRAVO 10 (UserGuide_B10_TV_PDF/)
+```
+**Chạy 2 giai đoạn để có kết quả nhanh:**
+1. **Retrieval-only (KHÔNG cần LLM/GPU):** chỉ cần Postgres + `bge-m3`. Test truy hồi+trích dẫn (đúng chương/trang) — chứng minh lõi RLS+RAG chạy trên dữ liệu thật.
+2. **Full Q&A:** thêm LLM cục bộ (Qwen2.5 qua vLLM/Ollama) → `/api/ask` trả lời ngôn ngữ tự nhiên có dẫn chứng.
+
 ## Migrations
 ```bash
 alembic revision --autogenerate -m "init"   # cần CREATE EXTENSION vector; trong migration đầu

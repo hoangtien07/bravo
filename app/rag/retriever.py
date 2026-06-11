@@ -107,12 +107,16 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
 
 
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
-                   candidate_k: int = 150, use_rerank: bool = True) -> list[Retrieved]:
+                   candidate_k: int = 150, use_rerank: bool | None = None) -> list[Retrieved]:
     """Full hybrid pipeline (findings/J): vector + lexical -> RRF -> cross-encoder rerank.
 
-    All branches enforce RLS in-query. Rerank can be disabled (e.g. when the reranker
-    model is unavailable in dev).
+    All branches enforce RLS in-query. Rerank defaults to settings.rerank_enabled
+    (OFF in the cloud demo since ViRanker is a local model).
     """
+    if use_rerank is None:
+        from app.config import get_settings
+        use_rerank = get_settings().rerank_enabled
+
     dense = await vector_search(db, identity, query, k=candidate_k)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
     fused = rrf_fuse(dense, lexical)
@@ -120,7 +124,16 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     if not use_rerank or not fused:
         return fused[:top_n]
 
-    # Cross-encoder rerank over the fused candidates (top-N kept).
+    from app.config import get_settings
+    provider = get_settings().rerank_provider
+
+    if provider == "llm":
+        # Listwise rerank top candidates via the cloud chat model (demo).
+        pool = fused[:25]
+        order = await _rerank.llm_rerank(query, [r.content for r in pool], top_n)
+        return [pool[i] for i in order][:top_n]
+
+    # Cross-encoder rerank (ViRanker, local) over the fused candidates.
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s

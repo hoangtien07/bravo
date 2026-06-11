@@ -1,8 +1,15 @@
-"""Eval CI runner. Run: `python -m app.eval.run [golden_set.yaml]`.
+"""Eval CI runner.
 
-Gate: citation_accuracy >= 0.95, refusal_accuracy >= 0.95, ZERO ACL leaks.
-Retrieval-level metrics are deterministic (no LLM needed). Generator faithfulness
-(RAGAS) is an optional extra step.
+Two entrypoints:
+  * `python -m app.eval.run [golden_set.yaml]`  — legacy retrieval-only gate (citation/
+    refusal/ACL-leak) using the single-turn schema.
+  * `python -m app.eval.run --passk`            — WP-H pass^k trajectory gate: runs the
+    golden trajectories k times through the REAL AgentSession.step (or a mock loop when
+    `--mock`), computes pass^k + HARD-FAIL detectors, and exits non-zero on a gate failure
+    (blocks merge). See app.eval.passk for the detectors and gate.
+
+Retrieval-level metrics are deterministic (no LLM needed). Generator faithfulness (RAGAS)
+is an optional extra step run with a LOCAL judge (app.eval.faithfulness).
 """
 from __future__ import annotations
 
@@ -14,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
 from app.database.models import Employee
-from app.eval.golden import GoldenItem, ItemResult, summarize
+from app.eval._compat import GoldenItem, ItemResult, summarize
 from app.eval.probes import assert_no_leak
 from app.rag import retriever
 from app.security.rls import Identity
@@ -77,7 +84,57 @@ async def main(path: str | None) -> int:
         return 0 if ok else 1
 
 
+# --------------------------------------------------------------------------------------
+# WP-H pass^k gate — runs golden TRAJECTORIES k times end-to-end.
+# --------------------------------------------------------------------------------------
+async def passk_main(*, use_mock: bool, k: int) -> int:
+    """WP-H gate entrypoint. Returns process exit code (0 = pass, non-zero = block merge)."""
+    from app.eval.passk import MockLoop, evaluate_gate, run_passk
+    from tests.eval.golden_trajectories import GOLDEN_TRAJECTORIES
+
+    if use_mock:
+        # Stub-tolerant path: a correctly-behaving mock loop (returns the expected outcome
+        # for each trajectory) so the harness + gate run with NO DB / NO cloud. Swap this
+        # factory for `_real_loop_factory` once WP-D's AgentSession is complete.
+        from tests.eval.mock_loop import build_mock_script
+
+        def loop_factory(traj):
+            return MockLoop(build_mock_script(traj))
+        report = await run_passk(loop_factory, GOLDEN_TRAJECTORIES, k=k)
+    else:
+        # Real loop: one AgentSession per repeat, bound to the trajectory actor's Identity.
+        # run_passk needs a SYNC factory; resolve identities up-front, then close over them.
+        async with async_session_factory() as db:
+            from app.agent.loop import AgentSession
+            id_cache: dict[str, Identity] = {}
+            for t in GOLDEN_TRAJECTORIES:
+                if t.actor_email not in id_cache:
+                    id_cache[t.actor_email] = await _identity_for(db, t.actor_email)
+
+            def loop_factory(traj):
+                return AgentSession(db, id_cache[traj.actor_email])
+            report = await run_passk(loop_factory, GOLDEN_TRAJECTORIES, k=k)
+
+    print("pass^k report:", report.as_dict())
+    gate = evaluate_gate(report)
+    if gate.passed:
+        print("RESULT: PASS")
+        return 0
+    print("RESULT: FAIL (block merge)")
+    for r in gate.reasons:
+        print("  -", r)
+    return 1
+
+
 if __name__ == "__main__":
     import asyncio
 
-    sys.exit(asyncio.run(main(sys.argv[1] if len(sys.argv) > 1 else None)))
+    argv = sys.argv[1:]
+    if "--passk" in argv:
+        use_mock = "--mock" in argv
+        k = 8
+        for a in argv:
+            if a.startswith("--k="):
+                k = int(a.split("=", 1)[1])
+        sys.exit(asyncio.run(passk_main(use_mock=use_mock, k=k)))
+    sys.exit(asyncio.run(main(argv[0] if argv else None)))
