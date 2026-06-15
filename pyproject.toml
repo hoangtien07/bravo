@@ -26,6 +26,8 @@ dependencies = [
     # Ingestion: pypdf = fast-path PDF text-thuần (BRAVO 10). Bóc BẢNG (Docling) ở extra [local].
     "pypdf>=4.0",
     "tiktoken>=0.7",
+    "defusedxml>=0.7",                   # parse hoá đơn điện tử XML (untrusted) — chống XXE
+    "pyyaml>=6.0",                       # nạp catalog TT99 + crosswalk (data/*.yaml)
     # Agent loop — Pydantic AI structured-output. CODE DÙNG API 1.x (Agent(output_type=...),
     # FunctionModel, ModelResponse/TextPart). ⚠️ TUYỆT ĐỐI KHÔNG cap '<0.1': bản 0.0.x API khác
     # hẳn -> _parse_decision vỡ -> agentic không trả lời. Pin sàn ở 1.x.
