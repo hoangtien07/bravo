@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      ENV: local
+      # Cloud-only deps; KHÔNG cài stack ML local -> test cần embedding/DB tự skip.
+      EMBEDDING_PROVIDER: local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (cloud-only core + dev)
+        run: pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: ruff check app
+        continue-on-error: true   # TODO: bật blocking khi code sạch ruff
+
+      # HARD-GATE 1: unit + journal Nợ=Có validator (test_journal) + verify-gate + parser.
+      # Test DB-integration tự skip (không có Postgres service ở job này — chạy nightly/local).
+      - name: Tests (unit + journal Nợ=Có gate)
+        run: pytest -q
+
+      # HARD-GATE 2: eval pass^k (mock, deterministic) — 5 HARD-FAIL detector
+      # (RLS-leak / fabricated-number / wrong-unit / egress / injection). exit≠0 chặn merge.
+      - name: Eval pass^k gate (deterministic)
+        run: python -m app.eval.run --passk --mock --k=8
