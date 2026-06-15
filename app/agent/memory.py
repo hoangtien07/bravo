@@ -129,19 +129,20 @@ class MemoryStore:
         return [frame_by_trust(p.content, p.trust_level, p.source) for p in hits]
 
     def _archival_scope(self):
-        """RLS for archival: global (empty depts) OR overlap with identity depts. Admin = all.
+        """RLS for archival (W2.1 — chống rò bộ nhớ riêng xuyên người dùng).
 
-        Uses `func.cardinality(...) == 0` for the global case — mirrors
-        `chunk_scope_filter` in rls.py. (Postgres rejects `array_col == '{}'`/`== []`
-        as malformed SQL; cardinality is the correct empty-array test — WP-G bugfix.)
+        Non-admin chỉ thấy: passage CỦA MÌNH (`owner_id == me`) HOẶC passage được CHIA SẺ
+        tường minh tới phòng mình (`department_ids` overlap). Passage dept-RỖNG = bộ nhớ
+        CÁ NHÂN của owner, KHÔNG còn coi là "global cho mọi người" (đó là lỗ rò cũ: cùng
+        phòng đọc bộ nhớ riêng của nhau). Admin / doc:read:all = thấy tất cả.
         """
         if self.identity.is_admin or "doc:read:all" in self.identity.permissions:
             from sqlalchemy import true
             return true()
-        is_global = func.cardinality(ArchivalPassage.department_ids) == 0
+        mine = ArchivalPassage.owner_id == self.identity.employee_id
         if not self.identity.department_ids:
-            return is_global
+            return mine
         overlap = ArchivalPassage.department_ids.op("&&")(
             array(self.identity.department_ids, type_=ArchivalPassage.department_ids.type.item_type)
         )
-        return or_(is_global, overlap)
+        return or_(mine, overlap)
