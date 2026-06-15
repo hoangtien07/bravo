@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Chunk, Department, Source, SourceDepartment
@@ -26,6 +26,10 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
     dept_ids = list((await db.execute(
         select(SourceDepartment.department_id).where(SourceDepartment.source_id == source_id)
     )).scalars().all())
+
+    # Re-index idempotent: xoá chunk cũ của source TRƯỚC khi nạp lại (tránh nhân đôi chunk
+    # khi ingest lại — deep-dive: pipeline cũ chỉ add, freshness=0).
+    await db.execute(delete(Chunk).where(Chunk.source_id == source_id))
 
     kind = detect_kind(path)
     blocks = parse(path)

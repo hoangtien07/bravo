@@ -116,29 +116,21 @@ def _excel_cell(row: int, col: int) -> str:
 
 
 def _table_cell_range(item) -> str | None:
-    """Best-effort A1 cell range ('A1:D12') for a TableItem from Docling table data.
+    """A1 cell range cho một TableItem — CHỈ khi đọc được TOẠ ĐỘ THẬT của bảng trong sheet.
 
-    Docling exposes the grid via `item.data` (TableData) with `num_rows`/`num_cols`
-    or a `grid`/`table_cells` list. We read the extent and return the spanning range so
-    a citation can point at the exact block of cells (invariant #3). Returns None when
-    the shape can't be determined (caller leaves cell_range empty rather than guess).
+    Deep-dive (invariant #3): bản cũ neo cứng ở A1 (`A1:D{n}` từ num_rows/num_cols) bất kể
+    bảng thật bắt đầu ở đâu -> citation trỏ tới ô SAI = số sai. Provenance ô phải lấy từ
+    Docling TableItem.prov (toạ độ thật), KHÔNG tự tính. Hiện CHƯA pin Docling để đọc anchor
+    thật -> trả None (citation tới sheet, không đoán ô) thay vì bịa.
+
+    TODO(Docling pinned): map item.prov[0].bbox / cell absolute offset -> ô neo A1 thật,
+    rồi mới phát hành cell_range. Có test trên fixture XLSX bảng KHÔNG bắt đầu ở A1.
     """
-    data = getattr(item, "data", None)
-    if data is None:
-        return None
-    n_rows = getattr(data, "num_rows", None)
-    n_cols = getattr(data, "num_cols", None)
-    if (n_rows is None or n_cols is None):
-        grid = getattr(data, "grid", None) or getattr(data, "table_cells", None)
-        if grid:
-            try:
-                n_rows = len(grid)
-                n_cols = max(len(r) for r in grid) if isinstance(grid[0], (list, tuple)) else 1
-            except Exception:  # noqa: BLE001
-                return None
-    if not n_rows or not n_cols:
-        return None
-    return f"{_excel_cell(0, 0)}:{_excel_cell(int(n_rows) - 1, int(n_cols) - 1)}"
+    start = getattr(item, "start_cell_a1", None)  # nếu version Docling phơi anchor thật
+    end = getattr(item, "end_cell_a1", None)
+    if start and end:
+        return f"{start}:{end}"
+    return None
 
 
 def _sheet_name_of(item, doc) -> str | None:
