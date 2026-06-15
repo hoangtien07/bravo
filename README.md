@@ -2,7 +2,36 @@
 
 > **Enterprise Knowledge & Financial Analytics Hub** — biến BRAVO ERP thành một hệ thống mở thông minh, có khả năng tương tác bằng ngôn ngữ tự nhiên và tự động hoá phân tích, với bảo mật phân quyền cấp phòng ban và sàn vận hành offline 100% (hybrid cloud tuỳ chọn, có kiểm soát).
 
-**Trạng thái:** 🟡 Giai đoạn thiết kế (design phase) — chưa code.
+**Trạng thái:** 🟢 Đang build (Phase 1–2). Lõi đã chạy E2E: RAG có RLS + trích dẫn · agent loop ràng buộc + verify-gate số · **money-engine AP** (hoá đơn điện tử XML → bút toán nháp TT99) · **nền tảng chat** (React SPA + SSE streaming + lịch sử hội thoại). ~140 test xanh.
+
+## Chức năng (đã chạy)
+
+| Nhóm | Mô tả | Surface |
+|---|---|---|
+| **Hỏi-đáp tri thức** | RAG có RLS theo phòng ban + trích dẫn trang/sheet/ô; từ chối khi ngoài phạm vi | chat · `/api/ask` |
+| **Agentic** | Vòng lặp ràng buộc (ADR-0010): chọn tool, verify-gate chống bịa số, egress-audit, draft HITL | chat agentic · `/api/agent/ask` |
+| **Money-engine AP** | Hoá đơn điện tử XML → bút toán nháp cân Nợ=Có, map TK **TT99**, VAT 1331, trích dẫn dòng → duyệt (maker-checker) | chat (inline) · panel · `/api/invoices/draft` |
+| **Chat platform** | Streaming token + bước agent + citations panel; lịch sử hội thoại theo người dùng; chia sẻ read-only; feedback | React SPA · `/api/chat/{id}/messages` (SSE) |
+
+## Chạy thử (local)
+
+```bash
+# 1) Hạ tầng + backend
+cp .env.example .env                       # bật cloud-only demo (xem preset trong file) hoặc local LLM
+docker compose up -d postgres redis
+pip install -e ".[dev]"
+alembic upgrade head
+python scripts/seed_demo.py                # 5 user demo (mật khẩu: demo123)
+python scripts/ingest_userguide.py         # nạp corpus cẩm nang (nếu có)
+
+# 2) Frontend React (build 1 lần -> uvicorn tự serve)
+cd frontend-react && npm install && npm run build && cd ..
+
+# 3) Chạy
+uvicorn app.main:app --port 8000           # http://localhost:8000  (đăng nhập ketoan@bravo.vn / demo123)
+```
+Dev hot-reload FE: `cd frontend-react && npm run dev` (proxy `/api` → :8000) → http://localhost:5173.
+Chi tiết: [README-DEV.md](README-DEV.md).
 
 ## Đọc theo thứ tự
 
