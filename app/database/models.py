@@ -180,7 +180,23 @@ class ConversationMessage(Base):
     content: Mapped[str] = mapped_column(Text)
     trust_level: Mapped[str] = mapped_column(String(20), default="trusted")  # trusted|untrusted
     source: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    feedback: Mapped[str | None] = mapped_column(String(10), nullable=True)  # like|dislike (P-chat)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Conversation(Base):
+    """Hội thoại chat (P-chat) — gom các ConversationMessage cùng session thành 1 thread
+    có chủ sở hữu + tiêu đề. `id` == session_id (1:1, tái dùng key sẵn có). RLS THEO NGƯỜI
+    DÙNG: chỉ chủ sở hữu (employee_id) thấy hội thoại của mình; chia sẻ read-only qua
+    shared_token (link không đoán được). Khác RLS dept-scope của chunks."""
+    __tablename__ = "conversations"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)  # == session_id
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    title: Mapped[str] = mapped_column(String(200), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_message_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True)
+    shared_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
 
 
 class ArchivalPassage(Base):
