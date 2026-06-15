@@ -15,9 +15,13 @@ from app.config import get_settings
 
 _settings = get_settings()
 
-_local = AsyncOpenAI(base_url=_settings.llm_local_base_url, api_key=_settings.llm_local_api_key)
+# timeout/max_retries: một lời gọi đi lạc (vd fail-closed về local nhưng KHÔNG có LLM local)
+# phải FAIL NHANH + rõ, thay vì treo (mặc định client ~10 phút) khiến UI "không có response".
+_local = AsyncOpenAI(base_url=_settings.llm_local_base_url, api_key=_settings.llm_local_api_key,
+                     timeout=30.0, max_retries=2)
 _cloud = (
-    AsyncOpenAI(base_url=_settings.cloud_base_url or None, api_key=_settings.cloud_api_key)
+    AsyncOpenAI(base_url=_settings.cloud_base_url or None, api_key=_settings.cloud_api_key,
+                timeout=30.0, max_retries=2)
     if _settings.cloud_enabled and _settings.cloud_api_key
     else None
 )
