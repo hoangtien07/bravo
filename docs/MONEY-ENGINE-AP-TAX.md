@@ -82,7 +82,7 @@ Nguồn (XML hoá đơn / tờ khai / sổ ERP)
 - **Cần (kiểm chứng/lấy thật):** schema XML hoá đơn điện tử (TT78 phụ lục) · **bảng map TT200→TT99 chính thức** (TT99 phụ lục) · mẫu tờ khai GTGT/TNDN · API tra cứu MST/NCC rủi ro (Tổng cục Thuế) · ERP write staging (Phase 3).
 - **Cần kế toán BRAVO xác nhận:** quy tắc map TK theo loại hàng/ngành · ngưỡng cross-check · xử lý thuế suất đặc thù.
 - **ROI = kỳ vọng phải chứng minh qua pilot** (chưa có hoá đơn/ERP thật chạy).
-- **Liên quan VAS/IFRS:** TT99 là bước hiện đại hoá hướng IFRS → engine map-TK nên thiết kế **mở** để sau gắn lớp VAS↔IFRS (xem báo cáo research VAS/IFRS — đang chạy).
+- **Liên quan VAS/IFRS & TT99 (ĐÃ research — [research/VAS-IFRS-MONEY-SPOTS.md](research/VAS-IFRS-MONEY-SPOTS.md)):** money-spot gần-hạn THẬT là **tuân thủ TT99** (đã chốt 1/1/2026, phổ cập, **cơ học ít-judgment**) → **GỘP vào engine này** (use-case D mới): (i) **remap CoA cấp ≥2 + sinh nháp "Accounting Policy Regulation" bắt buộc**; (ii) **bù-trừ hợp nhất nội bộ** (đầu mối + đơn vị phụ thuộc). Lớp **VAS↔IFRS đầy đủ** (mapping/dual-ledger/disclosure) = **agent TÁCH RIÊNG giai-đoạn-sau** (judgment-heavy: fair value/impairment → CHỈ có-người-duyệt; phạm vi hẹp niêm yết/FDI; cần pilot chứng minh ROI). **Moat:** verify-gate + maker-checker + audit-trail = điều kiện *"AI tài chính kiểm-toán-được"* (Big4/EU AI Act 8/2026) — bán được niềm tin.
 
 ---
 > Thiết kế này biến 2 "chỗ ăn tiền" thành một sản phẩm tận dụng ~70% cái bravo đã có (đuôi close-the-loop) + xây phần đầu VN-native mà đối thủ ngoại không có. Use-case A demo được **không cần ERP** = đường nhanh nhất tới một demo có $ rõ.
