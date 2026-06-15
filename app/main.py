@@ -18,7 +18,16 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: (migrations run via alembic separately). Place warm-ups here.
+    # Startup: boot-guard (fail-closed nếu prod còn secret mặc định) + nạp metric catalog.
+    import logging
+
+    logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.INFO))
+    _log = logging.getLogger("bravo.startup")
+    settings.validate_boot()
+    # Import data_layer kích hoạt register_catalog() (side-effect) -> REGISTRY đầy đủ lúc runtime.
+    from app.data_layer.semantic import REGISTRY
+
+    _log.info("BRAVO startup: env=%s · metric catalog=%d metric", settings.env, len(REGISTRY.ids()))
     yield
     # Shutdown
 
