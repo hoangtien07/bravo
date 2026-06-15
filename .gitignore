@@ -43,3 +43,6 @@ server.log
 *.log
 .venv/
 data/
+# ...nhưng danh mục TT99 freeze (nguồn-sự-thật runtime) PHẢI version:
+!app/accounting/data/
+!app/accounting/data/**
