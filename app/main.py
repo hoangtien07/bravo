@@ -7,14 +7,18 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import router as api_router
 from app.config import get_settings
 
-_FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
+# Ưu tiên SPA React đã build (frontend-react/dist); fallback bản vanilla cũ (frontend/).
+_ROOT = Path(__file__).resolve().parent.parent
+_FRONTEND = _ROOT / "frontend-react" / "dist"
+if not _FRONTEND.exists():
+    _FRONTEND = _ROOT / "frontend"
 
 settings = get_settings()
 
@@ -98,10 +102,18 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "env": settings.env}
 
 
-# Minimal frontend (static). index.html at root, assets under /static.
+# Frontend SPA: assets dưới /static; deep-link (/c/:id, /money-engine, /shared/:token) ->
+# SPA-fallback trả index.html để react-router xử lý (không 404).
 if _FRONTEND.exists():
     app.mount("/static", StaticFiles(directory=str(_FRONTEND)), name="static")
 
     @app.get("/")
     async def index() -> FileResponse:
+        return FileResponse(str(_FRONTEND / "index.html"))
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str) -> FileResponse:
+        if full_path.startswith(("api/", "static/")) or full_path in (
+                "livez", "readyz", "health", "metrics", "docs", "openapi.json"):
+            raise HTTPException(status_code=404)
         return FileResponse(str(_FRONTEND / "index.html"))
