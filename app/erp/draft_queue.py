@@ -106,6 +106,10 @@ async def approve_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUI
                     detail={"draft_id": str(draft_id)}))
     # TODO(Phase 3): push approved draft to BRAVO ERP staging (ERP-INTEGRATION-REQUEST §3).
     await db.commit()
+    # W2.3 "duyệt = thực thi": nếu draft thuộc một AgentRun chờ duyệt -> đánh dấu run done.
+    if draft.agent_run_id is not None:
+        from app.agent import runs
+        await runs.complete_on_approval(db, draft.agent_run_id)
     await db.refresh(draft)
     return draft
 

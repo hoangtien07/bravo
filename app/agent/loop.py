@@ -226,11 +226,36 @@ class AgentSession:
             # Audit must never crash the turn; in pure-unit tests db may be a stub.
             pass
 
+    # --- durable AgentRun (W2.2/2.3) — best-effort, không làm vỡ lượt nếu DB lỗi/giả ---
+    async def _open_run(self) -> None:
+        try:
+            from app.agent import runs
+            await runs.start_run(self.db, run_id=self.agent_run_id, session_id=self.session_id,
+                                 employee_id=self.identity.employee_id)
+        except Exception:
+            pass
+
+    async def _close_run(self, status: str) -> None:
+        try:
+            from app.agent import runs
+            await runs.finish_run(self.db, self.agent_run_id, status=status, checkpoint_state={
+                "created_draft": getattr(self, "_created_draft", False),
+                "routed_cloud": getattr(self, "_routed_cloud", False)})
+        except Exception:
+            pass
+
+    def _terminal_status(self) -> str:
+        # Lượt có tạo bút toán/draft chờ duyệt -> paused_for_approval ("duyệt = thực thi").
+        return "paused_for_approval" if getattr(self, "_created_draft", False) else "done"
+
     async def step(self, user_message: str) -> dict:
         """One conversational turn. Control flow is fully in this method (ADR-0010)."""
         await self._safe_recall_add("user", user_message)
         tracker = _BudgetTracker(self.budget)
         self._routed_cloud = False             # set True by _llm_decide if a call hits cloud
+        self._created_draft = False            # set True khi tool ghi tạo draft chờ duyệt
+        self.agent_run_id = uuid.uuid4()       # 1 lượt = 1 AgentRun (drafts của lượt link vào)
+        await self._open_run()
 
         # 1) Retrieve once up-front (RLS-in-SQL) — context for the whole turn.
         chunks = await retriever.retrieve(self.db, self.identity, user_message, top_n=6)
@@ -289,6 +314,10 @@ class AgentSession:
                 await self._audit("agent.tool_call",
                                   {"tool": decision.tool, "isError": result.get("isError", False)})
 
+                # Tool ghi -> draft chờ duyệt: đánh dấu để lượt vào trạng thái paused_for_approval.
+                if result.get("is_write") or result.get("status") == "pending_approval":
+                    self._created_draft = True
+
                 # Harvest engine values for the verify-gate (numbers come from tools, not LLM).
                 ev = result.get("result")
                 if isinstance(ev, MetricResult):
@@ -309,6 +338,7 @@ class AgentSession:
             answer = ("Tôi đã dừng vì đạt giới hạn an toàn của phiên xử lý "
                       f"({be.dimension}). Vui lòng thu hẹp câu hỏi hoặc thử lại.")
             await self._safe_recall_add("assistant", answer)
+            await self._close_run("failed")
             return {"answer": answer, "grounded": False, "citations": citations,
                     "stopped": "budget", "budget_dimension": be.dimension,
                     "routed_cloud": getattr(self, "_routed_cloud", False),
@@ -333,6 +363,7 @@ class AgentSession:
         else:
             safe, grounded, unmatched = answer, bool(citations), []
         await self._safe_recall_add("assistant", safe)
+        await self._close_run(self._terminal_status())
         return {
             "answer": safe,
             "grounded": grounded,
@@ -344,6 +375,7 @@ class AgentSession:
 
     async def _finish_clarify(self, question: str, citations: list[str]) -> dict:
         await self._safe_recall_add("assistant", question)
+        await self._close_run(self._terminal_status())
         return {"answer": question, "grounded": True, "clarify": True,
                 "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
                 "session_id": str(self.session_id)}
