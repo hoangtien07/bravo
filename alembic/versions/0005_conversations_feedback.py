@@ -16,23 +16,30 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "conversations",
-        sa.Column("id", UUID(as_uuid=True), primary_key=True),   # == session_id
-        sa.Column("employee_id", UUID(as_uuid=True), nullable=False),
-        sa.Column("title", sa.String(200), nullable=False, server_default=""),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("last_message_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("shared_token", sa.String(64), nullable=True),
-    )
-    op.create_index("ix_conversations_employee_id", "conversations", ["employee_id"])
-    op.create_index("ix_conversations_last_message_at", "conversations", ["last_message_at"])
-    op.create_index("uq_conversations_shared_token", "conversations", ["shared_token"], unique=True)
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    
+    if not insp.has_table("conversations"):
+        op.create_table(
+            "conversations",
+            sa.Column("id", UUID(as_uuid=True), primary_key=True),   # == session_id
+            sa.Column("employee_id", UUID(as_uuid=True), nullable=False),
+            sa.Column("title", sa.String(200), nullable=False, server_default=""),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+            sa.Column("last_message_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column("shared_token", sa.String(64), nullable=True),
+        )
+        op.create_index("ix_conversations_employee_id", "conversations", ["employee_id"])
+        op.create_index("ix_conversations_last_message_at", "conversations", ["last_message_at"])
+        op.create_index("uq_conversations_shared_token", "conversations", ["shared_token"], unique=True)
 
-    op.add_column("conversation_messages",
-                  sa.Column("feedback", sa.String(10), nullable=True))
-    op.create_index("ix_conv_messages_session_created", "conversation_messages",
-                    ["session_id", "created_at"])
+    if insp.has_table("conversation_messages"):
+        conv_msg_cols = [c["name"] for c in insp.get_columns("conversation_messages")]
+        if "feedback" not in conv_msg_cols:
+            op.add_column("conversation_messages",
+                          sa.Column("feedback", sa.String(10), nullable=True))
+            op.create_index("ix_conv_messages_session_created", "conversation_messages",
+                            ["session_id", "created_at"])
 
 
 def downgrade() -> None:

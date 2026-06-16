@@ -23,26 +23,30 @@ _TABLES = ("conversation_messages", "archival_passages")
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
     for table in _TABLES:
-        op.add_column(
-            table,
-            sa.Column(
-                "trust_level",
-                sa.String(length=20),
-                nullable=False,
-                server_default="trusted",
-            ),
-        )
-        op.add_column(
-            table,
-            sa.Column("source", sa.String(length=500), nullable=True),
-        )
-        # Deterministic constraint: only the two known trust levels are storable.
-        op.create_check_constraint(
-            f"ck_{table}_trust_level",
-            table,
-            "trust_level IN ('trusted', 'untrusted')",
-        )
+        columns = [c["name"] for c in insp.get_columns(table)]
+        if "trust_level" not in columns:
+            op.add_column(
+                table,
+                sa.Column(
+                    "trust_level",
+                    sa.String(length=20),
+                    nullable=False,
+                    server_default="trusted",
+                ),
+            )
+            op.add_column(
+                table,
+                sa.Column("source", sa.String(length=500), nullable=True),
+            )
+            # Deterministic constraint: only the two known trust levels are storable.
+            op.create_check_constraint(
+                f"ck_{table}_trust_level",
+                table,
+                "trust_level IN ('trusted', 'untrusted')",
+            )
 
 
 def downgrade() -> None:
