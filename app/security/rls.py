@@ -102,6 +102,21 @@ def source_scope_filter(identity: Identity, action: str = "read") -> "ColumnElem
     return or_(is_global, in_my_dept)
 
 
+def conversation_scope_filter(identity: Identity) -> "ColumnElement[bool]":
+    """SQL predicate giới hạn Conversation theo NGƯỜI DÙNG (P-chat).
+
+    Khác RLS dept-scope: hội thoại là TÀI SẢN CÁ NHÂN — chỉ chủ sở hữu (employee_id) thấy.
+    Admin thấy tất cả. (Chia sẻ read-only đi qua shared_token, tra trực tiếp, không dùng
+    filter này.)"""
+    from sqlalchemy import true
+
+    from app.database.models import Conversation
+
+    if identity.is_admin:
+        return true()
+    return Conversation.employee_id == identity.employee_id
+
+
 def can_access_source_departments(identity: Identity, source_department_ids: list[uuid.UUID],
                                   action: str = "read") -> bool:
     """In-memory check for a single already-loaded source (detail endpoints).

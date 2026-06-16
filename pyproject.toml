@@ -3,46 +3,51 @@ name = "bravo-ai-copilot"
 version = "0.1.0"
 description = "BRAVO AI Copilot — Enterprise Knowledge & Financial Analytics Hub (on-prem RAG on BRAVO ERP)"
 requires-python = ">=3.11"
+# CORE = bộ chạy được cho DEMO CLOUD-ONLY (OpenAI cho cả LLM lẫn embedding). KHÔNG kéo
+# torch/docling/sentence-transformers — tránh "version incompatibility" trên VM không-GPU.
+# Stack ML on-prem nằm ở extra [local] bên dưới (chỉ cài khi chạy local model thật).
+# Mọi import nặng trong code đều LAZY nên bỏ chúng KHÔNG vỡ khởi động.
 dependencies = [
     # Web / API
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
+    "python-multipart>=0.0.18",          # BẮT BUỘC: OAuth2 form login + upload (FastAPI)
     # DB + vector
     "sqlalchemy[asyncio]>=2.0.30",
     "asyncpg>=0.29",
     "pgvector>=0.3",
     "alembic>=1.13",
-    # Auth
+    # Auth — passwords.py dùng bcrypt TRỰC TIẾP; passlib chỉ phụ trợ. Cho phép bcrypt 5.x.
     "python-jose[cryptography]>=3.3",
-    "passlib[bcrypt]>=1.7",
-    # Ingestion (ADR-0013 BALANCED_REUSE): Docling = dep CHÍNH cho bóc bảng giữ cấu trúc
-    # + provenance page/sheet/cell (do_table_structure=True, do_ocr=False — không kéo OCR).
-    # pypdf = fast-path cho PDF text-thuần (tiếng Việt sạch, BRAVO 10). NO OCR scan (ADR-0009).
-    # Docling NẶNG (kéo torch + tải model table-structure lần đầu). Bake OFFLINE cho demo
-    # cloud/on-prem: trong image build chạy `python -c "from docling.document_converter
-    # import DocumentConverter; DocumentConverter()"` (warm tải model), đặt DOCLING_ARTIFACTS_
-    # PATH/HF_HOME vào layer cache, set HF_HUB_OFFLINE=1 ở runtime — không tải mạng lúc chạy.
-    "docling>=2.0",
+    "passlib>=1.7",
+    "bcrypt>=4.1,<6",
+    # Ingestion: pypdf = fast-path PDF text-thuần (BRAVO 10). Bóc BẢNG (Docling) ở extra [local].
     "pypdf>=4.0",
     "tiktoken>=0.7",
-    # Agent loop (ADR-0010/0013): Pydantic AI = library structured-output (self-host, KHÔNG
-    # sở hữu control-flow). KHÔNG LangGraph/Temporal ở MVP (chỉ khi đo reliability_horizon).
-    "pydantic-ai-slim>=0.0.14",
-    # RAG: local embedding (bge-m3, ADR-0009) + hybrid BM25 (findings/J)
-    "sentence-transformers>=3.0",
-    "FlagEmbedding>=1.2",
-    "rank-bm25>=0.2.2",
-    # LLM router: local (vLLM/Ollama OpenAI-compatible) + cloud opt-in (ADR-0003)
+    "defusedxml>=0.7",                   # parse hoá đơn điện tử XML (untrusted) — chống XXE
+    "pyyaml>=6.0",                       # nạp catalog TT99 + crosswalk (data/*.yaml)
+    # Agent loop — Pydantic AI structured-output. CODE DÙNG API 1.x (Agent(output_type=...),
+    # FunctionModel, ModelResponse/TextPart). ⚠️ TUYỆT ĐỐI KHÔNG cap '<0.1': bản 0.0.x API khác
+    # hẳn -> _parse_decision vỡ -> agentic không trả lời. Pin sàn ở 1.x.
+    "pydantic-ai-slim>=1.107,<2",
+    # LLM router + cloud embedding. CODE DÙNG openai 2.x. ⚠️ KHÔNG cap '<2.0'.
     "httpx>=0.27",
-    "openai>=1.40",
-    # Worker
+    "openai>=2.0,<3",
+    # Worker (tùy chọn; ingest hiện chạy đồng bộ, có thể bỏ nếu không dùng arq)
     "arq>=0.26",
     "redis>=5.0",
 ]
 
 [project.optional-dependencies]
+# On-prem ĐẦY ĐỦ: embedding bge-m3 + rerank ViRanker + bóc bảng Docling (kéo torch — RẤT NẶNG,
+# cần GPU/bake offline). DEMO CLOUD-ONLY KHÔNG cần extra này. Cài: `pip install -e .[local]`.
+local = [
+    "docling>=2.14",
+    "sentence-transformers>=3.0",
+    "FlagEmbedding>=1.2",
+]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",

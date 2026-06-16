@@ -59,6 +59,25 @@ class Settings(BaseSettings):
     # Worker
     redis_url: str = "redis://localhost:6379/0"
 
+    def validate_boot(self) -> None:
+        """Fail-closed boot guard (DEPLOY-DEMO.md hứa điều này). Ở staging/production:
+        chặn khởi động nếu secret còn mặc định/quá ngắn, hoặc bật cloud mà thiếu key.
+        Ở env=local (demo) là no-op để không cản trở phát triển."""
+        if self.env not in {"staging", "production", "prod"}:
+            return
+        weak = {"change-me", "change-me-in-production", "change-me-256-bit-random"}
+        for name in ("jwt_secret", "mcp_token_pepper"):
+            val = getattr(self, name)
+            if val in weak or len(val) < 16:
+                raise RuntimeError(
+                    f"[boot-guard] {name} còn giá trị mặc định/quá ngắn ở env={self.env}. "
+                    "Đặt secret ngẫu nhiên ≥16 ký tự trước khi chạy production (fail-closed)."
+                )
+        if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
+            raise RuntimeError(
+                "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
+            )
+
 
 @lru_cache
 def get_settings() -> Settings:

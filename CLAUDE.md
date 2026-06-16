@@ -34,7 +34,8 @@ Chi tiết chắt lọc: [docs/reference/arkon-notes.md](docs/reference/arkon-no
 
 ## 4. Cách làm việc trong repo này
 
-- **Giai đoạn hiện tại = BUILD (từ 2026-06-09).** Thiết kế đã chốt qua 9 ADR + 10 báo cáo nghiên cứu. Đang hiện thực theo [docs/PLAN.md](docs/PLAN.md). Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector, modular monolith ([ADR-0007](docs/adr/0007-code-strategy.md)). **arkon = viết lại từ pattern** (không copy code — PolyForm); docsgpt/letta = chuyển thể (MIT/Apache).
+- **Giai đoạn hiện tại = BUILD (Phase 1–2, đang chạy E2E).** 15 ADR. Lõi đã chạy: RAG+RLS, agent loop + verify-gate, eval pass^k, **money-engine AP** (hoá đơn XML→bút toán TT99, branch `feat/money-engine-ap`), **nền tảng chat** (React SPA + SSE streaming + multi-turn, branch `feat/chat-platform`). Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector, modular monolith ([ADR-0007](docs/adr/0007-code-strategy.md)). Chạy/cấu trúc: [README.md](README.md), [README-DEV.md](README-DEV.md). **arkon = viết lại từ pattern** (không copy code — PolyForm); docsgpt/letta = chuyển thể (MIT/Apache).
+- **Tái dùng trước khi xây mới:** xương sống đã có (loop·draft+maker-checker·verify-gate·RLS·memory·conversations·accounting). Đọc code thật, giữ 4 bất biến, anti-over-engineering.
 - **Tiếng Việt** cho tài liệu nghiệp vụ/chiến lược; thuật ngữ kỹ thuật giữ tiếng Anh.
 - Mọi quyết định kiến trúc lớn → ghi thành **ADR** trong [docs/adr/](docs/adr/) (dùng skill `/adr-new`).
 - Tham chiếu file theo `path:line` để bấm được.
@@ -61,6 +62,6 @@ Chi tiết chắt lọc: [docs/reference/arkon-notes.md](docs/reference/arkon-no
 | `/rag-ingest-design` | Thiết kế/đánh giá luồng nạp một loại tài liệu mới |
 | `/adr-new` | Tạo một Architecture Decision Record mới |
 
-## 6. Stack đề xuất (chưa chốt — xem ADR)
+## 6. Stack (đã chốt — xem ADR)
 
-Backend Python (FastAPI, async SQLAlchemy) · PostgreSQL + pgvector · Docling (ingestion) · **Model Router** điều phối LLM local (vLLM/Ollama, Qwen-2.5) làm mặc định + cloud opt-in có kiểm soát qua giao diện OpenAI-compatible · FastMCP cho tích hợp Claude · Next.js frontend. **Mọi lựa chọn phải giữ nguyên đường chạy offline (sàn bắt buộc).** Quyết định chính thức nằm trong [docs/adr/](docs/adr/).
+Backend Python (FastAPI, async SQLAlchemy) · PostgreSQL + pgvector · Docling/pypdf (ingestion) · `defusedxml` (hoá đơn XML) · **Model Router** điều phối LLM local (vLLM/Ollama, Qwen-2.5) mặc định + cloud opt-in (OpenAI-compatible, audit-then-egress) · FastMCP · **Frontend: React 18 + Vite + TypeScript + Tailwind** (design tokens brand, primitives kiểu shadcn) tại `frontend-react/`, streaming qua SSE (POST+fetch). **Mọi lựa chọn giữ nguyên đường chạy offline (sàn bắt buộc).** ADR: [docs/adr/](docs/adr/) (0001–0015).

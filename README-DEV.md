@@ -4,29 +4,39 @@ Hiện thực theo [docs/PLAN.md](docs/PLAN.md). Stack: FastAPI + async SQLAlche
 
 ## Chạy nhanh (dev)
 ```bash
-cp .env.example .env            # điền JWT_SECRET, MCP_TOKEN_PEPPER
+cp .env.example .env            # bật preset DEMO CLOUD-ONLY (OpenAI) hoặc LLM local
 docker compose up postgres redis -d
-pip install -e ".[dev]"
-alembic upgrade head            # (sau khi tạo migration đầu — xem dưới)
-uvicorn app.main:app --reload   # http://localhost:8000/health
+pip install -e ".[dev]"         # core = cloud-only nhẹ; `.[local]` = bge-m3/Docling (cần GPU/bake)
+alembic upgrade head
+python scripts/seed_demo.py     # 5 user demo (mật khẩu demo123)
+
+# Frontend React (Vite). Build 1 lần -> uvicorn serve dist ở /static + SPA-fallback:
+cd frontend-react && npm install && npm run build && cd ..
+uvicorn app.main:app --port 8000     # http://localhost:8000
+
+# Hoặc dev hot-reload FE (2 cổng):
+cd frontend-react && npm run dev      # http://localhost:5173 (proxy /api -> :8000)
 ```
-LLM cục bộ (Qwen2.5-32B) chạy riêng qua vLLM/Ollama (OpenAI-compatible) ở `LLM_LOCAL_BASE_URL`; bỏ comment service `vllm` trong `docker-compose.yml` khi có GPU.
+LLM cục bộ (Qwen2.5) chạy riêng qua vLLM/Ollama (OpenAI-compatible) ở `LLM_LOCAL_BASE_URL`. Demo dùng cloud OpenAI (preset trong `.env.example`). Health: `/livez` (process), `/readyz` (DB+catalog).
 
 ## Cấu trúc (modular monolith)
 ```
 app/
-  config.py          # Pydantic settings
-  database/          # engine, session, ORM models (scope baked in cho RLS)
-  security/          # rls.py (RLS-on-vector), auth.py (JWT, perms, MCP token hash)
-  ingestion/         # parser (Docling, digital-only, NO OCR) -> chunker -> pipeline
-  rag/               # embedding (bge-m3), retriever (RLS-on-vector + hybrid + rerank)
-  llm/               # router.py (Model Router: local default, cloud opt-in fail-closed)
-  data_layer/        # [Phase 2] semantic (metric layer), calc (PoT sandbox), grounding
-  agent/             # [Phase 2] lean memory (MemGPT pattern), tools (requires_approval)
-  erp/               # [Phase 2/3] read-only client, draft_queue (non-invasive)
-  api/               # routers (auth, ask)
-  main.py            # FastAPI app
+  config.py          # Pydantic settings + validate_boot (fail-closed prod)
+  database/          # engine, session, ORM models (Conversation, Draft, AgentRun, Chunk…)
+  security/          # rls.py (RLS-on-vector + conversation_scope_filter), auth.py (JWT)
+  ingestion/         # parser (Docling) -> chunker -> pipeline; invoice_parser.py (hoá đơn XML)
+  rag/               # embedding (bge-m3/cloud + egress-guard), retriever (hybrid + RLS)
+  llm/               # router.py (Model Router: local default, cloud opt-in, audit-then-egress)
+  data_layer/        # semantic (metric), calc (sandbox), grounding (verify-gate), money (Decimal)
+  accounting/        # [money-engine] coa (TT99), crosswalk, account_mapper, journal, ap_service
+  agent/             # loop.py (step + step_stream SSE), memory, runs (durable), conversations
+  erp/               # draft_queue (non-invasive, maker-checker)
+  api/               # routes: auth·ask·agent·conversations(SSE)·invoices·drafts·sources
+  main.py            # FastAPI app + SPA serve (frontend-react/dist) + livez/readyz
   worker.py          # arq ingestion worker
+frontend-react/      # React+Vite+TS+Tailwind SPA (chat streaming, sidebar, money-engine, share)
+alembic/versions/    # 0001..0005 (init, memory, agentrun, db-roles, conversations)
 ```
 
 ## Bốn nguyên tắc bất biến — đã gài vào code
@@ -51,7 +61,16 @@ alembic upgrade head
 ```
 > Lưu ý: migration đầu phải `CREATE EXTENSION IF NOT EXISTS vector;` trước khi tạo cột Vector.
 
-## Trạng thái
-- ✅ Phase 0 (nền tảng) + lõi Phase 1 (RLS, auth, ingestion skeleton, RAG retriever, ask endpoint, Model Router).
-- 🔜 Phase 1B/1C: provenance mapping trong parser, BM25+rerank trong retriever, eval.
-- ⏳ Phase 2+: data_layer, agent, erp (skeleton sẵn, gắn ADR).
+## Trạng thái (branch)
+- ✅ **main-ish**: RLS+auth, ingestion, RAG retriever, Model Router, agent loop + verify-gate, eval pass^k, draft HITL.
+- ✅ **feat/money-engine-ap**: nạp catalog runtime, bịt egress, CoA TT99 + parser hoá đơn XML + journal validator (Nợ=Có, ADR-0014), endpoint AP + UI, AgentRun durable, observability, CI, DB-role.
+- ✅ **feat/chat-platform** (HEAD): hội thoại + SSE streaming + multi-turn (ADR-0015), React SPA, share/feedback.
+- ⏳ Tiếp: real ERP DataSource, real-loop pass^k blocking, httpOnly cookie auth, kế toán ký-nhận rule map TT99.
+
+## Test & CI
+```bash
+pytest -q                                   # ~140 test (DB-integration skip nếu Postgres tắt)
+python -m app.eval.run --passk --mock --k=8 # eval HARD-FAIL gate (deterministic)
+cd frontend-react && npm run build          # tsc + vite (typecheck FE)
+```
+CI: `.github/workflows/ci.yml` (ruff + pytest + eval gate).

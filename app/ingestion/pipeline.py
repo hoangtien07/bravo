@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import Chunk, Source, SourceDepartment
+from app.database.models import Chunk, Department, Source, SourceDepartment
 from app.ingestion.chunker import chunk as chunk_blocks
 from app.ingestion.parser import detect_kind, parse
 from app.rag.embedding import embed
+from app.security.sensitivity import DEFAULT_SENSITIVE_KNOWLEDGE_TYPES
 
 
 async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> int:
@@ -26,6 +27,10 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
         select(SourceDepartment.department_id).where(SourceDepartment.source_id == source_id)
     )).scalars().all())
 
+    # Re-index idempotent: xoá chunk cũ của source TRƯỚC khi nạp lại (tránh nhân đôi chunk
+    # khi ingest lại — deep-dive: pipeline cũ chỉ add, freshness=0).
+    await db.execute(delete(Chunk).where(Chunk.source_id == source_id))
+
     kind = detect_kind(path)
     blocks = parse(path)
     # Text-PDFs: re-segment per-page blocks into heading-bounded sections (better
@@ -36,7 +41,17 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
         from app.ingestion.heading_chunker import heading_chunk
         blocks = heading_chunk(blocks)  # section-level chunks (heading + start page)
     blocks = chunk_blocks(blocks)       # split over-long sections + drop tiny ones
-    vectors = embed([b.text for b in blocks])
+
+    # Egress-guard (invariant #4): nguồn thuộc phòng nhạy HOẶC loại tri thức nhạy -> KHÔNG
+    # cloud-embed (raise nếu provider cloud). Tài liệu nhạy (lương/kế toán/PII) phải local.
+    is_sensitive = (source.knowledge_type or "").strip().lower() in DEFAULT_SENSITIVE_KNOWLEDGE_TYPES
+    if dept_ids and not is_sensitive:
+        n_sensitive = (await db.execute(
+            select(func.count()).select_from(Department)
+            .where(Department.id.in_(dept_ids), Department.sensitive.is_(True))
+        )).scalar() or 0
+        is_sensitive = n_sensitive > 0
+    vectors = embed([b.text for b in blocks], sensitive=is_sensitive)
 
     for b, vec in zip(blocks, vectors, strict=True):
         db.add(Chunk(

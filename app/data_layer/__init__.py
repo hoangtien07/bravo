@@ -6,4 +6,10 @@
                 emits final numbers.
 - grounding.py: abstain/verify gate (findings/H) — every number traces to a source;
                 refuse when out-of-scope / low confidence.
+
+Importing this package NẠP whitelist metric (register_catalog) như side-effect, để MỌI
+entrypoint chạm data_layer (API/eval/script) đều có REGISTRY đầy đủ — không còn cảnh
+catalog rỗng lúc runtime khiến metric_lookup abstain 100%. register() là idempotent.
 """
+
+from app.data_layer import catalog as _catalog  # noqa: F401,E402 — side-effect: register_catalog()

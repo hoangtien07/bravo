@@ -1,0 +1,13 @@
+version: v1
+# Bản nháp v1 — CẦN KẾ TOÁN BRAVO DUYỆT trước khi dùng thật (reviewed_by chưa có).
+# Mỗi rule: regex (trên tên hàng/dịch vụ, không phân biệt hoa thường) -> tài khoản Nợ.
+# Dừng ở rule ĐẦU TIÊN khớp (rule-first). TK đích phải POSTABLE trong CoA TT99.
+# default_account dùng khi KHÔNG rule nào khớp -> kéo theo needs_review=True (kế toán quyết).
+default_account: "6428"          # Chi phí bằng tiền khác (QLDN) — postable
+rules:
+  - { match: "nguyên ?liệu|vật ?liệu|vật ?tư|\\bnvl\\b", account: "152" }
+  - { match: "công ?cụ|dụng ?cụ|\\bccdc\\b", account: "153" }
+  - { match: "hàng ?ho[áa]|thương ?mại|thành ?phẩm", account: "156" }
+  - { match: "tài ?sản ?cố ?định|\\btscđ\\b|máy ?móc|thiết ?bị", account: "211" }
+  - { match: "vận ?chuyển|cước|logistics|giao ?nhận", account: "6427" }
+  - { match: "dịch ?vụ|tư ?vấn|thuê|hoa ?hồng|quảng ?cáo|môi ?giới|phí", account: "6427" }

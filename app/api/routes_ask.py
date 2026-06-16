@@ -65,11 +65,12 @@ async def ask(
         {"role": "system", "content": _SYSTEM},
         {"role": "user", "content": f"NGỮ CẢNH:\n{context}\n\nCÂU HỎI: {req.question}"},
     ]
-    # KB user-guides are non-sensitive technical docs -> for the demo, allow the cloud
-    # LLM (data sovereignty enforced for sensitive data; production flips to local).
+    # Egress (invariant #4): KHÔNG hard-code sensitive=False. Truyền context=chunks + db để
+    # router TỰ classify_context (fail-closed -> local nếu chunk thuộc phòng nhạy) và
+    # audit-then-egress trước khi prompt rời mạng. Demo: chunk cẩm nang non-sensitive -> cloud.
     answer, _decision = await llm.chat(
-        messages, sensitive=False, allow_cloud_task=_settings.demo_allow_cloud_answers,
-        temperature=0.1,
+        messages, context=chunks, db=db,
+        allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.1,
     )
 
     return AskResponse(

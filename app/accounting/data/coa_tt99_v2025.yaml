@@ -1,0 +1,1038 @@
+version: TT99/2025
+effective_from: '2026-01-01'
+source: file_system/Danh mục TK TT99.xlsx · sheet 'HTTK theo TT99'
+note: Sinh tự động bởi scripts/build_coa_from_xlsx.py — KHÔNG sửa tay.
+
+accounts:
+- code: '111'
+  level: 1
+  parent: null
+  name: Tiền mặt
+  loai: tai_san
+  is_postable: true
+- code: '112'
+  level: 1
+  parent: null
+  name: Tiền gửi không kỳ hạn
+  loai: tai_san
+  is_postable: true
+- code: '113'
+  level: 1
+  parent: null
+  name: Tiền đang chuyển
+  loai: tai_san
+  is_postable: true
+- code: '121'
+  level: 1
+  parent: null
+  name: Chứng khoán kinh doanh
+  loai: tai_san
+  is_postable: true
+- code: '128'
+  level: 1
+  parent: null
+  name: Đầu tư nắm giữ đến ngày đáo hạn
+  loai: tai_san
+  is_postable: false
+- code: '1281'
+  level: 2
+  parent: '128'
+  name: Tiền gửi có kỳ hạn
+  loai: tai_san
+  is_postable: true
+- code: '1282'
+  level: 2
+  parent: '128'
+  name: Trái phiếu
+  loai: tai_san
+  is_postable: true
+- code: '1283'
+  level: 2
+  parent: '128'
+  name: Cho vay
+  loai: tai_san
+  is_postable: true
+- code: '1288'
+  level: 2
+  parent: '128'
+  name: Các khoản đầu tư khác nắm giữ đến ngày đáo hạn
+  loai: tai_san
+  is_postable: true
+- code: '131'
+  level: 1
+  parent: null
+  name: Phải thu của khách hàng
+  loai: tai_san
+  is_postable: true
+- code: '133'
+  level: 1
+  parent: null
+  name: Thuế GTGT được khấu trừ
+  loai: tai_san
+  is_postable: false
+- code: '1331'
+  level: 2
+  parent: '133'
+  name: Thuế GTGT được khấu trừ của hàng hóa, dịch vụ
+  loai: tai_san
+  is_postable: true
+- code: '1332'
+  level: 2
+  parent: '133'
+  name: Thuế GTGT được khấu trừ của TSCĐ
+  loai: tai_san
+  is_postable: true
+- code: '136'
+  level: 1
+  parent: null
+  name: Phải thu nội bộ
+  loai: tai_san
+  is_postable: false
+- code: '1361'
+  level: 2
+  parent: '136'
+  name: Vốn kinh doanh ở đơn vị trực thuộc
+  loai: tai_san
+  is_postable: true
+- code: '1362'
+  level: 2
+  parent: '136'
+  name: Phải thu nội bộ về chênh lệch tỷ giá
+  loai: tai_san
+  is_postable: true
+- code: '1363'
+  level: 2
+  parent: '136'
+  name: Phải thu nội bộ về chi phí đi vay đủ điều kiện được vốn hoá
+  loai: tai_san
+  is_postable: true
+- code: '1368'
+  level: 2
+  parent: '136'
+  name: Phải thu nội bộ khác
+  loai: tai_san
+  is_postable: true
+- code: '138'
+  level: 1
+  parent: null
+  name: Phải thu khác
+  loai: tai_san
+  is_postable: false
+- code: '1381'
+  level: 2
+  parent: '138'
+  name: Tài sản thiếu chờ xử lý
+  loai: tai_san
+  is_postable: true
+- code: '1383'
+  level: 2
+  parent: '138'
+  name: Thuế TTĐB của hàng nhập khẩu
+  loai: tai_san
+  is_postable: true
+- code: '1388'
+  level: 2
+  parent: '138'
+  name: Phải thu khác
+  loai: tai_san
+  is_postable: true
+- code: '141'
+  level: 1
+  parent: null
+  name: Tạm ứng
+  loai: tai_san
+  is_postable: true
+- code: '151'
+  level: 1
+  parent: null
+  name: Hàng mua đang đi đường
+  loai: tai_san
+  is_postable: true
+- code: '152'
+  level: 1
+  parent: null
+  name: Nguyên liệu, vật liệu
+  loai: tai_san
+  is_postable: true
+- code: '153'
+  level: 1
+  parent: null
+  name: Công cụ, dụng cụ
+  loai: tai_san
+  is_postable: true
+- code: '154'
+  level: 1
+  parent: null
+  name: Chi phí sản xuất, kinh doanh dở dang
+  loai: tai_san
+  is_postable: true
+- code: '155'
+  level: 1
+  parent: null
+  name: Sản phẩm
+  loai: tai_san
+  is_postable: true
+- code: '156'
+  level: 1
+  parent: null
+  name: Hàng hóa
+  loai: tai_san
+  is_postable: true
+- code: '157'
+  level: 1
+  parent: null
+  name: Hàng gửi đi bán
+  loai: tai_san
+  is_postable: true
+- code: '158'
+  level: 1
+  parent: null
+  name: Nguyên liệu, vật tư tại kho bảo thuế
+  loai: tai_san
+  is_postable: true
+- code: '171'
+  level: 1
+  parent: null
+  name: Giao dịch mua, bán lại trái phiếu chính phủ
+  loai: tai_san
+  is_postable: true
+- code: '211'
+  level: 1
+  parent: null
+  name: Tài sản cố định hữu hình
+  loai: tai_san
+  is_postable: true
+- code: '212'
+  level: 1
+  parent: null
+  name: Tài sản cố định thuê tài chính
+  loai: tai_san
+  is_postable: true
+- code: '213'
+  level: 1
+  parent: null
+  name: Tài sản cố định vô hình
+  loai: tai_san
+  is_postable: true
+- code: '214'
+  level: 1
+  parent: null
+  name: Hao mòn tài sản cố định
+  loai: tai_san
+  is_postable: false
+- code: '2141'
+  level: 2
+  parent: '214'
+  name: Hao mòn TSCĐ hữu hình
+  loai: tai_san
+  is_postable: true
+- code: '2142'
+  level: 2
+  parent: '214'
+  name: Hao mòn TSCĐ thuê tài chính
+  loai: tai_san
+  is_postable: true
+- code: '2143'
+  level: 2
+  parent: '214'
+  name: Hao mòn TSCĐ vô hình
+  loai: tai_san
+  is_postable: true
+- code: '2147'
+  level: 2
+  parent: '214'
+  name: Hao mòn BĐSĐT
+  loai: tai_san
+  is_postable: true
+- code: '215'
+  level: 1
+  parent: null
+  name: Tài sản sinh học
+  loai: tai_san
+  is_postable: false
+- code: '2151'
+  level: 2
+  parent: '215'
+  name: Súc vật nuôi cho sản phẩm định kỳ
+  loai: tai_san
+  is_postable: true
+- code: '2152'
+  level: 2
+  parent: '215'
+  name: Súc vật nuôi lấy sản phẩm một lần
+  loai: tai_san
+  is_postable: true
+- code: '2153'
+  level: 2
+  parent: '215'
+  name: Cây trồng theo mùa vụ hoặc lấy sản phẩm một lần
+  loai: tai_san
+  is_postable: true
+- code: '217'
+  level: 1
+  parent: null
+  name: Bất động sản đầu tư
+  loai: tai_san
+  is_postable: true
+- code: '221'
+  level: 1
+  parent: null
+  name: Đầu tư vào công ty con
+  loai: tai_san
+  is_postable: true
+- code: '222'
+  level: 1
+  parent: null
+  name: Đầu tư vào công ty liên doanh, liên kết
+  loai: tai_san
+  is_postable: true
+- code: '228'
+  level: 1
+  parent: null
+  name: Đầu tư khác
+  loai: tai_san
+  is_postable: false
+- code: '2281'
+  level: 2
+  parent: '228'
+  name: Đầu tư góp vốn vào đơn vị khác
+  loai: tai_san
+  is_postable: true
+- code: '2288'
+  level: 2
+  parent: '228'
+  name: Đầu tư khác
+  loai: tai_san
+  is_postable: true
+- code: '229'
+  level: 1
+  parent: null
+  name: Dự phòng tổn thất tài sản
+  loai: tai_san
+  is_postable: false
+- code: '2291'
+  level: 2
+  parent: '229'
+  name: Dự phòng giảm giá chứng khoán kinh doanh
+  loai: tai_san
+  is_postable: true
+- code: '2292'
+  level: 2
+  parent: '229'
+  name: Dự phòng tổn thất đầu tư vào đơn vị khác
+  loai: tai_san
+  is_postable: true
+- code: '2293'
+  level: 2
+  parent: '229'
+  name: Dự phòng phải thu khó đòi
+  loai: tai_san
+  is_postable: true
+- code: '2294'
+  level: 2
+  parent: '229'
+  name: Dự phòng giảm giá hàng tồn kho
+  loai: tai_san
+  is_postable: true
+- code: '2295'
+  level: 2
+  parent: '229'
+  name: Dự phòng tổn thất tài sản sinh học
+  loai: tai_san
+  is_postable: true
+- code: '241'
+  level: 1
+  parent: null
+  name: Xây dựng cơ bản dở dang
+  loai: tai_san
+  is_postable: false
+- code: '2411'
+  level: 2
+  parent: '241'
+  name: Mua sắm TSCĐ
+  loai: tai_san
+  is_postable: true
+- code: '2412'
+  level: 2
+  parent: '241'
+  name: Xây dựng cơ bản
+  loai: tai_san
+  is_postable: true
+- code: '2413'
+  level: 2
+  parent: '241'
+  name: Sửa chữa, bảo dưỡng định kỳ TSCĐ
+  loai: tai_san
+  is_postable: true
+- code: '2414'
+  level: 2
+  parent: '241'
+  name: Nâng cấp, cải tạo TSCĐ
+  loai: tai_san
+  is_postable: true
+- code: '242'
+  level: 1
+  parent: null
+  name: Chi phí chờ phân bổ
+  loai: tai_san
+  is_postable: true
+- code: '243'
+  level: 1
+  parent: null
+  name: Tài sản thuế thu nhập hoãn lại
+  loai: tai_san
+  is_postable: true
+- code: '244'
+  level: 1
+  parent: null
+  name: Ký quỹ, ký cược
+  loai: tai_san
+  is_postable: true
+- code: '331'
+  level: 1
+  parent: null
+  name: Phải trả cho người bán
+  loai: no_phai_tra
+  is_postable: true
+- code: '332'
+  level: 1
+  parent: null
+  name: Phải trả cổ tức, lợi nhuận
+  loai: no_phai_tra
+  is_postable: true
+- code: '333'
+  level: 1
+  parent: null
+  name: Thuế và các khoản phải nộp Nhà nước
+  loai: no_phai_tra
+  is_postable: false
+- code: '3331'
+  level: 2
+  parent: '333'
+  name: Thuế giá trị gia tăng phải nộp
+  loai: no_phai_tra
+  is_postable: true
+- code: '3332'
+  level: 2
+  parent: '333'
+  name: Thuế tiêu thụ đặc biệt
+  loai: no_phai_tra
+  is_postable: true
+- code: '3333'
+  level: 2
+  parent: '333'
+  name: Thuế xuất, nhập khẩu
+  loai: no_phai_tra
+  is_postable: true
+- code: '3334'
+  level: 2
+  parent: '333'
+  name: Thuế thu nhập doanh nghiệp
+  loai: no_phai_tra
+  is_postable: true
+- code: '3335'
+  level: 2
+  parent: '333'
+  name: Thuế thu nhập cá nhân
+  loai: no_phai_tra
+  is_postable: true
+- code: '3336'
+  level: 2
+  parent: '333'
+  name: Thuế tài nguyên
+  loai: no_phai_tra
+  is_postable: true
+- code: '3337'
+  level: 2
+  parent: '333'
+  name: Thuế nhà đất, tiền thuê đất
+  loai: no_phai_tra
+  is_postable: true
+- code: '3338'
+  level: 2
+  parent: '333'
+  name: Thuế bảo vệ môi trường và các loại thuế khác
+  loai: no_phai_tra
+  is_postable: true
+- code: '3339'
+  level: 2
+  parent: '333'
+  name: Phí, lệ phí và các khoản phải nộp khác
+  loai: no_phai_tra
+  is_postable: true
+- code: '334'
+  level: 1
+  parent: null
+  name: Phải trả người lao động
+  loai: no_phai_tra
+  is_postable: true
+- code: '335'
+  level: 1
+  parent: null
+  name: Chi phí phải trả
+  loai: no_phai_tra
+  is_postable: true
+- code: '336'
+  level: 1
+  parent: null
+  name: Phải trả nội bộ
+  loai: no_phai_tra
+  is_postable: false
+- code: '3361'
+  level: 2
+  parent: '336'
+  name: Phải trả nội bộ về vốn kinh doanh
+  loai: no_phai_tra
+  is_postable: true
+- code: '3362'
+  level: 2
+  parent: '336'
+  name: Phải trả nội bộ về chênh lệch tỷ giá
+  loai: no_phai_tra
+  is_postable: true
+- code: '3363'
+  level: 2
+  parent: '336'
+  name: Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn hóa
+  loai: no_phai_tra
+  is_postable: true
+- code: '3368'
+  level: 2
+  parent: '336'
+  name: Phải trả nội bộ khác
+  loai: no_phai_tra
+  is_postable: true
+- code: '337'
+  level: 1
+  parent: null
+  name: Thanh toán theo tiến độ hợp đồng xây dựng
+  loai: no_phai_tra
+  is_postable: true
+- code: '338'
+  level: 1
+  parent: null
+  name: Phải trả, phải nộp khác
+  loai: no_phai_tra
+  is_postable: false
+- code: '3381'
+  level: 2
+  parent: '338'
+  name: Tài sản thừa chờ giải quyết
+  loai: no_phai_tra
+  is_postable: true
+- code: '3382'
+  level: 2
+  parent: '338'
+  name: Kinh phí công đoàn
+  loai: no_phai_tra
+  is_postable: true
+- code: '3383'
+  level: 2
+  parent: '338'
+  name: Bảo hiểm xã hội
+  loai: no_phai_tra
+  is_postable: true
+- code: '3384'
+  level: 2
+  parent: '338'
+  name: Bảo hiểm y tế
+  loai: no_phai_tra
+  is_postable: true
+- code: '3386'
+  level: 2
+  parent: '338'
+  name: Bảo hiểm thất nghiệp
+  loai: no_phai_tra
+  is_postable: true
+- code: '3387'
+  level: 2
+  parent: '338'
+  name: Doanh thu chờ phân bổ
+  loai: no_phai_tra
+  is_postable: true
+- code: '3388'
+  level: 2
+  parent: '338'
+  name: Phải trả, phải nộp khác
+  loai: no_phai_tra
+  is_postable: true
+- code: '341'
+  level: 1
+  parent: null
+  name: Vay và nợ thuê tài chính
+  loai: no_phai_tra
+  is_postable: false
+- code: '3411'
+  level: 2
+  parent: '341'
+  name: Các khoản đi vay
+  loai: no_phai_tra
+  is_postable: true
+- code: '3412'
+  level: 2
+  parent: '341'
+  name: Nợ thuê tài chính
+  loai: no_phai_tra
+  is_postable: true
+- code: '343'
+  level: 1
+  parent: null
+  name: Trái phiếu phát hành
+  loai: no_phai_tra
+  is_postable: false
+- code: '3431'
+  level: 2
+  parent: '343'
+  name: Trái phiếu thường
+  loai: no_phai_tra
+  is_postable: true
+- code: '3432'
+  level: 2
+  parent: '343'
+  name: Trái phiếu chuyển đổi
+  loai: no_phai_tra
+  is_postable: true
+- code: '344'
+  level: 1
+  parent: null
+  name: Nhận ký quỹ, ký cược
+  loai: no_phai_tra
+  is_postable: true
+- code: '347'
+  level: 1
+  parent: null
+  name: Thuế thu nhập hoãn lại phải trả
+  loai: no_phai_tra
+  is_postable: true
+- code: '352'
+  level: 1
+  parent: null
+  name: Dự phòng phải trả
+  loai: no_phai_tra
+  is_postable: false
+- code: '3521'
+  level: 2
+  parent: '352'
+  name: Dự phòng bảo hành sản phẩm, hàng hóa
+  loai: no_phai_tra
+  is_postable: true
+- code: '3522'
+  level: 2
+  parent: '352'
+  name: Dự phòng bảo hành công trình xây dựng
+  loai: no_phai_tra
+  is_postable: true
+- code: '3523'
+  level: 2
+  parent: '352'
+  name: Dự phòng tái cơ cấu doanh nghiệp
+  loai: no_phai_tra
+  is_postable: true
+- code: '3525'
+  level: 2
+  parent: '352'
+  name: Dự phòng phải trả khác
+  loai: no_phai_tra
+  is_postable: true
+- code: '353'
+  level: 1
+  parent: null
+  name: Quỹ khen thưởng, phúc lợi
+  loai: no_phai_tra
+  is_postable: false
+- code: '3531'
+  level: 2
+  parent: '353'
+  name: Quỹ khen thưởng
+  loai: no_phai_tra
+  is_postable: true
+- code: '3532'
+  level: 2
+  parent: '353'
+  name: Quỹ phúc lợi
+  loai: no_phai_tra
+  is_postable: true
+- code: '3533'
+  level: 2
+  parent: '353'
+  name: Quỹ phúc lợi đã hình thành TSCĐ
+  loai: no_phai_tra
+  is_postable: true
+- code: '3534'
+  level: 2
+  parent: '353'
+  name: Quỹ thưởng ban quản lý điều hành công ty
+  loai: no_phai_tra
+  is_postable: true
+- code: '356'
+  level: 1
+  parent: null
+  name: Quỹ phát triển khoa học và công nghệ
+  loai: no_phai_tra
+  is_postable: false
+- code: '3561'
+  level: 2
+  parent: '356'
+  name: Quỹ phát triển khoa học và công nghệ
+  loai: no_phai_tra
+  is_postable: true
+- code: '3562'
+  level: 2
+  parent: '356'
+  name: Quỹ phát triển khoa học và công nghệ đã hình thành tài sản
+  loai: no_phai_tra
+  is_postable: true
+- code: '357'
+  level: 1
+  parent: null
+  name: Quỹ bình ổn giá
+  loai: no_phai_tra
+  is_postable: true
+- code: '411'
+  level: 1
+  parent: null
+  name: Vốn đầu tư của chủ sở hữu
+  loai: von_chu_so_huu
+  is_postable: false
+- code: '4111'
+  level: 2
+  parent: '411'
+  name: Vốn góp của chủ sở hữu
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '4112'
+  level: 2
+  parent: '411'
+  name: Thặng dư vốn
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '4113'
+  level: 2
+  parent: '411'
+  name: Quyền chọn chuyển đổi trái phiếu
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '4118'
+  level: 2
+  parent: '411'
+  name: Vốn khác
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '412'
+  level: 1
+  parent: null
+  name: Chênh lệch đánh giá lại tài sản
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '413'
+  level: 1
+  parent: null
+  name: Chênh lệch tỷ giá hối đoái
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '414'
+  level: 1
+  parent: null
+  name: Quỹ đầu tư phát triển
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '418'
+  level: 1
+  parent: null
+  name: Các quỹ khác thuộc vốn chủ sở hữu
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '419'
+  level: 1
+  parent: null
+  name: Cổ phiếu mua lại của chính mình
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '421'
+  level: 1
+  parent: null
+  name: Lợi nhuận sau thuế chưa phân phối
+  loai: von_chu_so_huu
+  is_postable: false
+- code: '4211'
+  level: 2
+  parent: '421'
+  name: Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '4212'
+  level: 2
+  parent: '421'
+  name: Lợi nhuận sau thuế chưa phân phối năm nay
+  loai: von_chu_so_huu
+  is_postable: true
+- code: '511'
+  level: 1
+  parent: null
+  name: Doanh thu bán hàng và cung cấp dịch vụ
+  loai: doanh_thu
+  is_postable: true
+- code: '515'
+  level: 1
+  parent: null
+  name: Doanh thu hoạt động tài chính
+  loai: doanh_thu
+  is_postable: true
+- code: '521'
+  level: 1
+  parent: null
+  name: Các khoản giảm trừ doanh thu
+  loai: doanh_thu
+  is_postable: true
+- code: '621'
+  level: 1
+  parent: null
+  name: Chi phí nguyên liệu, vật liệu trực tiếp
+  loai: chi_phi
+  is_postable: true
+- code: '622'
+  level: 1
+  parent: null
+  name: Chi phí nhân công trực tiếp
+  loai: chi_phi
+  is_postable: true
+- code: '623'
+  level: 1
+  parent: null
+  name: Chi phí sử dụng máy thi công
+  loai: chi_phi
+  is_postable: false
+- code: '6231'
+  level: 2
+  parent: '623'
+  name: Chi phí nhân công
+  loai: chi_phi
+  is_postable: true
+- code: '6232'
+  level: 2
+  parent: '623'
+  name: Chi phí vật liệu
+  loai: chi_phi
+  is_postable: true
+- code: '6233'
+  level: 2
+  parent: '623'
+  name: Chi phí dụng cụ sản xuất
+  loai: chi_phi
+  is_postable: true
+- code: '6234'
+  level: 2
+  parent: '623'
+  name: Chi phí khấu hao máy thi công
+  loai: chi_phi
+  is_postable: true
+- code: '6237'
+  level: 2
+  parent: '623'
+  name: Chi phí dịch vụ mua ngoài
+  loai: chi_phi
+  is_postable: true
+- code: '6238'
+  level: 2
+  parent: '623'
+  name: Chi phí bằng tiền khác
+  loai: chi_phi
+  is_postable: true
+- code: '627'
+  level: 1
+  parent: null
+  name: Chi phí sản xuất chung
+  loai: chi_phi
+  is_postable: false
+- code: '6271'
+  level: 2
+  parent: '627'
+  name: Chi phí nhân viên phân xưởng
+  loai: chi_phi
+  is_postable: true
+- code: '6272'
+  level: 2
+  parent: '627'
+  name: Chi phí vật liệu
+  loai: chi_phi
+  is_postable: true
+- code: '6273'
+  level: 2
+  parent: '627'
+  name: Chi phí dụng cụ sản xuất
+  loai: chi_phi
+  is_postable: true
+- code: '6274'
+  level: 2
+  parent: '627'
+  name: Chi phí khấu hao TSCĐ
+  loai: chi_phi
+  is_postable: true
+- code: '6275'
+  level: 2
+  parent: '627'
+  name: Thuế, phí, lệ phí
+  loai: chi_phi
+  is_postable: true
+- code: '6277'
+  level: 2
+  parent: '627'
+  name: Chi phí dịch vụ mua ngoài
+  loai: chi_phi
+  is_postable: true
+- code: '6278'
+  level: 2
+  parent: '627'
+  name: Chi phí bằng tiền khác
+  loai: chi_phi
+  is_postable: true
+- code: '632'
+  level: 1
+  parent: null
+  name: Giá vốn hàng bán
+  loai: chi_phi
+  is_postable: true
+- code: '635'
+  level: 1
+  parent: null
+  name: Chi phí tài chính
+  loai: chi_phi
+  is_postable: true
+- code: '641'
+  level: 1
+  parent: null
+  name: Chi phí bán hàng
+  loai: chi_phi
+  is_postable: false
+- code: '6411'
+  level: 2
+  parent: '641'
+  name: Chi phí nhân viên
+  loai: chi_phi
+  is_postable: true
+- code: '6412'
+  level: 2
+  parent: '641'
+  name: Chi phí vật liệu, bao bì
+  loai: chi_phi
+  is_postable: true
+- code: '6413'
+  level: 2
+  parent: '641'
+  name: Chi phí dụng cụ, đồ dùng
+  loai: chi_phi
+  is_postable: true
+- code: '6414'
+  level: 2
+  parent: '641'
+  name: Chi phí khấu hao TSCĐ
+  loai: chi_phi
+  is_postable: true
+- code: '6415'
+  level: 2
+  parent: '641'
+  name: Thuế, phí, lệ phí
+  loai: chi_phi
+  is_postable: true
+- code: '6417'
+  level: 2
+  parent: '641'
+  name: Chi phí dịch vụ mua ngoài
+  loai: chi_phi
+  is_postable: true
+- code: '6418'
+  level: 2
+  parent: '641'
+  name: Chi phí bằng tiền khác
+  loai: chi_phi
+  is_postable: true
+- code: '642'
+  level: 1
+  parent: null
+  name: Chi phí quản lý doanh nghiệp
+  loai: chi_phi
+  is_postable: false
+- code: '6421'
+  level: 2
+  parent: '642'
+  name: Chi phí nhân viên quản lý
+  loai: chi_phi
+  is_postable: true
+- code: '6422'
+  level: 2
+  parent: '642'
+  name: Chi phí vật liệu quản lý
+  loai: chi_phi
+  is_postable: true
+- code: '6423'
+  level: 2
+  parent: '642'
+  name: Chi phí đồ dùng văn phòng
+  loai: chi_phi
+  is_postable: true
+- code: '6424'
+  level: 2
+  parent: '642'
+  name: Chi phí khấu hao TSCĐ
+  loai: chi_phi
+  is_postable: true
+- code: '6425'
+  level: 2
+  parent: '642'
+  name: Thuế, phí và lệ phí
+  loai: chi_phi
+  is_postable: true
+- code: '6426'
+  level: 2
+  parent: '642'
+  name: Chi phí dự phòng
+  loai: chi_phi
+  is_postable: true
+- code: '6427'
+  level: 2
+  parent: '642'
+  name: Chi phí dịch vụ mua ngoài
+  loai: chi_phi
+  is_postable: true
+- code: '6428'
+  level: 2
+  parent: '642'
+  name: Chi phí bằng tiền khác
+  loai: chi_phi
+  is_postable: true
+- code: '711'
+  level: 1
+  parent: null
+  name: Thu nhập khác
+  loai: thu_nhập_khác
+  is_postable: true
+- code: '811'
+  level: 1
+  parent: null
+  name: Chi phí khác
+  loai: chi_phi
+  is_postable: true
+- code: '821'
+  level: 1
+  parent: null
+  name: Chi phí thuế thu nhập doanh nghiệp
+  loai: chi_phi
+  is_postable: false
+- code: '8211'
+  level: 2
+  parent: '821'
+  name: Chi phí thuế TNDN hiện hành
+  loai: chi_phi
+  is_postable: true
+- code: '8212'
+  level: 2
+  parent: '821'
+  name: Chi phí thuế TNDN hoãn lại
+  loai: chi_phi
+  is_postable: true
+- code: '911'
+  level: 1
+  parent: null
+  name: Xác định kết quả kinh doanh
+  loai: chi_phi
+  is_postable: true

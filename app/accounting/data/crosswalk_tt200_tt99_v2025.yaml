@@ -1,0 +1,1104 @@
+version: TT200->TT99/2025
+effective_from: '2026-01-01'
+source: file_system/Danh mục TK TT99.xlsx · sheet 'Sự khác biệt'
+note: Sinh tự động — needs_confirm=True (THEM/BO/KHAC) cần kế toán xác nhận.
+
+entries:
+- code: '111'
+  name_tt200: Tiền mặt
+  name_tt99: Tiền mặt
+  change: KHONG_DOI
+  note: Không đổi; TT99 không chi tiết cấp 2
+  needs_confirm: false
+- code: '112'
+  name_tt200: Tiền gửi Ngân hàng
+  name_tt99: Tiền gửi không kỳ hạn
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '113'
+  name_tt200: Tiền đang chuyển
+  name_tt99: Tiền đang chuyển
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '121'
+  name_tt200: Chứng khoán kinh doanh
+  name_tt99: Chứng khoán kinh doanh
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '128'
+  name_tt200: Đầu tư nắm giữ đến ngày đáo hạn
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '1281'
+  name_tt200: Tiền gửi có kỳ hạn
+  name_tt99: Tiền gửi có kỳ hạn
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '1282'
+  name_tt200: Trái phiếu
+  name_tt99: Trái phiếu
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '1283'
+  name_tt200: Cho vay
+  name_tt99: Cho vay
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '1288'
+  name_tt200: Các khoản đầu tư khác nắm giữ đến ngày đáo hạn
+  name_tt99: Các khoản đầu tư khác nắm giữ đến ngày đáo hạn
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '131'
+  name_tt200: Phải thu khách hàng
+  name_tt99: Phải thu khách hàng
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '133'
+  name_tt200: Thuế GTGT được khấu trừ
+  name_tt99: Thuế GTGT được khấu trừ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1331'
+  name_tt200: Thuế GTGT được khấu trừ của hàng hóa, dịch vụ
+  name_tt99: Thuế GTGT được khấu trừ của hàng hóa, dịch vụ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1332'
+  name_tt200: Thuế GTGT được khấu trừ của TSCĐ
+  name_tt99: Thuế GTGT được khấu trừ của TSCĐ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '136'
+  name_tt200: Phải thu nội bộ
+  name_tt99: Phải thu nội bộ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1361'
+  name_tt200: Vốn kinh doanh ở đơn vị trực thuộc
+  name_tt99: Vốn kinh doanh ở đơn vị trực thuộc
+  change: KHAC
+  note: Điều chỉnh cách diễn đạt TK 1361
+  needs_confirm: true
+- code: '1362'
+  name_tt200: Phải thu nội bộ về chênh lệch tỷ giá
+  name_tt99: Phải thu nội bộ về chênh lệch tỷ giá
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1363'
+  name_tt200: Phải thu nội bộ về chi phí đi vay đủ điều kiện được vốn hoá
+  name_tt99: Phải thu nội bộ về chi phí đi vay đủ điều kiện được vốn hoá
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1368'
+  name_tt200: Phải thu nội bộ khác
+  name_tt99: Phải thu nội bộ khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '138'
+  name_tt200: Phải thu khác
+  name_tt99: Phải thu khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1381'
+  name_tt200: Tài sản thiếu chờ xử lý
+  name_tt99: Tài sản thiếu chờ xử lý
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '1383'
+  name_tt200: null
+  name_tt99: Thuế TTĐB của hàng nhập khẩu
+  change: THEM
+  note: Thêm TK 1383
+  needs_confirm: true
+- code: '1385'
+  name_tt200: Phải thu về cổ phần hóa"
+  name_tt99: null
+  change: BO
+  note: Bỏ TK 1385
+  needs_confirm: true
+- code: '1388'
+  name_tt200: Phải thu khác
+  name_tt99: Phải thu khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '141'
+  name_tt200: Tạm ứng
+  name_tt99: Tạm ứng
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '151'
+  name_tt200: Hàng mua đang đi đường
+  name_tt99: Hàng mua đang đi đường
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '152'
+  name_tt200: Nguyên liệu, vật liệu
+  name_tt99: Nguyên liệu, vật liệu
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '153'
+  name_tt200: Công cụ, dụng cụ
+  name_tt99: Công cụ, dụng cụ
+  change: KHONG_DOI
+  note: Không đổi; TT99 ko liệt kê cấp 2
+  needs_confirm: false
+- code: '154'
+  name_tt200: Chi phí SXKD dở dang
+  name_tt99: Chi phí SXKD dở dang
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '155'
+  name_tt200: Thành phẩm
+  name_tt99: Sản phẩm
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '156'
+  name_tt200: Hàng hóa
+  name_tt99: Hàng hóa
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '157'
+  name_tt200: Hàng gửi đi bán
+  name_tt99: Hàng gửi đi bán
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '158'
+  name_tt200: Hàng hóa kho bảo thuế
+  name_tt99: Nguyên liệu, vật tư tại kho bảo thuế
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '161'
+  name_tt200: Chi sự nghiệp
+  name_tt99: Không còn
+  change: BO
+  note: Loại bỏ TK 161
+  needs_confirm: true
+- code: '171'
+  name_tt200: Giao dịch mua bán lại TPCP
+  name_tt99: Giao dịch mua bán lại TPCP
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '211'
+  name_tt200: TSCĐ hữu hình
+  name_tt99: TSCĐ hữu hình
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '212'
+  name_tt200: TSCĐ thuê tài chính
+  name_tt99: TSCĐ thuê tài chính
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '213'
+  name_tt200: TSCĐ vô hình
+  name_tt99: TSCĐ vô hình
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '214'
+  name_tt200: Hao mòn TSCĐ
+  name_tt99: Hao mòn TSCĐ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2141'
+  name_tt200: Hao mòn TSCĐ hữu hình
+  name_tt99: Hao mòn TSCĐ hữu hình
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2142'
+  name_tt200: Hao mòn TSCĐ thuê tài chính
+  name_tt99: Hao mòn TSCĐ thuê tài chính
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2143'
+  name_tt200: Hao mòn TSCĐ vô hình
+  name_tt99: Hao mòn TSCĐ vô hình
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2147'
+  name_tt200: Hao mòn BĐSĐT
+  name_tt99: Hao mòn BĐSĐT
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '215'
+  name_tt200: —
+  name_tt99: Tài sản sinh học
+  change: THEM
+  note: Mới — thêm TK 215 và 3 TK cấp 2
+  needs_confirm: true
+- code: '2151'
+  name_tt200: —
+  name_tt99: Súc vật nuôi cho sản phẩm định kỳ
+  change: THEM
+  note: Mới — thêm TK 215 và 3 TK cấp 2
+  needs_confirm: true
+- code: '2152'
+  name_tt200: —
+  name_tt99: Súc vật nuôi lấy sản phẩm một lần
+  change: THEM
+  note: Mới — thêm TK 215 và 3 TK cấp 2
+  needs_confirm: true
+- code: '2153'
+  name_tt200: —
+  name_tt99: Cây trồng theo mùa vụ hoặc lấy sản phẩm một lần
+  change: THEM
+  note: Mới — thêm TK 215 và 3 TK cấp 2
+  needs_confirm: true
+- code: '217'
+  name_tt200: BĐS đầu tư
+  name_tt99: BĐS đầu tư
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '221'
+  name_tt200: Đầu tư vào công ty con
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '222'
+  name_tt200: Đầu tư vào công ty liên doanh, liên kết
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '228'
+  name_tt200: Đầu tư khác
+  name_tt99: Đầu tư khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2281'
+  name_tt200: Đầu tư góp vốn vào đơn vị khác
+  name_tt99: Đầu tư góp vốn vào đơn vị khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2288'
+  name_tt200: Đầu tư khác
+  name_tt99: Đầu tư khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '229'
+  name_tt200: —
+  name_tt99: Dự phòng tổn thất tài sản
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '2291'
+  name_tt200: —
+  name_tt99: Dự phòng giảm giá chứng khoán kinh doanh
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '2292'
+  name_tt200: —
+  name_tt99: Dự phòng tổn thất đầu tư vào đơn vị khác
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '2293'
+  name_tt200: —
+  name_tt99: Dự phòng phải thu khó đòi
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '2294'
+  name_tt200: —
+  name_tt99: Dự phòng giảm giá hàng tồn kho
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '2295'
+  name_tt200: —
+  name_tt99: Dự phòng tổn thất tài sản sinh học
+  change: THEM
+  note: Thêm TK 2295 (liên quan tài sản sinh học)
+  needs_confirm: true
+- code: '241'
+  name_tt200: XDCB dở dang
+  name_tt99: XDCB dở dang
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2411'
+  name_tt200: Mua sắm TSCĐ
+  name_tt99: Mua sắm TSCĐ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2412'
+  name_tt200: Xây dựng cơ bản
+  name_tt99: Xây dựng cơ bản
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '2413'
+  name_tt200: Chi phí sửa chữa lớn TSCĐ
+  name_tt99: Sửa chữa, bảo dưỡng định kỳ TSCĐ
+  change: KHONG_DOI
+  note: Cập nhật tên 2413
+  needs_confirm: false
+- code: '2414'
+  name_tt200: —
+  name_tt99: Nâng cấp, cải tạo TSCĐ
+  change: THEM
+  note: Thêm 2414
+  needs_confirm: true
+- code: '242'
+  name_tt200: Chi phí trả trước
+  name_tt99: Chi phí chờ phân bổ
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '243'
+  name_tt200: Tài sản thuế TNDN hoãn lại
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '244'
+  name_tt200: Cầm cố, thế chấp, ký quỹ, ký cược
+  name_tt99: Ký quỹ, ký cược
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '331'
+  name_tt200: Phải trả người bán
+  name_tt99: Phải trả người bán
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '332'
+  name_tt200: —
+  name_tt99: Phải trả cổ tức, lợi nhuận
+  change: THEM
+  note: Thêm TK mới
+  needs_confirm: true
+- code: '333'
+  name_tt200: Thuế & các khoản phải nộp Nhà nước
+  name_tt99: Thuế & các khoản phải nộp Nhà nước
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3331'
+  name_tt200: Thuế giá trị gia tăng phải nộp
+  name_tt99: Thuế giá trị gia tăng phải nộp
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3332'
+  name_tt200: Thuế tiêu thụ đặc biệt
+  name_tt99: Thuế tiêu thụ đặc biệt
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3333'
+  name_tt200: Thuế xuất, nhập khẩu
+  name_tt99: Thuế xuất, nhập khẩu
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3334'
+  name_tt200: Thuế thu nhập doanh nghiệp
+  name_tt99: Thuế thu nhập doanh nghiệp
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3335'
+  name_tt200: Thuế thu nhập cá nhân
+  name_tt99: Thuế thu nhập cá nhân
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3336'
+  name_tt200: Thuế tài nguyên
+  name_tt99: Thuế tài nguyên
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3337'
+  name_tt200: Thuế nhà đất, tiền thuê đất
+  name_tt99: Thuế nhà đất, tiền thuê đất
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3338'
+  name_tt200: Thuế bảo vệ môi trường và các loại thuế khác
+  name_tt99: Thuế bảo vệ môi trường và các loại thuế khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '3339'
+  name_tt200: Phí, lệ phí và các khoản phải nộp khác
+  name_tt99: Phí, lệ phí và các khoản phải nộp khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '334'
+  name_tt200: Phải trả NLĐ
+  name_tt99: Phải trả NLĐ
+  change: KHONG_DOI
+  note: Không liệt kê chi tiết cấp 2
+  needs_confirm: false
+- code: '335'
+  name_tt200: Chi phí phải trả
+  name_tt99: Chi phí phải trả
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '336'
+  name_tt200: Phải trả nội bộ
+  name_tt99: Phải trả nội bộ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3361'
+  name_tt200: Phải trả nội bộ về vốn kinh doanh
+  name_tt99: Phải trả nội bộ về vốn kinh doanh
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3362'
+  name_tt200: Phải trả nội bộ về chênh lệch tỷ giá
+  name_tt99: Phải trả nội bộ về chênh lệch tỷ giá
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3363'
+  name_tt200: Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn hóa
+  name_tt99: Phải trả nội bộ về chi phí đi vay đủ điều kiện được vốn hóa
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3368'
+  name_tt200: Phải trả nội bộ khác
+  name_tt99: Phải trả nội bộ khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '337'
+  name_tt200: Thanh toán theo tiến độ kế hoạch hợp đồng xây dựng
+  name_tt99: Thanh toán theo tiến độ hợp đồng xây dựng
+  change: KHONG_DOI
+  note: Rút gọn tên TK
+  needs_confirm: false
+- code: '338'
+  name_tt200: Phải trả, phải nộp khác
+  name_tt99: Phải trả, phải nộp khác
+  change: BO
+  note: Bỏ TK 3385; đổi tên TK 3387 thành “Doanh thu chờ phân bổ”
+  needs_confirm: true
+- code: '3381'
+  name_tt200: Tài sản thừa chờ giải quyết
+  name_tt99: Tài sản thừa chờ giải quyết
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3382'
+  name_tt200: Kinh phí công đoàn
+  name_tt99: Kinh phí công đoàn
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3383'
+  name_tt200: Bảo hiểm xã hội
+  name_tt99: Bảo hiểm xã hội
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3384'
+  name_tt200: Bảo hiểm y tế
+  name_tt99: Bảo hiểm y tế
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3385'
+  name_tt200: Phải trả về cổ phần hóa
+  name_tt99: null
+  change: BO
+  note: Bỏ TK 3385
+  needs_confirm: true
+- code: '3386'
+  name_tt200: Bảo hiểm thất nghiệp
+  name_tt99: Bảo hiểm thất nghiệp
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3387'
+  name_tt200: Doanh thu chưa thực hiện
+  name_tt99: Doanh thu chờ phân bổ
+  change: DOI_TEN
+  note: Đổi tên TK 3387 thành “Doanh thu chờ phân bổ”
+  needs_confirm: false
+- code: '3388'
+  name_tt200: Phải trả, phải nộp khác
+  name_tt99: Phải trả, phải nộp khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '341'
+  name_tt200: Vay & nợ thuê tài chính
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3411'
+  name_tt200: Các khoản đi vay
+  name_tt99: Các khoản đi vay
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3412'
+  name_tt200: Nợ thuê tài chính
+  name_tt99: Nợ thuê tài chính
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '343'
+  name_tt200: Trái phiếu phát hành
+  name_tt99: Trái phiếu phát hành
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3431'
+  name_tt200: Trái phiếu thường
+  name_tt99: Trái phiếu thường
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3432'
+  name_tt200: Trái phiếu chuyển đổi
+  name_tt99: Trái phiếu chuyển đổi
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3433'
+  name_tt200: Phụ trội trái phiếu
+  name_tt99: —
+  change: BO
+  note: Bỏ TK 3433
+  needs_confirm: true
+- code: '344'
+  name_tt200: Nhận ký quỹ, ký cược
+  name_tt99: Nhận ký quỹ, ký cược
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '347'
+  name_tt200: Thuế TNDN hoãn lại phải trả
+  name_tt99: Thuế TNDN hoãn lại phải trả
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '352'
+  name_tt200: Dự phòng phải trả
+  name_tt99: Dự phòng phải trả
+  change: THEM
+  note: Bỏ 3524; thêm 3525 – Dự phòng khác
+  needs_confirm: true
+- code: '3521'
+  name_tt200: Dự phòng bảo hành sản phẩm, hàng hóa
+  name_tt99: Dự phòng bảo hành sản phẩm, hàng hóa
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3522'
+  name_tt200: Dự phòng bảo hành công trình xây dựng
+  name_tt99: Dự phòng bảo hành công trình xây dựng
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3523'
+  name_tt200: Dự phòng tái cơ cấu doanh nghiệp
+  name_tt99: Dự phòng tái cơ cấu doanh nghiệp
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3524'
+  name_tt200: Dự phòng phải trả khác
+  name_tt99: '- -'
+  change: BO
+  note: Bỏ 3524
+  needs_confirm: true
+- code: '3525'
+  name_tt200: '- -'
+  name_tt99: Dự phòng phải trả khác
+  change: THEM
+  note: Thêm TK 3525
+  needs_confirm: true
+- code: '353'
+  name_tt200: Quỹ khen thưởng phúc lợi
+  name_tt99: Quỹ khen thưởng, phúc lợi
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3531'
+  name_tt200: Quỹ khen thưởng
+  name_tt99: Quỹ khen thưởng
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3532'
+  name_tt200: Quỹ phúc lợi
+  name_tt99: Quỹ phúc lợi
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3533'
+  name_tt200: Quỹ phúc lợi đã hình thành TSCĐ
+  name_tt99: Quỹ phúc lợi đã hình thành TSCĐ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3534'
+  name_tt200: Quỹ thưởng ban quản lý điều hành công ty
+  name_tt99: Quỹ thưởng ban quản lý điều hành công ty
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '356'
+  name_tt200: Quỹ phát triển KH&CN
+  name_tt99: Quỹ phát triển KH&CN
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3561'
+  name_tt200: Quỹ phát triển khoa học và công nghệ
+  name_tt99: Quỹ phát triển khoa học và công nghệ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '3562'
+  name_tt200: Quỹ phát triển khoa học và công nghệ
+  name_tt99: Quỹ phát triển khoa học và công nghệ đã hình thành tài sản
+  change: DOI_TEN
+  note: Đổi tên
+  needs_confirm: false
+- code: '357'
+  name_tt200: Quỹ bình ổn giá
+  name_tt99: Quỹ bình ổn giá
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '411'
+  name_tt200: Vốn đầu tư của chủ sở hữu
+  name_tt99: Như TT200
+  change: DOI_TEN
+  note: Đổi tên TK 4112 thành “Thặng dư vốn”
+  needs_confirm: false
+- code: '4111'
+  name_tt200: Vốn góp của chủ sở hữu
+  name_tt99: Vốn góp của chủ sở hữu
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '4112'
+  name_tt200: Thặng dư vốn cổ phần
+  name_tt99: Thặng dư vốn
+  change: DOI_TEN
+  note: Đổi tên TK 4112 thành “Thặng dư vốn”
+  needs_confirm: false
+- code: '4113'
+  name_tt200: Quyền chọn chuyển đổi trái phiếu
+  name_tt99: Quyền chọn chuyển đổi trái phiếu
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '4118'
+  name_tt200: Vốn khác
+  name_tt99: Vốn khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '412'
+  name_tt200: Chênh lệch đánh giá lại tài sản
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '413'
+  name_tt200: Chênh lệch tỷ giá hối đoái
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không liệt kê cấp 2
+  needs_confirm: false
+- code: '414'
+  name_tt200: Quỹ đầu tư phát triển
+  name_tt99: Quỹ đầu tư phát triển
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '417'
+  name_tt200: Quỹ hỗ trợ sắp xếp DN
+  name_tt99: —
+  change: BO
+  note: Bỏ TK 417
+  needs_confirm: true
+- code: '418'
+  name_tt200: Các quỹ khác thuộc vốn chủ sở hữu
+  name_tt99: Như TT200
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '419'
+  name_tt200: Cổ phiếu quỹ
+  name_tt99: Cổ phiếu mua lại của chính mình
+  change: DOI_TEN
+  note: Đổi tên TK
+  needs_confirm: false
+- code: '4211'
+  name_tt200: Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước
+  name_tt99: Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '4212'
+  name_tt200: Lợi nhuận sau thuế chưa phân phối năm nay
+  name_tt99: Lợi nhuận sau thuế chưa phân phối năm nay
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '421'
+  name_tt200: LN sau thuế chưa phân phối
+  name_tt99: LN sau thuế chưa phân phối
+  change: DOI_TEN
+  note: Đổi tên TK cấp 2 – nhấn mạnh lũy kế
+  needs_confirm: false
+- code: '441'
+  name_tt200: Nguồn vốn đầu tư XDCB
+  name_tt99: —
+  change: BO
+  note: Bỏ TK 441
+  needs_confirm: true
+- code: '461'
+  name_tt200: Nguồn kinh phí sự nghiệp
+  name_tt99: —
+  change: BO
+  note: Bỏ TK 461
+  needs_confirm: true
+- code: '466'
+  name_tt200: Nguồn kinh phí hình thành TSCĐ
+  name_tt99: —
+  change: BO
+  note: Bỏ TK 466
+  needs_confirm: true
+- code: '511'
+  name_tt200: Doanh thu bán hàng và cung cấp dịch vụ
+  name_tt99: Doanh thu bán hàng và cung cấp dịch vụ
+  change: KHONG_DOI
+  note: Giữ nguyên; không chi tiết TK cấp 2
+  needs_confirm: false
+- code: '515'
+  name_tt200: Doanh thu hoạt động tài chính
+  name_tt99: Doanh thu hoạt động tài chính
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '521'
+  name_tt200: Các khoản giảm trừ doanh thu
+  name_tt99: Các khoản giảm trừ doanh thu
+  change: KHONG_DOI
+  note: Giữ nguyên; không chi tiết TK cấp 2
+  needs_confirm: false
+- code: '611'
+  name_tt200: Mua hàng
+  name_tt99: Không có
+  change: BO
+  note: Bỏ TK 611
+  needs_confirm: true
+- code: '621'
+  name_tt200: Chi phí NVL trực tiếp
+  name_tt99: Chi phí NVL trực tiếp
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '622'
+  name_tt200: Chi phí nhân công trực tiếp
+  name_tt99: Chi phí nhân công trực tiếp
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '623'
+  name_tt200: Chi phí sử dụng máy thi công
+  name_tt99: Chi phí sử dụng máy thi công
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6231'
+  name_tt200: Chi phí nhân công
+  name_tt99: Chi phí nhân công
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6232'
+  name_tt200: Chi phí vật liệu
+  name_tt99: Chi phí vật liệu
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6233'
+  name_tt200: Chi phí dụng cụ sản xuất
+  name_tt99: Chi phí dụng cụ sản xuất
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6234'
+  name_tt200: Chi phí khấu hao máy thi công
+  name_tt99: Chi phí khấu hao máy thi công
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6237'
+  name_tt200: Chi phí dịch vụ mua ngoài
+  name_tt99: Chi phí dịch vụ mua ngoài
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6238'
+  name_tt200: Chi phí bằng tiền khác
+  name_tt99: Chi phí bằng tiền khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '627'
+  name_tt200: Chi phí sản xuất chung
+  name_tt99: Chi phí sản xuất chung
+  change: THEM
+  note: Bổ sung TK 6275 – Thuế, phí, lệ phí
+  needs_confirm: true
+- code: '6271'
+  name_tt200: Chi phí nhân viên phân xưởng
+  name_tt99: Chi phí nhân viên phân xưởng
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6272'
+  name_tt200: Chi phí vật liệu
+  name_tt99: Chi phí vật liệu
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6273'
+  name_tt200: Chi phí dụng cụ sản xuất
+  name_tt99: Chi phí dụng cụ sản xuất
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6274'
+  name_tt200: Chi phí khấu hao TSCĐ
+  name_tt99: Chi phí khấu hao TSCĐ
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6275'
+  name_tt200: Thuế, phí, lệ phí
+  name_tt99: Thuế, phí, lệ phí
+  change: THEM
+  note: Bổ sung TK 6275 – Thuế, phí, lệ phí
+  needs_confirm: true
+- code: '6277'
+  name_tt200: Chi phí dịch vụ mua ngoài
+  name_tt99: Chi phí dịch vụ mua ngoài
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '6278'
+  name_tt200: Chi phí bằng tiền khác
+  name_tt99: Chi phí bằng tiền khác
+  change: KHONG_DOI
+  note: Không đổi
+  needs_confirm: false
+- code: '631'
+  name_tt200: Giá thành sản xuất
+  name_tt99: Không có
+  change: BO
+  note: Bỏ TK 631
+  needs_confirm: true
+- code: '632'
+  name_tt200: Giá vốn hàng bán
+  name_tt99: Giá vốn hàng bán
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '635'
+  name_tt200: Chi phí tài chính
+  name_tt99: Chi phí tài chính
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '641'
+  name_tt200: Chi phí bán hàng
+  name_tt99: Chi phí bán hàng
+  change: KHONG_DOI
+  note: Đổi TK 6415 thành “Thuế, phí, lệ phí”
+  needs_confirm: false
+- code: '6411'
+  name_tt200: Chi phí nhân viên
+  name_tt99: Chi phí nhân viên
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6412'
+  name_tt200: Chi phí vật liệu, bao bì
+  name_tt99: Chi phí vật liệu, bao bì
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6413'
+  name_tt200: Chi phí dụng cụ, đồ dùng
+  name_tt99: Chi phí dụng cụ, đồ dùng
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6414'
+  name_tt200: Chi phí khấu hao TSCĐ
+  name_tt99: Chi phí khấu hao TSCĐ
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6415'
+  name_tt200: Chi phí bảo hành sản phẩm, hàng hóa
+  name_tt99: Thuế, phí, lệ phí
+  change: KHONG_DOI
+  note: Đổi TK 6415 thành “Thuế, phí, lệ phí”
+  needs_confirm: false
+- code: '6417'
+  name_tt200: Chi phí dịch vụ mua ngoài
+  name_tt99: Chi phí dịch vụ mua ngoài
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6418'
+  name_tt200: Chi phí bằng tiền khác
+  name_tt99: Chi phí bằng tiền khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '642'
+  name_tt200: Chi phí quản lý DN
+  name_tt99: Chi phí quản lý DN
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6421'
+  name_tt200: Chi phí nhân viên quản lý
+  name_tt99: Chi phí nhân viên quản lý
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6422'
+  name_tt200: Chi phí vật liệu quản lý
+  name_tt99: Chi phí vật liệu quản lý
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6423'
+  name_tt200: Chi phí đồ dùng văn phòng
+  name_tt99: Chi phí đồ dùng văn phòng
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6424'
+  name_tt200: Chi phí khấu hao TSCĐ
+  name_tt99: Chi phí khấu hao TSCĐ
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6425'
+  name_tt200: Thuế, phí và lệ phí
+  name_tt99: Thuế, phí và lệ phí
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6426'
+  name_tt200: Chi phí dự phòng
+  name_tt99: Chi phí dự phòng
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6427'
+  name_tt200: Chi phí dịch vụ mua ngoài
+  name_tt99: Chi phí dịch vụ mua ngoài
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '6428'
+  name_tt200: Chi phí bằng tiền khác
+  name_tt99: Chi phí bằng tiền khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '711'
+  name_tt200: Thu nhập khác
+  name_tt99: Thu nhập khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '811'
+  name_tt200: Chi phí khác
+  name_tt99: Chi phí khác
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '821'
+  name_tt200: Chi phí thuế TNDN
+  name_tt99: Chi phí thuế TNDN
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '8211'
+  name_tt200: Chi phí thuế TNDN hiện hành
+  name_tt99: Chi phí thuế TNDN hiện hành
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '8212'
+  name_tt200: Chi phí thuế TNDN hoãn lại
+  name_tt99: Chi phí thuế TNDN hoãn lại
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false
+- code: '911'
+  name_tt200: Xác định kết quả kinh doanh
+  name_tt99: Xác định kết quả kinh doanh
+  change: KHONG_DOI
+  note: Giữ nguyên
+  needs_confirm: false

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh. Ca LỖI: tổng thanh toán SAI (để test validator bắt cờ). -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAC</KHHDon>
+      <SHDon>0000789</SHDon>
+      <NLap>2026-03-01</NLap>
+      <DVTTe>VND</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY DEMO D</Ten><MST>0310001236</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Hàng hóa Y</THHDVu><DVTinh>Cái</DVTinh>
+          <SLuong>2</SLuong><DGia>100000</DGia><ThTien>200000</ThTien>
+          <TSuat>10%</TSuat><TThue>20000</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>200000</TgTCThue>
+        <TgTThue>20000</TgTThue>
+        <TgTTTBSo>999999</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — khoá brand BRAVO (sienna/kem), phong cách shadcn (HSL vars). */
+:root {
+  --background: 39 50% 96%;        /* #faf5ee kem */
+  --foreground: 24 16% 20%;        /* #3a302a */
+  --card: 0 0% 100%;
+  --primary: 22 64% 46%;           /* #c2652a sienna */
+  --primary-foreground: 0 0% 100%;
+  --destructive: 0 40% 39%;        /* #8c3c3c rose */
+  --muted: 39 30% 92%;
+  --muted-foreground: 30 11% 49%;  /* #8a7d70 */
+  --border: 30 19% 82%;            /* #d8d0c8 */
+  --input: 30 19% 82%;
+  --ring: 22 64% 46%;
+  --radius: 0.625rem;              /* 10px */
+}
+
+* { border-color: hsl(var(--border)); }
+body { @apply bg-background text-foreground antialiased; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* highlight.js theme tối giản hợp tông kem */
+.hljs { background: #faf6ef; color: #3a302a; }
+.prose-chat p { margin: 0.4rem 0; }
+.prose-chat ul, .prose-chat ol { margin: 0.4rem 0; padding-left: 1.2rem; }
+.prose-chat code { background: #f0e9df; padding: 0 4px; border-radius: 4px; font-size: 0.9em; }
+.prose-chat pre { background: #faf6ef; padding: 10px; border-radius: 8px; overflow-x: auto; }
+.prose-chat table { border-collapse: collapse; margin: 0.5rem 0; }
+.prose-chat th, .prose-chat td { border: 1px solid hsl(var(--border)); padding: 4px 8px; }

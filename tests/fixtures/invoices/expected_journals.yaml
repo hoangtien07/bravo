@@ -1,0 +1,13 @@
+# Ground-truth bút toán cho fixture hoá đơn (AP gate).
+# reviewed_by: null = CHƯA kế toán BRAVO duyệt -> map-accuracy chỉ thông tin, không chặn merge.
+# Cờ balance (Nợ=Có) + verify (số truy được về hoá đơn) là HARD-GATE (đúng 100%).
+inv_single_10pct_goods.xml:
+  reviewed_by: null
+  total: "1100000"
+  debits: { "156": "1000000", "1331": "100000" }
+  credit: "331"
+inv_multi_rate.xml:
+  reviewed_by: null
+  total: "1640000"
+  debits: { "6427": "500000", "152": "1000000", "1331": "140000" }
+  credit: "331"

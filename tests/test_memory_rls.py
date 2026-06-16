@@ -33,8 +33,8 @@ HR = uuid.uuid4()
 ACCOUNTING = uuid.uuid4()
 
 
-def _id(perms, depts=(), admin=False):
-    return Identity(employee_id=uuid.uuid4(), department_ids=list(depts),
+def _id(perms, depts=(), admin=False, eid=None):
+    return Identity(employee_id=eid or uuid.uuid4(), department_ids=list(depts),
                     permissions=frozenset(perms), is_admin=admin)
 
 
@@ -98,12 +98,13 @@ def _scope_sql(identity) -> str:
                             compile_kwargs={"literal_binds": True}))
 
 
-def test_archival_scope_uses_cardinality_not_empty_list():
-    """Global test must be `cardinality(...) = 0`, never the malformed `= []`."""
+def test_archival_scope_filters_by_owner_and_overlap():
+    """W2.1: non-admin thấy passage CỦA MÌNH (owner_id) HOẶC chia sẻ tới phòng (overlap).
+    KHÔNG còn 'dept rỗng = global cho mọi người' (lỗ rò bộ nhớ riêng xuyên người dùng)."""
     sql = _scope_sql(_id(["doc:read:own_dept"], depts=[ACCOUNTING])).lower()
-    assert "cardinality" in sql
-    assert "= 0" in sql or "= $" not in sql  # cardinality(...) = 0
-    assert "&&" in sql  # OR overlap branch present
+    assert "owner_id" in sql
+    assert "&&" in sql              # nhánh overlap phòng
+    assert "cardinality" not in sql  # không còn nhánh 'global cho tất cả'
 
 
 def test_archival_scope_admin_unrestricted():
@@ -111,10 +112,10 @@ def test_archival_scope_admin_unrestricted():
     assert "true" in sql
 
 
-def test_archival_scope_no_depts_global_only():
-    """A reader with no departments sees ONLY global rows (no overlap branch)."""
+def test_archival_scope_no_depts_owner_only():
+    """Reader không phòng: chỉ thấy passage của CHÍNH MÌNH (owner_id), không overlap."""
     sql = _scope_sql(_id(["doc:read:own_dept"], depts=[])).lower()
-    assert "cardinality" in sql
+    assert "owner_id" in sql
     assert "&&" not in sql
 
 
@@ -160,10 +161,10 @@ _DIM = __import__("app.config", fromlist=["get_settings"]).get_settings().embedd
 _VEC = [0.1] * _DIM
 
 
-async def _seed(db, *, content, depts, trust="untrusted", source=None):
+async def _seed(db, *, content, depts, owner=None, trust="untrusted", source=None):
     from app.database.models import ArchivalPassage
 
-    p = ArchivalPassage(owner_id=uuid.uuid4(), content=content, embedding=_VEC,
+    p = ArchivalPassage(owner_id=owner or uuid.uuid4(), content=content, embedding=_VEC,
                         tags=[], department_ids=depts, trust_level=trust, source=source)
     db.add(p)
     await db.commit()
@@ -171,29 +172,32 @@ async def _seed(db, *, content, depts, trust="untrusted", source=None):
 
 
 @pytestmark_db
-def test_archival_global_visible_crossdept_hidden(monkeypatch):
+def test_archival_owner_scoped_no_crossuser_leak(monkeypatch):
+    """W2.1: bộ nhớ riêng (dept rỗng) của người KHÁC KHÔNG lộ; của mình + chia-sẻ-phòng thì thấy."""
     from app.agent.memory import MemoryStore
     from app.database.models import ArchivalPassage
     import app.agent.memory as mem
 
     monkeypatch.setattr(mem, "embed_one", lambda _t: _VEC)
     tag = f"wpg-{uuid.uuid4().hex[:8]}"
+    me = uuid.uuid4()
 
     async def run():
         engine, factory = _fresh_session_factory()
         async with factory() as db:
-            gid = await _seed(db, content=f"{tag} GLOBAL chính sách chung", depts=[])
+            mine = await _seed(db, content=f"{tag} của tôi", depts=[], owner=me)
+            other = await _seed(db, content=f"{tag} bộ nhớ riêng người khác", depts=[])  # owner khác
+            shared = await _seed(db, content=f"{tag} ACC chia sẻ", depts=[ACCOUNTING])
             await _seed(db, content=f"{tag} HR bảng lương", depts=[HR])
-            acc_id = await _seed(db, content=f"{tag} ACC sổ cái", depts=[ACCOUNTING])
             try:
-                ident = _id(["doc:read:own_dept"], depts=[ACCOUNTING])
+                ident = _id(["doc:read:own_dept"], depts=[ACCOUNTING], eid=me)
                 store = MemoryStore(db, uuid.uuid4(), ident)
                 hits = await store.archival_search(tag, top_k=50)
                 got = {h.id for h in hits if tag in h.content}
-                assert gid in got, "global passage must be visible"
-                assert acc_id in got, "own-dept (ACCOUNTING) passage must be visible"
-                hr_rows = [h for h in hits if "HR bảng lương" in h.content]
-                assert hr_rows == [], "cross-dept (HR) passage must NOT be visible"
+                assert mine in got, "passage của chính mình phải thấy"
+                assert shared in got, "passage chia sẻ tới phòng mình phải thấy"
+                assert other not in got, "RÒ: bộ nhớ riêng của người khác KHÔNG được thấy"
+                assert all("HR bảng lương" not in h.content for h in hits), "cross-dept phải ẩn"
             finally:
                 await db.execute(delete(ArchivalPassage).where(
                     ArchivalPassage.content.like(f"{tag}%")))
@@ -216,8 +220,8 @@ def test_archival_untrusted_injection_is_framed(monkeypatch):
     async def run():
         engine, factory = _fresh_session_factory()
         async with factory() as db:
-            await _seed(db, content=f"{tag} {inject}", depts=[], trust="untrusted",
-                        source="poisoned.pdf")
+            await _seed(db, content=f"{tag} {inject}", depts=[ACCOUNTING], trust="untrusted",
+                        source="poisoned.pdf")  # chia sẻ tới phòng searcher (test này về framing)
             try:
                 ident = _id(["doc:read:own_dept"], depts=[ACCOUNTING])
                 store = MemoryStore(db, uuid.uuid4(), ident)

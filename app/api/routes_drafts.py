@@ -5,12 +5,15 @@ Non-invasive write path — AI proposes, human approves. Approval requires `draf
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.database.models import Draft
 from app.erp import draft_queue
 from app.security.auth import require_permission
 from app.security.rls import Identity
@@ -28,6 +31,8 @@ class DraftOut(BaseModel):
     kind: str
     status: str
     payload: dict
+    created_by: uuid.UUID | None = None
+    created_at: datetime | None = None
 
 
 class RejectIn(BaseModel):
@@ -35,7 +40,9 @@ class RejectIn(BaseModel):
 
 
 def _out(d) -> DraftOut:
-    return DraftOut(id=d.id, kind=d.kind, status=d.status, payload=d.payload)
+    return DraftOut(id=d.id, kind=d.kind, status=d.status, payload=d.payload,
+                    created_by=getattr(d, "created_by", None),
+                    created_at=getattr(d, "created_at", None))
 
 
 @router.post("/drafts", response_model=DraftOut, status_code=status.HTTP_201_CREATED)
@@ -48,6 +55,18 @@ async def propose(body: DraftIn, identity: Identity = Depends(require_permission
 async def pending(identity: Identity = Depends(require_permission("draft:approve")),
                   db: AsyncSession = Depends(get_db)) -> list[DraftOut]:
     return [_out(d) for d in await draft_queue.list_pending(db, identity)]
+
+
+@router.get("/drafts/{draft_id}", response_model=DraftOut)
+async def get_draft(draft_id: uuid.UUID,
+                    identity: Identity = Depends(require_permission("draft:approve")),
+                    db: AsyncSession = Depends(get_db)) -> DraftOut:
+    # RLS-scoped: chỉ trả draft trong phạm vi phòng của identity (không rò liên-phòng).
+    d = (await db.execute(select(Draft).where(
+        Draft.id == draft_id, draft_queue.draft_scope_filter(identity)))).scalar_one_or_none()
+    if d is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Draft không tồn tại hoặc ngoài phạm vi")
+    return _out(d)
 
 
 @router.post("/drafts/{draft_id}/approve", response_model=DraftOut)
