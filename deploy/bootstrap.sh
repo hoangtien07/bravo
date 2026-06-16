@@ -15,7 +15,7 @@ echo "==> Migrate schema"
 $COMPOSE run --rm api alembic upgrade head
 
 echo "==> Seed demo users/departments (RLS)"
-$COMPOSE run --rm api python scripts/seed_demo.py
+$COMPOSE run --rm api python -m scripts.seed_demo
 
 echo "==> Ingest corpus THẬT (pypdf cho PDF text, Docling cho .docx/bảng) — embedding bge-m3 local"
 $COMPOSE run --rm api python -m scripts.ingest_userguide ./file_system
