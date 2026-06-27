@@ -45,6 +45,25 @@ export async function api<T = unknown>(
   return (await res.json()) as T;
 }
 
+// Tải file có auth (bearer) -> blob -> trigger download (không dùng <a href> trần vì cần header).
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const res = await fetch(path, { headers: authHeaders() });
+  if (!res.ok) {
+    let detail = `Lỗi tải ${res.status}`;
+    try { detail = (await res.json()).detail || detail; } catch { /* ignore */ }
+    throw new Error(detail);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function login(username: string, password: string): Promise<void> {
   const body = new URLSearchParams({ username, password });
   const res = await fetch("/api/auth/login", { method: "POST", body });

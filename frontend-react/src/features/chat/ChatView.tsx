@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Share2, X } from "lucide-react";
-import { api } from "@/api/client";
+import { ArrowDown, Share2, X } from "lucide-react";
+import { api, authHeaders } from "@/api/client";
 import { Button } from "@/components/ui";
 import { useChat } from "@/store/chat";
 import { MessageBubble } from "./MessageBubble";
@@ -11,12 +11,17 @@ import type { ChatMessage } from "@/api/types";
 export function ChatView() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { conversationId, messages, sending, send, stop, setConversation, newConversation } = useChat();
+  const { conversationId, messages, sending, send, stop, setConversation, newConversation, addMessage } = useChat();
   const [cites, setCites] = useState<string[] | null>(null);
-  const bottom = useRef<HTMLDivElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const atBottomRef = useRef(true);
+  const [showJump, setShowJump] = useState(false);
 
   // Load conversation theo URL (hoặc new khi vào "/").
   useEffect(() => {
+    atBottomRef.current = true;
+    setShowJump(false);
     if (!id) {
       newConversation();
       return;
@@ -27,7 +32,24 @@ export function ChatView() {
       .catch(() => nav("/"));
   }, [id]);
 
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Auto-scroll THÔNG MINH: chỉ kéo xuống nếu người dùng đang ở đáy (không phá khi đọc lại trên).
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+    atBottomRef.current = dist < 80;
+    setShowJump(!atBottomRef.current);
+  };
+  const jumpToBottom = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    atBottomRef.current = true;
+    setShowJump(false);
+  };
+  useEffect(() => {
+    if (atBottomRef.current) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages]);
 
   const onSend = (q: string) => {
     const wasNew = !id;
@@ -36,6 +58,44 @@ export function ChatView() {
       const cid = useChat.getState().conversationId;
       if (wasNew && cid) nav(`/c/${cid}`, { replace: true });
     });
+  };
+
+  // Nạp hoá đơn/tài liệu ngay trong khung chat: XML -> bút toán nháp; còn lại -> nguồn tri thức.
+  const onUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    if (!conversationId) newConversation();
+    setUploading(true);
+    for (const f of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", f);
+      const isXml = /\.xml$/i.test(f.name) || f.type.includes("xml");
+      try {
+        if (isXml) {
+          const r = await fetch("/api/invoices/draft", { method: "POST", headers: authHeaders(), body: fd });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(d.detail || `Lỗi ${r.status}`);
+          addMessage({
+            role: "assistant",
+            content: `📎 Đã nạp hoá đơn **${f.name}** → bút toán nháp (kiểm Nợ=Có, map TT99):`,
+            draft: { draft_id: d.draft_id, kind: d.kind, payload: d.journal },
+          });
+        } else {
+          const r = await fetch("/api/sources", { method: "POST", headers: authHeaders(), body: fd });
+          const s = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(s.detail || `Lỗi ${r.status}`);
+          addMessage({
+            role: "assistant",
+            content: `📎 Đã nạp tài liệu **${s.filename}** (trạng thái: ${s.status}). Bạn có thể hỏi về nội dung tài liệu này.`,
+          });
+        }
+      } catch (e) {
+        addMessage({ role: "assistant", content: `⚠ Không nạp được **${f.name}**: ${e instanceof Error ? e.message : "lỗi"}` });
+      }
+    }
+    setUploading(false);
+    window.dispatchEvent(new Event("conv:refresh"));
+    const cid = useChat.getState().conversationId;
+    if (!id && cid) nav(`/c/${cid}`, { replace: true });
   };
 
   const approve = async (did: string) => {
@@ -71,7 +131,7 @@ export function ChatView() {
           <h1 className="font-semibold tracking-tight">BRAVO AI Copilot</h1>
           {id && <Button variant="ghost" size="sm" onClick={share}><Share2 className="h-4 w-4" /> Chia sẻ</Button>}
         </header>
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div ref={scrollRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto px-4 py-4">
           <div className="mx-auto max-w-3xl space-y-4">
             {!messages.length && (
               <div className="text-center text-muted-foreground mt-20">
@@ -81,10 +141,18 @@ export function ChatView() {
             {messages.map((m, i) => (
               <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onApprove={approve} onReject={reject} />
             ))}
-            <div ref={bottom} />
           </div>
+          {showJump && (
+            <button
+              onClick={jumpToBottom}
+              aria-label="Xuống cuối"
+              className="sticky bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs shadow-card hover:bg-muted"
+            >
+              <ArrowDown className="h-3.5 w-3.5" /> Xuống cuối
+            </button>
+          )}
         </div>
-        <Composer onSend={onSend} sending={sending} onStop={stop} />
+        <Composer onSend={onSend} sending={sending} onStop={stop} onUpload={onUpload} uploading={uploading} />
       </div>
       {cites && (
         <aside className="w-80 shrink-0 border-l border-border bg-card/60 overflow-y-auto">
@@ -94,7 +162,14 @@ export function ChatView() {
           </div>
           <ul className="p-3 space-y-2">
             {cites.map((c, i) => (
-              <li key={i} className="rounded-md border-l-2 border-primary bg-muted/50 px-2 py-1 text-xs">{c}</li>
+              <li
+                key={i}
+                id={`source-${i + 1}`}
+                className="flex items-start rounded-md border-l-2 border-primary bg-muted/50 px-2 py-1.5 text-xs"
+              >
+                <span className="cite-num">{i + 1}</span>
+                <span className="min-w-0 break-words">{c}</span>
+              </li>
             ))}
           </ul>
         </aside>

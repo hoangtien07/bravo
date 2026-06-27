@@ -1,5 +1,7 @@
 # ANOMALY-AGENT — đào sâu thiết kế (agent #2: phát hiện bất thường/gian lận)
 
+> 🧊 **FROZEN — thiết kế, KHÔNG triển khai cho tới khi: (a) đạt L3 + ≥1 khách hàng thật, và (b) lõi AP/Tax ship được.** Đây là tài liệu kế hoạch, không phải cam kết tiến độ. Lý do đóng băng: tránh "bẫy L1" của [MATURITY-LADDER.md](MATURITY-LADDER.md) (thiết kế nhiều agent khi 0 user). Xem [ADR-0016](adr/0016-pivot-standalone-ap-vertical.md).
+
 > Từ [research/AGENT-OPPORTUNITIES.md](research/AGENT-OPPORTUNITIES.md): Anomaly = **#2 bravo-fit** (judgment-risk THẤP — chỉ FLAG, người quyết). **Chưa code.**
 > **Blueprint (AuditCopilot, research findings/K):** **engine deterministic tính điểm + LLM diễn giải + draft cờ** — hybrid (rule+ML+LLM) giảm false-positive vs pure-rule (alert-fatigue). Tái dùng verify-gate/draft/RLS/AgentRun ĐÃ CÓ; chỉ xây scoring engine.
 

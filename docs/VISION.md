@@ -3,6 +3,8 @@
 
 > Tài liệu này tinh chỉnh và hoàn thiện mục tiêu dự án sau khi nghiên cứu ba hệ mã nguồn tham chiếu (arkon, docsgpt, letta). Nó là **nguồn sự thật** về *vì sao* và *cái gì* của dự án. *Như thế nào* nằm ở [ARCHITECTURE.md](ARCHITECTURE.md).
 
+> ⚠️ **Trạng thái thực tế (cập nhật 2026-06):** đây là tài liệu **TẦM NHÌN** — mô tả đích đến, **không** phải mô tả cái đã ship. Hiện thực tế ở **L1 (lõi chạy trên dữ liệu mock)**, đang hướng L2; **chưa có người dùng thật, chưa có ERP API** (xem §8 câu hỏi mở phía cuối tài liệu và [ERP-INTEGRATION-REQUEST.md](ERP-INTEGRATION-REQUEST.md)). Mọi tài liệu agent/lộ-trình (`*-AGENT.md`, `MONEY-ENGINE-ROADMAP.md`) là **kế hoạch, KHÔNG phải tài sản sẵn sàng bán**. Thang trưởng thành: [MATURITY-LADDER.md](MATURITY-LADDER.md). Đề xuất đổi hướng để ship sớm không phụ thuộc ERP API: [ADR-0016](adr/0016-pivot-standalone-ap-vertical.md) (proposed).
+
 ---
 
 ## 0. Một câu định vị

@@ -1,11 +1,15 @@
 import { useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { ChevronDown, Cloud, Lock, Quote, ShieldCheck, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
 import { Badge, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { DraftCard } from "./DraftCard";
+import { MermaidBlock } from "./MermaidBlock";
 import type { ChatMessage } from "@/api/types";
 
 function Steps({ steps }: { steps: NonNullable<ChatMessage["steps"]> }) {
@@ -40,14 +44,70 @@ interface Props {
   readOnly?: boolean;
 }
 
+// Biến marker [N] trong câu trả lời thành link #cite-N (bỏ qua [text](url) đã có).
+function linkifyCitations(text: string): string {
+  return text.replace(/\[(\d{1,3})\](?!\()/g, "[$1](#cite-$1)");
+}
+
+// Bấm vào nguồn #source-N: mở panel dẫn chứng + cuộn + nháy (harvest pattern DocsGPT, MIT).
+function focusSource(n: number): void {
+  setTimeout(() => {
+    const el = document.getElementById(`source-${n}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.classList.add("cite-flash");
+    setTimeout(() => el?.classList.remove("cite-flash"), 1600);
+  }, 60);
+}
+
 export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, readOnly }: Props) {
   const isUser = m.role === "user";
+  const mdComponents = {
+    // Khối ```mermaid -> render sơ đồ (thay cả <pre>); còn lại giữ <pre> mặc định.
+    pre({ children, ...rest }: any) {
+      const child = Array.isArray(children) ? children[0] : children;
+      const cls: string = child?.props?.className || "";
+      if (/language-mermaid/.test(cls)) {
+        const raw = child.props.children;
+        const text = Array.isArray(raw) ? raw.join("") : String(raw ?? "");
+        return <MermaidBlock chart={text} />;
+      }
+      return <pre {...rest}>{children}</pre>;
+    },
+    a({ href, children, ...rest }: any) {
+      const cite = /^#cite-(\d+)$/.exec(href || "");
+      if (cite) {
+        const n = Number(cite[1]);
+        return (
+          <a
+            href={href}
+            className="cite-ref"
+            onClick={(e) => {
+              e.preventDefault();
+              if (m.citations?.length) onCite?.(m.citations);
+              focusSource(n);
+            }}
+          >
+            {children}
+          </a>
+        );
+      }
+      return <a href={href} target="_blank" rel="noreferrer" {...rest}>{children}</a>;
+    },
+  };
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div className={cn("max-w-[85%] rounded-lg px-4 py-2.5", isUser ? "bg-primary text-primary-foreground" : "bg-card border border-border shadow-card")}>
         {!isUser && m.steps && <Steps steps={m.steps} />}
         <div className={cn("prose-chat text-sm", isUser ? "text-primary-foreground" : "")}>
-          {m.content ? <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>{m.content}</Markdown> : m.streaming ? <Spinner /> : null}
+          {m.content ? (
+            <Markdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex, rehypeHighlight]}
+              components={isUser ? undefined : mdComponents}
+            >
+              {isUser ? m.content : linkifyCitations(m.content)}
+            </Markdown>
+          ) : m.streaming ? <Spinner /> : null}
         </div>
         {!isUser && m.draft?.payload && (
           <DraftCard payload={m.draft.payload as any} draftId={m.draft.draft_id} onApprove={onApprove} onReject={onReject} readOnly={readOnly} />

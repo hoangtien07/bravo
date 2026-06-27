@@ -32,9 +32,18 @@ Dự án **không khởi tạo từ con số 0**. Nó tổng hợp ba hệ mã n
 
 Chi tiết chắt lọc: [docs/reference/arkon-notes.md](docs/reference/arkon-notes.md), [docs/reference/docsgpt-notes.md](docs/reference/docsgpt-notes.md), [docs/reference/letta-notes.md](docs/reference/letta-notes.md).
 
+**Hai repo tham chiếu bổ sung** (học để *cải thiện*, không phải nền móng kiến trúc):
+
+| Repo | Đường dẫn | Ta học gì | Ghi chú |
+|------|-----------|-----------|---------|
+| **agent-ai** (Atlas Builder) | `../agent-ai` | Agent doanh nghiệp VN **đã chạy thật**: experiences-as-skills · routing fail-loud · **audit↔handover gate** (maker-checker bằng exit code) · master-là-sự-thật (LLM chỉ verify) · offline dictionary | Bằng chứng thực chiến cho 4 bất biến; **thiếu dữ liệu cấu hình** để chạy (dictionary/tariff rỗng) |
+| **hermes-agent** (Hermes/NousResearch) | `../hermes-agent` | Framework agent nhiều star: **nén trajectory** (cho context nhỏ) · **write-approval staging** · tool registry/toolset · provider abstraction có nhánh offline · state/resume (SQLite) · cron script-injection · mô hình tin cậy bảo mật | Cloud-default, đơn người dùng, **không RLS** — mượn pattern, đảo ưu tiên về local-first |
+
+Chi tiết: [docs/reference/agent-ai-notes.md](docs/reference/agent-ai-notes.md), [docs/reference/hermes-notes.md](docs/reference/hermes-notes.md).
+
 ## 4. Cách làm việc trong repo này
 
-- **Giai đoạn hiện tại = BUILD (Phase 1–2, đang chạy E2E).** 15 ADR. Lõi đã chạy: RAG+RLS, agent loop + verify-gate, eval pass^k, **money-engine AP** (hoá đơn XML→bút toán TT99, branch `feat/money-engine-ap`), **nền tảng chat** (React SPA + SSE streaming + multi-turn, branch `feat/chat-platform`). Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector, modular monolith ([ADR-0007](docs/adr/0007-code-strategy.md)). Chạy/cấu trúc: [README.md](README.md), [README-DEV.md](README-DEV.md). **arkon = viết lại từ pattern** (không copy code — PolyForm); docsgpt/letta = chuyển thể (MIT/Apache).
+- **Giai đoạn hiện tại = BUILD (Phase 1, lõi chạy trên DỮ LIỆU MOCK).** 15 ADR. Lõi đã hiện thực & có test: RAG+RLS (lọc ở tầng SQL), agent loop + verify-gate, eval pass^k, **money-engine AP** (parser hoá đơn XML→bút toán TT99 cân Nợ=Có, branch `feat/money-engine-ap`), **nền tảng chat** (React SPA + SSE streaming + multi-turn, branch `feat/chat-platform`). ⚠️ **Ranh giới thực tế (đừng nói "đã chạy" mà không kèm điều này):** đầu vào số liệu hiện là **YAML mock** ([mock_source.py](app/data_layer/mock_source.py), `is_demo=True`), **ERP client là stub** ([erp/client.py](app/erp/client.py), TODO Phase 2 — chờ BRAVO mở REST API), **duyệt nháp chưa đẩy về ERP** ([draft_queue.py:107](app/erp/draft_queue.py#L107), TODO Phase 3). Tức vòng giá trị ERP→phân tích→nháp→duyệt→ghi-lại **đứt ở hai đầu**; đây là demo trên dữ liệu giả, chưa phải chạy trên dữ liệu thật. Maturity: [docs/MATURITY-LADDER.md](docs/MATURITY-LADDER.md). Cân nhắc đổi hướng: [ADR-0016](docs/adr/0016-pivot-standalone-ap-vertical.md) (proposed). Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector, modular monolith ([ADR-0007](docs/adr/0007-code-strategy.md)). Chạy/cấu trúc: [README.md](README.md), [README-DEV.md](README-DEV.md). **arkon = viết lại từ pattern** (không copy code — PolyForm); docsgpt/letta = chuyển thể (MIT/Apache).
 - **Tái dùng trước khi xây mới:** xương sống đã có (loop·draft+maker-checker·verify-gate·RLS·memory·conversations·accounting). Đọc code thật, giữ 4 bất biến, anti-over-engineering.
 - **Tiếng Việt** cho tài liệu nghiệp vụ/chiến lược; thuật ngữ kỹ thuật giữ tiếng Anh.
 - Mọi quyết định kiến trúc lớn → ghi thành **ADR** trong [docs/adr/](docs/adr/) (dùng skill `/adr-new`).

@@ -1,5 +1,6 @@
-import { Check, X } from "lucide-react";
+import { Check, Download, X } from "lucide-react";
 import { Badge, Button, Card } from "@/components/ui";
+import { downloadFile } from "@/api/client";
 import { fmtMoney } from "@/lib/utils";
 import type { JournalPayload } from "@/api/types";
 
@@ -60,12 +61,22 @@ export function DraftCard({ payload, draftId, onApprove, onReject, readOnly }: P
         ))}
       </div>
       {!readOnly && draftId && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3 flex-wrap">
           <Button size="sm" onClick={() => onApprove?.(draftId)}>
             <Check className="h-4 w-4" /> Duyệt
           </Button>
           <Button size="sm" variant="destructive" onClick={() => onReject?.(draftId)}>
             <X className="h-4 w-4" /> Từ chối
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              downloadFile(`/api/drafts/${draftId}/export?fmt=csv`, `buttoan_${draftId.slice(0, 8)}.csv`)
+                .catch((e) => alert(e instanceof Error ? e.message : "Lỗi xuất file"))
+            }
+          >
+            <Download className="h-4 w-4" /> Xuất CSV
           </Button>
         </div>
       )}

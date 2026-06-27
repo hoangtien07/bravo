@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { FileText, MessageSquarePlus, Receipt, Trash2 } from "lucide-react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn, fmtDate } from "@/lib/utils";
 import { useAuth } from "@/store/auth";
 import type { ConversationSummary } from "@/api/types";
@@ -60,7 +61,10 @@ export function ConversationSidebar() {
       </div>
       <div className="border-t border-border p-3 text-xs text-muted-foreground">
         <div className="truncate">{identity?.full_name}</div>
-        <button className="mt-1 text-primary hover:underline" onClick={logout}>Đăng xuất</button>
+        <div className="mt-1 flex items-center justify-between">
+          <button className="text-primary hover:underline" onClick={logout}>Đăng xuất</button>
+          <ThemeToggle />
+        </div>
       </div>
     </aside>
   );

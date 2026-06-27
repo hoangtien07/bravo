@@ -1,5 +1,7 @@
 # TAX-ASSISTANT-AGENT — đào sâu thiết kế (agent #3: trợ lý thuế VN)
 
+> 🧊 **FROZEN — thiết kế, KHÔNG triển khai cho tới khi: (a) đạt L3 + ≥1 khách hàng thật, và (b) lõi AP/Tax ship được.** Đây là tài liệu kế hoạch, không phải cam kết tiến độ. Lý do đóng băng: tránh "bẫy L1" của [MATURITY-LADDER.md](MATURITY-LADDER.md) (thiết kế nhiều agent khi 0 user). Xem [ADR-0016](adr/0016-pivot-standalone-ap-vertical.md).
+
 > Từ [research/AGENT-OPPORTUNITIES.md](research/AGENT-OPPORTUNITIES.md): Trợ lý thuế = **#3, VN-native MOAT cao** (ngoại không làm). **Chưa code.** **Mở rộng** cross-check của [MONEY-ENGINE-AP-TAX.md](MONEY-ENGINE-AP-TAX.md) use-case B sang quyết toán + BHXH + giải trình.
 
 ## 0. Agent làm gì

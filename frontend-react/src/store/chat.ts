@@ -13,6 +13,7 @@ interface ChatState {
   abort: AbortController | null;
   newConversation: () => string;
   setConversation: (id: string, messages: ChatMessage[]) => void;
+  addMessage: (m: ChatMessage) => void;
   send: (question: string, onDone?: () => void) => Promise<void>;
   stop: () => void;
 }
@@ -30,6 +31,8 @@ export const useChat = create<ChatState>((set, get) => ({
   },
 
   setConversation: (id, messages) => set({ conversationId: id, messages }),
+
+  addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
 
   stop: () => {
     get().abort?.abort();

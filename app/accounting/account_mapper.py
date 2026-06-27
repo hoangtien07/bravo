@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 
@@ -17,6 +18,17 @@ from app.accounting.coa import CoaCatalog, load_coa
 from app.ingestion.invoice_parser import Invoice, InvoiceLine
 
 _DATA = Path(__file__).resolve().parent / "data"
+
+# TT45/2013 Đ.3: ghi nhận TSCĐ hữu hình chỉ khi nguyên giá ≥ 30 triệu ĐỒNG VÀ thời gian sử
+# dụng > 1 năm. Tên hàng KHÔNG đủ kết luận TSCĐ — đây là lỗi định khoản hay gặp. Ngưỡng giá
+# trị kiểm được tất định; điều kiện thời gian KHÔNG suy ra được từ hoá đơn -> cờ chờ kế toán.
+TSCD_VALUE_THRESHOLD = Decimal("30000000")
+
+
+def _is_fixed_asset(code: str) -> bool:
+    """TK TSCĐ hữu hình: 211 và các tiểu khoản 211x (TT99)."""
+    c = str(code).strip()
+    return c == "211" or c.startswith("211")
 
 
 @dataclass(frozen=True)
@@ -65,13 +77,30 @@ def map_invoice(inv: Invoice, *, coa: CoaCatalog | None = None, version: str = "
         if not matched:
             needs_review = True
             notes.append(f"{ln.source_ref}: tên '{name[:40]}' không khớp rule -> mặc định {acct} (cần duyệt)")
+        # TT45: tên hàng KHÔNG làm nên TSCĐ. Khớp rule 211 phải qua NGƯỠNG GIÁ TRỊ ≥30tr; dưới
+        # ngưỡng thì KHÔNG là TSCĐ -> tạm xếp 153 (CCDC) + cờ (kế toán có thể đổi 142/242/chi phí).
+        if _is_fixed_asset(acct):
+            amt = ln.thanh_tien or Decimal(0)
+            if amt < TSCD_VALUE_THRESHOLD:
+                acct, matched = "153", False
+                needs_review = True
+                notes.append(
+                    f"{ln.source_ref}: '{name[:30]}' nguyên giá {amt:.0f} < 30tr -> KHÔNG đủ điều kiện "
+                    f"TSCĐ (TT45); tạm xếp 153/CCDC, kế toán xác nhận (có thể 142/242/chi phí)"
+                )
+            else:
+                needs_review = True
+                notes.append(
+                    f"{ln.source_ref}: TSCĐ (211) cần xác nhận thời gian sử dụng > 1 năm (TT45) — "
+                    f"không suy ra được từ hoá đơn"
+                )
         if not coa.is_valid_posting_account(acct):
             needs_review = True
             notes.append(f"{ln.source_ref}: TK {acct} không hạch toán-trực-tiếp được trong TT99 (cần duyệt)")
         line_mappings.append(LineMapping(line=ln, debit_account=acct, matched=matched))
 
-    # VAT đầu vào: nếu có dòng map vào TSCĐ (211) -> 1332; ngược lại 1331.
-    vat_account = "1332" if any(m.debit_account == "211" for m in line_mappings) else "1331"
+    # VAT đầu vào: nếu có dòng map vào TSCĐ (211/211x) -> 1332; ngược lại 1331.
+    vat_account = "1332" if any(_is_fixed_asset(m.debit_account) for m in line_mappings) else "1331"
     return MappingProposal(
         line_mappings=line_mappings, vat_account=vat_account, credit_account="331",
         needs_review=needs_review, notes=notes,

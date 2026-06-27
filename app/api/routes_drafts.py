@@ -7,11 +7,12 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.accounting import journal_export
 from app.database import get_db
 from app.database.models import Draft
 from app.erp import draft_queue
@@ -67,6 +68,30 @@ async def get_draft(draft_id: uuid.UUID,
     if d is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Draft không tồn tại hoặc ngoài phạm vi")
     return _out(d)
+
+
+@router.get("/drafts/{draft_id}/export")
+async def export_draft(draft_id: uuid.UUID, fmt: str = Query("csv", pattern="^(csv|xlsx)$"),
+                       identity: Identity = Depends(require_permission("draft:approve")),
+                       db: AsyncSession = Depends(get_db)) -> Response:
+    """Xuất bút toán nháp ra CSV/XLSX để kế toán nhập tay vào ERP (ADR-0016, non-invasive)."""
+    d = (await db.execute(select(Draft).where(
+        Draft.id == draft_id, draft_queue.draft_scope_filter(identity)))).scalar_one_or_none()
+    if d is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Draft không tồn tại hoặc ngoài phạm vi")
+    if d.kind != "journal_entry":
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Chỉ xuất được bút toán (journal_entry)")
+    name = f"buttoan_{str(draft_id)[:8]}"
+    if fmt == "xlsx":
+        try:
+            data = journal_export.to_xlsx(d.payload)
+        except ImportError:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                "XLSX cần openpyxl — dùng fmt=csv") from None
+        return Response(data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        headers={"Content-Disposition": f'attachment; filename="{name}.xlsx"'})
+    return Response(journal_export.to_csv(d.payload), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
 
 
 @router.post("/drafts/{draft_id}/approve", response_model=DraftOut)

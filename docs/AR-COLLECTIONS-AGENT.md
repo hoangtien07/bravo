@@ -1,5 +1,7 @@
 # AR-COLLECTIONS-AGENT — đào sâu thiết kế (agent kế tiếp sau Tax&AP)
 
+> 🧊 **FROZEN — thiết kế, KHÔNG triển khai cho tới khi: (a) đạt L3 + ≥1 khách hàng thật, và (b) lõi AP/Tax ship được.** Đây là tài liệu kế hoạch, không phải cam kết tiến độ. Lý do đóng băng: tránh "bẫy L1" của [MATURITY-LADDER.md](MATURITY-LADDER.md) (thiết kế nhiều agent khi 0 user). Xem [ADR-0016](adr/0016-pivot-standalone-ap-vertical.md).
+
 > Từ [research/AGENT-OPPORTUNITIES.md](research/AGENT-OPPORTUNITIES.md): **AR collections = #1 bravo-fit** (close-the-loop nhất, tái dùng draft+verify+RLS, judgment thấp). **Chưa code — thiết kế.**
 > ⚠️ **ROI:** vòng research chứng minh **ROI vendor (HighRadius/Billtrust/Tesorio) KHÔNG đáng tin** — KHÔNG dùng trong sales. Giá trị bán bằng **pilot đo DSO/tiền-thu của CHÍNH khách**.
 > **Triết lý:** tái dùng ~70% cái bravo ĐÃ CÓ (draft_queue + maker-checker = "đuôi" close-the-loop; verify-gate; semantic catalog; AgentRun; RLS) — chỉ xây "đầu" (aging + scoring + soạn nhắc nợ).

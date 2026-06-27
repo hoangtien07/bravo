@@ -1,6 +1,8 @@
-# ARCHITECTURE — BRAVO AI Copilot (đề xuất)
+# ARCHITECTURE — BRAVO AI Copilot
 
-> Kiến trúc *đề xuất* tổng hợp từ arkon + docsgpt + letta. Chưa code. Mọi lựa chọn cụ thể (vector store, model, ...) sẽ được chốt qua [adr/](adr/). Mục tiêu & ràng buộc: [VISION.md](VISION.md).
+> Kiến trúc tổng hợp từ arkon + docsgpt + letta. Mọi lựa chọn cụ thể (vector store, model, ...) chốt qua [adr/](adr/). Mục tiêu & ràng buộc: [VISION.md](VISION.md).
+
+> ⚠️ **Trạng thái (cập nhật 2026-06):** phần lõi đã có code + test (RAG+RLS, agent loop, verify-gate, money-engine AP parser, chat SSE) **chạy trên dữ liệu MOCK**. Phần **tích hợp ERP** (client đọc, đẩy nháp→staging) còn là **stub** ([erp/client.py](../app/erp/client.py), [draft_queue.py:107](../app/erp/draft_queue.py#L107)) — chờ BRAVO mở REST API ([ERP-INTEGRATION-REQUEST.md](ERP-INTEGRATION-REQUEST.md)). Một số đoạn dưới đây mô tả đích nhắm, chưa hẳn = code hiện tại; chỗ nào còn là đề xuất sẽ ghi rõ.
 
 ## 1. Sơ đồ khối tổng quan
 

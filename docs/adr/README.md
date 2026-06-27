@@ -21,6 +21,9 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0011](0011-egress-classification-audit.md) | Phân loại độ nhạy tự động & audit-then-egress cho Model Router | Accepted | 2026-06-11 |
 | [0012](0012-verify-gate-number-integrity.md) | Verify-gate value-object & toàn vẹn số liệu (nối gate vào loop, đơn vị, Decimal) | Accepted | 2026-06-11 |
 | [0013](0013-reuse-vs-rewrite-and-topology.md) | Reuse-vs-rewrite & topology: BALANCED_REUSE (reuse library proven, hand-roll glue invariant, modular-monolith) | Accepted | 2026-06-11 |
+| [0014](0014-journal-entry-validator.md) | Journal-entry validator: Nợ=Có là invariant cứng (deterministic) | Accepted | 2026-06-15 |
+| [0015](0015-chat-conversation-sse.md) | Tầng hội thoại (Conversation) + SSE streaming | Accepted | 2026-06-15 |
+| [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Proposed** | 2026-06-26 |
 
 > ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 đã Accepted nhưng **CHƯA implement** (BLOCKING Phase 2 số). Lộ trình code song song: [../work-packages/](../work-packages/) · [../AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
 

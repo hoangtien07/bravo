@@ -16,6 +16,27 @@
   --input: 30 19% 82%;
   --ring: 22 64% 46%;
   --radius: 0.625rem;              /* 10px */
+  --code-bg: #faf6ef;
+  --code-fg: #3a302a;
+  --code-inline: #f0e9df;
+}
+
+/* Dark mode (toggle .dark trên <html>) — đảo tông sienna/kem sang nâu trầm. */
+.dark {
+  --background: 24 16% 11%;         /* nâu trầm */
+  --foreground: 39 30% 90%;         /* kem nhạt */
+  --card: 24 14% 15%;
+  --primary: 22 70% 53%;            /* sienna sáng hơn cho tương phản */
+  --primary-foreground: 0 0% 100%;
+  --destructive: 0 52% 58%;
+  --muted: 24 12% 20%;
+  --muted-foreground: 30 10% 62%;
+  --border: 28 10% 28%;
+  --input: 28 10% 28%;
+  --ring: 22 70% 53%;
+  --code-bg: #221d19;
+  --code-fg: #e8ddcf;
+  --code-inline: #2a241f;
 }
 
 * { border-color: hsl(var(--border)); }
@@ -23,11 +44,32 @@ body { @apply bg-background text-foreground antialiased; }
 
 .tabular { font-variant-numeric: tabular-nums; }
 
-/* highlight.js theme tối giản hợp tông kem */
-.hljs { background: #faf6ef; color: #3a302a; }
+/* highlight.js + code — theo CSS var nên tự đổi theo theme */
+.hljs { background: var(--code-bg); color: var(--code-fg); }
 .prose-chat p { margin: 0.4rem 0; }
 .prose-chat ul, .prose-chat ol { margin: 0.4rem 0; padding-left: 1.2rem; }
-.prose-chat code { background: #f0e9df; padding: 0 4px; border-radius: 4px; font-size: 0.9em; }
-.prose-chat pre { background: #faf6ef; padding: 10px; border-radius: 8px; overflow-x: auto; }
+.prose-chat code { background: var(--code-inline); padding: 0 4px; border-radius: 4px; font-size: 0.9em; }
+.prose-chat pre { background: var(--code-bg); padding: 10px; border-radius: 8px; overflow-x: auto; }
 .prose-chat table { border-collapse: collapse; margin: 0.5rem 0; }
 .prose-chat th, .prose-chat td { border: 1px solid hsl(var(--border)); padding: 4px 8px; }
+
+/* Trích dẫn nội dòng [N] -> bấm cuộn tới nguồn (harvest pattern DocsGPT, MIT). */
+.cite-ref {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.1rem; height: 1.1rem; padding: 0 0.25rem; margin: 0 1px;
+  font-size: 0.7rem; font-weight: 600; line-height: 1; vertical-align: super;
+  color: hsl(var(--primary)); background: hsl(var(--primary) / 0.12);
+  border-radius: 0.3rem; cursor: pointer; text-decoration: none;
+}
+.cite-ref:hover { background: hsl(var(--primary) / 0.22); }
+.cite-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.1rem; height: 1.1rem; margin-right: 0.35rem; flex-shrink: 0;
+  font-size: 0.7rem; font-weight: 600; color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.12); border-radius: 0.3rem;
+}
+.cite-flash { animation: cite-flash 1.6s ease-out; }
+@keyframes cite-flash {
+  0%, 30% { background: hsl(var(--primary) / 0.22); box-shadow: 0 0 0 2px hsl(var(--primary) / 0.5); }
+  100% { background: transparent; box-shadow: none; }
+}
