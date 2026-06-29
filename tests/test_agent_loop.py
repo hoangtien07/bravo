@@ -273,11 +273,13 @@ async def test_clarify_when_ambiguous(monkeypatch, patch_retrieve):
 
 
 @pytest.mark.asyncio
-async def test_malformed_structured_output_falls_back_to_clarify(monkeypatch, patch_retrieve):
-    _mock_llm(monkeypatch, ["đây không phải JSON hợp lệ"])
+async def test_malformed_structured_output_treated_as_answer(monkeypatch, patch_retrieve):
+    # Model mạnh đôi khi trả PROSE không-JSON -> coi là câu trả lời (graceful), không crash/clarify cụt.
+    _mock_llm(monkeypatch, ["Đây là câu trả lời dạng văn xuôi."])
     sess = AgentSession(_FakeDB(), _identity(admin=True))
     out = await sess.step("câu hỏi")
-    assert out.get("clarify") is True
+    assert out.get("clarify") is not True
+    assert "văn xuôi" in out["answer"]
 
 
 @pytest.mark.asyncio

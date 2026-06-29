@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
     rerank_enabled: bool = False
     rerank_provider: str = "viranker"
+    # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
+    # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
+    # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).
+    retrieval_min_score: float = 0.12
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"

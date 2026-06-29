@@ -101,27 +101,52 @@ class AgentDecision(BaseModel):
 
 
 async def _parse_decision(text: str) -> AgentDecision:
-    """Validate raw LLM text into AgentDecision using Pydantic AI (no model call).
+    """Validate raw LLM text into AgentDecision.
 
-    We hand the text to a FunctionModel so Pydantic AI's output-validation machinery
-    (not a bespoke parser) coerces it. Invalid structure -> raises -> caller clarifies.
-    Async (`agent.run`) because the agent loop already runs inside an event loop.
+    Robust hơn: model mạnh (gpt-4o) đôi khi bọc JSON trong ```json hoặc kèm prose -> trước
+    tiên dọn rào code + trích object JSON đầu tiên rồi json.loads. Thất bại mới fallback sang
+    Pydantic AI FunctionModel (CONTRACTS §6). Invalid hẳn -> raise -> caller clarify.
     """
-    def _emit(messages, info):
-        return ModelResponse(parts=[TextPart(content=text)])
+    import re as _re
 
-    agent = Agent(FunctionModel(_emit), output_type=AgentDecision, retries=0)
-    result = await agent.run("")
-    return result.output
+    raw = (text or "").strip()
+    cleaned = raw
+    if cleaned.startswith("```"):
+        cleaned = _re.sub(r"^```[a-zA-Z]*\n?", "", cleaned)
+        cleaned = _re.sub(r"\n?```$", "", cleaned).strip()
+    m = _re.search(r"\{.*\}", cleaned, _re.DOTALL)
+    if m:
+        try:
+            return AgentDecision(**json.loads(m.group(0)))
+        except Exception:
+            pass
+    # Model mạnh đôi khi trả PROSE không bọc JSON -> coi cả text là câu trả lời (graceful),
+    # tránh "clarify" cụt khó hiểu. (Bỏ fallback FunctionModel — nguồn lỗi 'Exceeded retries'.)
+    return AgentDecision(
+        action="answer",
+        answer=raw or "Không tìm thấy thông tin trong tài liệu nội bộ.")
 
 
 _SYSTEM = (
-    "Bạn là BRAVO AI Copilot, một agent có rào chắn. Bạn KHÔNG tự sinh số liệu — số phải đến "
-    "từ tool/engine. Mỗi bước bạn TRẢ VỀ JSON đúng một trong ba dạng:\n"
-    '  {"action":"tool","tool":"<tên>","args":{...}}  — gọi tool để lấy dữ liệu;\n'
-    '  {"action":"clarify","question":"..."}            — khi câu hỏi mơ hồ/thiếu tham số;\n'
-    '  {"action":"answer","answer":"..."}               — khi đã đủ dữ liệu để trả lời tiếng Việt có trích dẫn.\n'
-    "CHỈ trả JSON, không kèm văn bản khác. Thiếu căn cứ thì answer là câu 'không tìm thấy'."
+    "Bạn là BRAVO AI Copilot — trợ lý ERP/kế toán, trả lời TIẾNG VIỆT.\n"
+    "Ở MỖI bước bạn PHẢI xuất DUY NHẤT một object JSON (không kèm văn bản, KHÔNG dùng ```), "
+    "đúng MỘT trong ba dạng:\n"
+    '  {"action":"tool","tool":"<tên>","args":{...}}\n'
+    '  {"action":"clarify","question":"<câu hỏi làm rõ>"}\n'
+    '  {"action":"answer","answer":"<câu trả lời tiếng Việt>"}\n'
+    "ƯU TIÊN action=answer. Nếu NGỮ CẢNH có thông tin liên quan câu hỏi -> PHẢI trả lời "
+    "(câu hỏi rộng -> trả lời TỔNG QUAN có cấu trúc rồi mời hỏi sâu); KHÔNG hỏi lại chỉ để "
+    "thu hẹp phạm vi.\n"
+    "QUY TẮC khi action=answer:\n"
+    "- CHỈ dùng NGỮ CẢNH (các khối [1],[2],...) và LỊCH SỬ; KHÔNG dùng kiến thức ngoài, KHÔNG bịa.\n"
+    "- Gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh (đúng số khối nguồn).\n"
+    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer = 'Không tìm thấy thông "
+    "tin trong tài liệu nội bộ.'\n"
+    "- Phân biệt CHÍNH XÁC: mua hàng ≠ bán hàng; đầu vào ≠ đầu ra; phải thu ≠ phải trả; nhập ≠ xuất.\n"
+    "- KHÔNG tự sinh số liệu — số phải đến từ tool/engine.\n"
+    "CHỈ dùng action=clarify khi câu hỏi KHÔNG liên quan ngữ cảnh, HOẶC thiếu tham số bắt buộc "
+    "để gọi tool — KHÔNG clarify khi đã có ngữ cảnh liên quan.\n"
+    "TUYỆT ĐỐI chỉ xuất JSON."
 )
 
 
@@ -255,20 +280,100 @@ class AgentSession:
         except Exception:
             return []
 
+    async def _summarize(self, history_text: str, prev_summary: str | None) -> str:
+        """Tóm tắt phần hội thoại cũ (giữ sự kiện/quyết định/số) — đi qua router (egress-audited)."""
+        prompt = [
+            {"role": "system", "content": (
+                "Tóm tắt cuộc hội thoại sau bằng TIẾNG VIỆT, gạch đầu dòng ngắn gọn: giữ lại "
+                "CHỦ ĐỀ đang bàn, SỰ KIỆN, QUYẾT ĐỊNH, và DỮ LIỆU/số quan trọng. Nếu có TÓM TẮT "
+                "TRƯỚC thì hợp nhất, không lặp.")},
+            {"role": "user", "content": (
+                (f"TÓM TẮT TRƯỚC:\n{prev_summary}\n\n" if prev_summary else "")
+                + f"HỘI THOẠI:\n{history_text}\n\nTÓM TẮT:")},
+        ]
+        try:
+            text, _ = await llm.chat(prompt, db=self.db,
+                                     allow_cloud_task=_settings.demo_allow_cloud_answers,
+                                     temperature=0.2)
+            return (text or prev_summary or "").strip()
+        except Exception:
+            return prev_summary or ""
+
+    async def _safe_history(self) -> list[dict[str, str]]:
+        """Lịch sử CÓ NÉN (Tầng 2). Lỗi -> fallback recall thô 20 lượt (giữ lượt chạy được)."""
+        try:
+            return await self.memory.history_for_prompt(self._summarize)
+        except Exception:
+            return await self._safe_recall_prompt(limit=20)
+
+    async def _rephrase_query(self, recall: list[dict], question: str, max_turns: int = 6) -> str:
+        """Câu nối tiếp ngắn -> câu truy vấn ĐỘC LẬP dùng lịch sử (DocsGPT pattern). Lượt đầu
+        (không lịch sử) -> giữ nguyên. Lỗi -> fallback câu gốc. Đi qua router (egress-audited)."""
+        if not recall:
+            return question
+        hist = "\n".join(f"{m['role']}: {m['content'][:300]}" for m in recall[-max_turns:])
+        prompt = [
+            {"role": "system", "content": (
+                "Viết lại CÂU HỎI MỚI thành MỘT câu truy vấn tìm kiếm độc lập bằng tiếng Việt, "
+                "bổ sung ngữ cảnh cần thiết từ LỊCH SỬ (giữ thuật ngữ nghiệp vụ; phân biệt "
+                "mua/bán, đầu vào/đầu ra, phải thu/phải trả). CHỈ trả về câu truy vấn, không giải thích.")},
+            {"role": "user",
+             "content": f"LỊCH SỬ:\n{hist}\n\nCÂU HỎI MỚI: {question}\n\nCÂU TRUY VẤN ĐỘC LẬP:"},
+        ]
+        try:
+            text, _ = await llm.chat(prompt, db=self.db,
+                                     allow_cloud_task=_settings.demo_allow_cloud_answers,
+                                     temperature=0.0)
+            q = (text or "").strip().strip('"').splitlines()[0].strip() if text else ""
+            return q or question
+        except Exception:
+            return question
+
+    async def _source_labels(self, chunks: list) -> dict[str, str]:
+        """Map source_id -> nhãn thân thiện (knowledge_type/filename) thay UUID trong trích dẫn."""
+        ids = {getattr(c, "source_id", None) for c in chunks}
+        ids.discard(None)
+        if not ids:
+            return {}
+        try:
+            from sqlalchemy import select
+            from app.database.models import Source
+            rows = (await self.db.execute(
+                select(Source).where(Source.id.in_([uuid.UUID(x) for x in ids])))).scalars().all()
+            return {str(s.id): (s.knowledge_type or s.filename) for s in rows}
+        except Exception:
+            return {}
+
     async def _prepare_turn(self, user_message: str):
-        """Retrieve + build messages (GỒM lịch sử hội thoại) cho một lượt. Dùng chung
-        step()/step_stream(). Trả (messages, chunks, citations)."""
-        # Lịch sử TRƯỚC khi thêm câu hiện tại (tránh câu hiện tại xuất hiện 2 lần).
-        recall = await self._safe_recall_prompt(limit=20)
+        """Retrieve (query-rewrite theo lịch sử) + build messages có NGỮ CẢNH đánh số [N].
+        Dùng chung step()/step_stream(). Trả (messages, chunks, citations) — citations[i] khớp [i+1]."""
+        recall = await self._safe_history()                 # lịch sử (CÓ NÉN) TRƯỚC câu hiện tại
         await self._safe_recall_add("user", user_message)
 
-        chunks = await retriever.retrieve(self.db, self.identity, user_message, top_n=6)
-        # Document text is UNTRUSTED data (WP-G): frame nó như DATA trơ, không phải chỉ thị.
-        context = "\n\n".join(
-            f"{frame_untrusted(c.content, source=getattr(c, 'source_id', None))}\n{c.citation()}"
-            for c in chunks
-        ) if chunks else ""
-        citations = [c.citation() for c in chunks]
+        search_query = await self._rephrase_query(recall, user_message)
+        chunks = await retriever.retrieve(self.db, self.identity, search_query, top_n=6)
+
+        labels = await self._source_labels(chunks)
+        blocks: list[str] = []
+        citations: list[str] = []
+        for i, c in enumerate(chunks, start=1):
+            sid = getattr(c, "source_id", None)
+            label = labels.get(sid) if sid else None
+            if label:  # tên nguồn thân thiện (chương/file) + vị trí
+                loc = []
+                if getattr(c, "page_number", None) is not None:
+                    loc.append(f"trang {c.page_number}")
+                if getattr(c, "sheet_name", None):
+                    loc.append(f"sheet {c.sheet_name}")
+                if getattr(c, "cell_range", None):
+                    loc.append(f"ô {c.cell_range}")
+                cite = label + (", " + ", ".join(loc) if loc else "")
+            else:  # fallback: dùng citation gốc của chunk (UUID) nếu chưa join được tên
+                cite = c.citation() if hasattr(c, "citation") else "tài liệu"
+            citations.append(cite)   # citations[i-1] <-> khối [i] <-> FE source-i (bấm-cuộn)
+            # Nội dung tài liệu là DỮ LIỆU không tin cậy (WP-G) -> frame trơ, không phải chỉ thị.
+            blocks.append(f"[{i}] {frame_untrusted(c.content, source=sid)}\n(nguồn [{i}]: {cite})")
+        context = "\n\n".join(blocks)
 
         tools = filter_tools_by_permission(REGISTRY, self.identity)  # RLS layer #1
         tools_desc = "\n".join(
@@ -278,9 +383,9 @@ class AgentSession:
         messages = [
             {"role": "system", "content": _SYSTEM},
             {"role": "system", "content": f"TOOL khả dụng:\n{tools_desc or '(không có)'}"},
-            *recall,  # <-- multi-turn: lịch sử hội thoại (đã DATA-frame) NẰM TRƯỚC câu hỏi
+            *recall,  # multi-turn: lịch sử (đã DATA-frame) NẰM TRƯỚC câu hỏi
             {"role": "user",
-             "content": f"NGỮ CẢNH:\n{context or '(trống)'}\n\nCÂU HỎI: {user_message}"},
+             "content": f"NGỮ CẢNH (đánh số để trích dẫn [N]):\n{context or '(trống)'}\n\nCÂU HỎI: {user_message}"},
         ]
         return messages, chunks, citations
 

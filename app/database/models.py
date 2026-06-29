@@ -226,3 +226,20 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(200))
     detail: Mapped[dict] = mapped_column(JSONB, default=dict)
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ToolCallAttempt(Base):
+    """Nhật ký tool-call (compliance/observability — pattern DocsGPT tool_executor).
+
+    Mỗi lần agent gọi tool ghi MỘT dòng: drafted (ghi->nháp) | executed (đọc ok) | failed.
+    `args_hash` pin tham số (không lưu nội dung nhạy thô); `agent_run_id` truy vết theo lượt.
+    """
+    __tablename__ = "tool_call_attempts"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), index=True, nullable=True)
+    actor_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    tool: Mapped[str] = mapped_column(String(100))
+    args_hash: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(20))  # drafted|executed|failed
+    summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

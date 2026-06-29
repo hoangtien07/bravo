@@ -16,6 +16,7 @@ from app.ingestion.parser import ParsedBlock
 _enc = tiktoken.get_encoding("cl100k_base")
 MAX_TOKENS = 900
 MIN_TOKENS = 60
+OVERLAP_TOKENS = 120   # ~15% — đuôi chunk trước được mang sang chunk sau (giữ ngữ cảnh ranh giới)
 
 _SENT = re.compile(r"(?<=[.!?…:])\s+|\n+")
 
@@ -28,6 +29,19 @@ def _hard_split(text: str, max_tokens: int) -> list[str]:
     """Last-resort split by token window (for a single over-long sentence)."""
     toks = _enc.encode(text)
     return [_enc.decode(toks[i:i + max_tokens]) for i in range(0, len(toks), max_tokens)]
+
+
+def _tail_overlap(buf: list[str]) -> tuple[list[str], int]:
+    """Đuôi (các câu cuối) của buffer có tổng <= OVERLAP_TOKENS — seed cho chunk kế tiếp."""
+    out: list[str] = []
+    tot = 0
+    for s in reversed(buf):
+        tt = _ntok(s)
+        if tot + tt > OVERLAP_TOKENS:
+            break
+        out.insert(0, s)
+        tot += tt
+    return out, tot
 
 
 def _split_long(text: str) -> list[str]:
@@ -43,7 +57,8 @@ def _split_long(text: str) -> list[str]:
             pieces.extend(_hard_split(sent, MAX_TOKENS))
             continue
         if count + t > MAX_TOKENS and buf:
-            pieces.append(" ".join(buf)); buf, count = [], 0
+            pieces.append(" ".join(buf))
+            buf, count = _tail_overlap(buf)   # mang đuôi sang -> overlap giữa các chunk
         buf.append(sent); count += t
     if buf:
         pieces.append(" ".join(buf))

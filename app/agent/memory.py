@@ -90,6 +90,39 @@ class MemoryStore:
             for m in rows
         ]
 
+    async def history_for_prompt(self, summarize_fn, *, keep_recent: int = 8,
+                                 max_tokens: int = 3000, fetch: int = 60) -> list[dict[str, str]]:
+        """Lịch sử cho prompt CÓ NÉN (sliding-window, pattern letta Summarizer, Apache).
+
+        Hội thoại ngắn (<= max_tokens) -> trả nguyên (đã DATA-frame). Dài -> tóm tắt các lượt
+        CŨ thành 1 'summary' (lưu MemoryBlock 'summary', chỉ tóm tắt lại khi phần cũ đổi -> rẻ),
+        giữ `keep_recent` lượt gần nhất nguyên văn. `summarize_fn(text, prev)->str` do caller
+        (loop) cung cấp để GIỮ LLM ngoài tầng memory (layering). Lỗi tóm tắt -> giữ summary cũ.
+        """
+        from app.agent.context import count_messages
+
+        rows = await self.recall_recent(fetch)
+
+        def framed(ms):
+            return [{"role": m.role, "content": frame_by_trust(m.content, m.trust_level, m.source)}
+                    for m in ms]
+
+        all_framed = framed(rows)
+        if count_messages(all_framed) <= max_tokens or len(rows) <= keep_recent:
+            return all_framed
+
+        older, recent = rows[:-keep_recent], rows[-keep_recent:]
+        summary = await self.core_get("summary")
+        marker = await self.core_get("summary_n")
+        if str(len(older)) != marker:   # phần cũ đã đổi -> tóm tắt lại (nếu không, tái dùng)
+            text = "\n".join(f"{m.role}: {m.content}" for m in older)
+            summary = await summarize_fn(text, summary)
+            await self.core_replace("summary", summary or "")
+            await self.core_replace("summary_n", str(len(older)))
+        head = ([{"role": "system", "content": f"[TÓM TẮT HỘI THOẠI TRƯỚC]\n{summary}"}]
+                if summary else [])
+        return head + framed(recent)
+
     # --- archival memory (long-term, vector-searchable, RLS-scoped) ---
     async def archival_insert(self, content: str, tags: list[str] | None = None,
                               department_ids: list[uuid.UUID] | None = None,

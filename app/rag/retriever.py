@@ -45,8 +45,11 @@ class Retrieved:
 
 
 async def vector_search(db: AsyncSession, identity: Identity, query: str,
-                        k: int = 150) -> list[Retrieved]:
-    """Scope-filtered dense vector search (RLS enforced IN the query)."""
+                        k: int = 150, min_score: float = 0.0) -> list[Retrieved]:
+    """Scope-filtered dense vector search (RLS enforced IN the query).
+
+    `min_score`: bỏ chunk có cosine-sim < ngưỡng (giảm nhiễu ngữ nghĩa). 0 = không lọc.
+    """
     qvec = embed_one(query)
     stmt = (
         select(Chunk, Chunk.embedding.cosine_distance(qvec).label("dist"))
@@ -55,7 +58,7 @@ async def vector_search(db: AsyncSession, identity: Identity, query: str,
         .limit(k)
     )
     rows = (await db.execute(stmt)).all()
-    return [
+    out = [
         Retrieved(
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
             page_number=c.page_number, sheet_name=c.sheet_name, cell_range=c.cell_range,
@@ -63,6 +66,7 @@ async def vector_search(db: AsyncSession, identity: Identity, query: str,
         )
         for c, dist in rows
     ]
+    return [r for r in out if r.score >= min_score] if min_score > 0 else out
 
 
 def rrf_fuse(*ranked_lists: list[Retrieved], k: int = 60) -> list[Retrieved]:
@@ -107,21 +111,28 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
 
 
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
-                   candidate_k: int = 150, use_rerank: bool | None = None) -> list[Retrieved]:
+                   candidate_k: int = 150, use_rerank: bool | None = None,
+                   min_score: float | None = None) -> list[Retrieved]:
     """Full hybrid pipeline (findings/J): vector + lexical -> RRF -> cross-encoder rerank.
 
     All branches enforce RLS in-query. Rerank defaults to settings.rerank_enabled
-    (OFF in the cloud demo since ViRanker is a local model).
+    (OFF in the cloud demo since ViRanker is a local model). `min_score` (mặc định theo
+    settings.retrieval_min_score) lọc nhiễu dense; rỗng -> [] -> agent trả "không tìm thấy".
     """
+    from app.config import get_settings
+    _s = get_settings()
     if use_rerank is None:
-        from app.config import get_settings
-        use_rerank = get_settings().rerank_enabled
+        use_rerank = _s.rerank_enabled
+    if min_score is None:
+        min_score = _s.retrieval_min_score
 
-    dense = await vector_search(db, identity, query, k=candidate_k)
+    dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
     fused = rrf_fuse(dense, lexical)
+    if not fused:
+        return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
-    if not use_rerank or not fused:
+    if not use_rerank:
         return fused[:top_n]
 
     from app.config import get_settings
@@ -129,7 +140,7 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
 
     if provider == "llm":
         # Listwise rerank top candidates via the cloud chat model (demo).
-        pool = fused[:25]
+        pool = fused[:40]   # pool rộng hơn -> tăng recall (chương đúng lọt vào diện rerank)
         order = await _rerank.llm_rerank(query, [r.content for r in pool], top_n)
         return [pool[i] for i in order][:top_n]
 

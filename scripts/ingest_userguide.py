@@ -20,8 +20,10 @@ import re
 import sys
 from pathlib import Path
 
+from sqlalchemy import delete, select
+
 from app.database import async_session_factory
-from app.database.models import Source
+from app.database.models import Chunk, Source, SourceDepartment
 from app.ingestion.pipeline import ingest_source
 
 DEFAULT_DIR = Path("file_system")
@@ -62,6 +64,16 @@ async def main(folder: Path) -> None:
     async with async_session_factory() as db:
         for f in files:
             kt = _knowledge_type(f.name)
+            # Idempotent: xoá MỌI source cùng filename (+chunks/scope) trước khi nạp lại — chạy
+            # lại script KHÔNG còn nhân đôi corpus (deep-dive: bản cũ tạo Source mới mỗi lần).
+            old = list((await db.execute(
+                select(Source.id).where(Source.filename == f.name))).scalars().all())
+            for sid in old:
+                await db.execute(delete(Chunk).where(Chunk.source_id == sid))
+                await db.execute(delete(SourceDepartment).where(SourceDepartment.source_id == sid))
+                await db.execute(delete(Source).where(Source.id == sid))
+            if old:
+                await db.commit()
             src = Source(filename=f.name, knowledge_type=kt, status="pending")
             db.add(src)
             await db.flush()  # scope: no departments => GLOBAL (toàn công ty đọc được)
