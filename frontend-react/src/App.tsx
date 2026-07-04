@@ -5,6 +5,8 @@ import { useAuth } from "@/store/auth";
 import { AppShell } from "@/features/chat/AppShell";
 import { ChatView } from "@/features/chat/ChatView";
 import { MoneyEnginePage } from "@/features/money/MoneyEnginePage";
+import { GraphView } from "@/features/graph/GraphView";
+import { AnomalyPage } from "@/features/anomaly/AnomalyPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SharedPage } from "@/features/shared/SharedPage";
 
@@ -31,6 +33,8 @@ export default function App() {
         <Route path="/" element={<ChatView />} />
         <Route path="/c/:id" element={<ChatView />} />
         <Route path="/money-engine" element={<MoneyEnginePage />} />
+        <Route path="/graph" element={<GraphView />} />
+        <Route path="/anomaly" element={<AnomalyPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

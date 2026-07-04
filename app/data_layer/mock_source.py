@@ -54,8 +54,14 @@ class MockDataSource:
 
     def __init__(self, path: pathlib.Path | None = None) -> None:
         data = yaml.safe_load((path or _DEFAULT_FIXTURE).read_text(encoding="utf-8"))
+        self._raw: dict = data
         self._meta: dict = data.get("meta", {})
         self._metrics: dict = data.get("metrics", {})
+
+    def fetch_block(self, name: str):
+        """Đọc một KHỐI dữ liệu top-level ngoài `metrics` (anomalies/journal_entries/ar_aging/
+        invoices/tax_returns...) cho các agent demo. Trả None nếu không có."""
+        return self._raw.get(name)
 
     def fetch(self, metric_id: str, params: Mapping[str, object],
               identity: "Identity") -> MetricResult:

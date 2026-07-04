@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh. Ca: máy móc <30tr -> KHÔNG đủ TSCĐ (TT45) -> tạm 153/CCDC + cờ. Tổng <20tr. -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAA</KHHDon>
+      <SHDon>0000202</SHDon>
+      <NLap>2026-02-11</NLap>
+      <DVTTe>VND</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY THIẾT BỊ DEMO</Ten><MST>0100100008</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Máy móc thiết bị mini văn phòng</THHDVu><DVTinh>Cái</DVTinh>
+          <SLuong>1</SLuong><DGia>15000000</DGia><ThTien>15000000</ThTien>
+          <TSuat>10%</TSuat><TThue>1500000</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>15000000</TgTCThue>
+        <TgTThue>1500000</TgTThue>
+        <TgTTTBSo>16500000</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

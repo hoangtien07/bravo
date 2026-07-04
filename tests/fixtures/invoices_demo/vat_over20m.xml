@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh. Ca: hàng hoá ≥20tr -> 156, cờ TT219 (yêu cầu chứng từ thanh toán không tiền mặt). -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAA</KHHDon>
+      <SHDon>0000203</SHDon>
+      <NLap>2026-02-12</NLap>
+      <DVTTe>VND</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY THƯƠNG MẠI DEMO</Ten><MST>0100100008</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Hàng hóa thương mại nhập kho</THHDVu><DVTinh>Cái</DVTinh>
+          <SLuong>300</SLuong><DGia>100000</DGia><ThTien>30000000</ThTien>
+          <TSuat>10%</TSuat><TThue>3000000</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>30000000</TgTCThue>
+        <TgTThue>3000000</TgTThue>
+        <TgTTTBSo>33000000</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

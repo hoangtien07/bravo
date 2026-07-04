@@ -51,6 +51,17 @@ export interface JournalLine {
   source_ref?: string;
 }
 
+export interface InvoiceLine {
+  stt?: number | null;
+  ten_hang?: string | null;
+  dvt?: string | null;
+  so_luong?: string | null;
+  don_gia?: string | null;
+  thanh_tien?: string | null;
+  thue_suat?: string | null;
+  tien_thue?: string | null;
+}
+
 export interface JournalPayload {
   doc_type?: string;
   invoice?: Record<string, unknown>;
@@ -59,6 +70,7 @@ export interface JournalPayload {
   total_credit: string;
   needs_review?: boolean;
   validation_flags?: string[];
+  invoice_lines?: InvoiceLine[];
 }
 
 // SSE event union (khớp backend step_stream)

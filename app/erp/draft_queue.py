@@ -81,9 +81,19 @@ async def create_draft(db: AsyncSession, identity: Identity, kind: str, payload:
 
 async def list_pending(db: AsyncSession, identity: Identity) -> list[Draft]:
     """Drafts awaiting review — RLS-scoped IN the query (no cross-department leak)."""
+    return await list_drafts(db, identity, status="pending")
+
+
+async def list_drafts(db: AsyncSession, identity: Identity, *, status: str | None = None,
+                      kind: str | None = None) -> list[Draft]:
+    """Drafts RLS-scoped, lọc tuỳ chọn theo status (pending/approved/rejected) + kind."""
+    conds = [draft_scope_filter(identity)]
+    if status:
+        conds.append(Draft.status == status)
+    if kind:
+        conds.append(Draft.kind == kind)
     rows = (await db.execute(
-        select(Draft).where(Draft.status == "pending", draft_scope_filter(identity))
-        .order_by(Draft.created_at.desc())
+        select(Draft).where(*conds).order_by(Draft.created_at.desc())
     )).scalars().all()
     return list(rows)
 

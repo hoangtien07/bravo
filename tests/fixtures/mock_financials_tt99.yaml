@@ -78,3 +78,16 @@ cong_no_theo_khach_hang:
 anomalies:
   - { loai: "hoa_don_trung", mo_ta: "2 hoá đơn cùng NCC + số tiền + ngày", chung_tu: "HD-2026-0421/0422", value: 0.85, scale: "tỷ" }
   - { loai: "but_toan_so_tron", mo_ta: "Bút toán số tròn lớn ngoài giờ", chung_tu: "PKT-2026-0118", value: 1.0, scale: "tỷ" }
+
+# Sổ bút toán DEMO (engine tất định soi bất thường: trùng / số tròn lớn / ngoài giờ). so_tien = VND.
+journal_entries:
+  - { id: "PKT-2026-0201", ngay: "2026-02-03", gio: "09:15", ncc: "CTY Thép Miền Nam", so_tien: 152340000, dien_giai: "Mua thép cuộn", tk_no: "152", tk_co: "331" }
+  - { id: "PKT-2026-0202", ngay: "2026-02-03", gio: "10:02", ncc: "CTY Vận Tải ABC", so_tien: 8500000, dien_giai: "Cước vận chuyển", tk_no: "6427", tk_co: "331" }
+  - { id: "PKT-2026-0210", ngay: "2026-02-08", gio: "14:20", ncc: "CTY Vật Tư XYZ", so_tien: 47000000, dien_giai: "Mua vật tư", tk_no: "152", tk_co: "331" }
+  - { id: "PKT-2026-0211", ngay: "2026-02-08", gio: "14:22", ncc: "CTY Vật Tư XYZ", so_tien: 47000000, dien_giai: "Mua vật tư (nghi trùng)", tk_no: "152", tk_co: "331" }
+  - { id: "PKT-2026-0225", ngay: "2026-02-15", gio: "22:47", ncc: "CTY TNHH Lạ", so_tien: 500000000, dien_giai: "Chi phí dịch vụ", tk_no: "642", tk_co: "111" }
+  - { id: "PKT-2026-0226", ngay: "2026-02-16", gio: "23:10", ncc: "Cá nhân N.V.A", so_tien: 200000000, dien_giai: "Tạm ứng lớn", tk_no: "141", tk_co: "111" }
+  - { id: "PKT-2026-0230", ngay: "2026-02-18", gio: "08:40", ncc: "CTY Điện Lực", so_tien: 12680000, dien_giai: "Tiền điện", tk_no: "6427", tk_co: "112" }
+  - { id: "PKT-2026-0231", ngay: "2026-02-19", gio: "11:05", ncc: "CTY Nước Sạch", so_tien: 3450000, dien_giai: "Tiền nước", tk_no: "6427", tk_co: "112" }
+  - { id: "PKT-2026-0232", ngay: "2026-02-20", gio: "15:30", ncc: "CTY Bao Bì", so_tien: 27900000, dien_giai: "Mua bao bì", tk_no: "153", tk_co: "331" }
+  - { id: "PKT-2026-0233", ngay: "2026-02-21", gio: "09:50", ncc: "CTY Thép Miền Nam", so_tien: 98120000, dien_giai: "Mua thép", tk_no: "152", tk_co: "331" }

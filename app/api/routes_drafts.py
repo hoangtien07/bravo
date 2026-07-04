@@ -53,9 +53,29 @@ async def propose(body: DraftIn, identity: Identity = Depends(require_permission
 
 
 @router.get("/drafts", response_model=list[DraftOut])
-async def pending(identity: Identity = Depends(require_permission("draft:approve")),
-                  db: AsyncSession = Depends(get_db)) -> list[DraftOut]:
-    return [_out(d) for d in await draft_queue.list_pending(db, identity)]
+async def list_drafts(status: str | None = Query(None, description="pending|approved|rejected"),
+                      kind: str | None = Query(None),
+                      identity: Identity = Depends(require_permission("draft:approve")),
+                      db: AsyncSession = Depends(get_db)) -> list[DraftOut]:
+    return [_out(d) for d in await draft_queue.list_drafts(db, identity, status=status, kind=kind)]
+
+
+class BatchExportIn(BaseModel):
+    draft_ids: list[uuid.UUID]
+
+
+@router.post("/drafts/export")
+async def export_batch(body: BatchExportIn,
+                       identity: Identity = Depends(require_permission("draft:approve")),
+                       db: AsyncSession = Depends(get_db)) -> Response:
+    """Xuất GỘP nhiều bút toán vào 1 CSV (nhập tay theo lô) — RLS-scoped."""
+    rows = (await db.execute(select(Draft).where(
+        Draft.id.in_(body.draft_ids), draft_queue.draft_scope_filter(identity)))).scalars().all()
+    payloads = [d.payload for d in rows if d.kind == "journal_entry"]
+    if not payloads:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Không có bút toán hợp lệ để xuất")
+    return Response(journal_export.batch_to_csv(payloads), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="buttoan_lo.csv"'})
 
 
 @router.get("/drafts/{draft_id}", response_model=DraftOut)

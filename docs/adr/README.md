@@ -24,6 +24,7 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0014](0014-journal-entry-validator.md) | Journal-entry validator: Nợ=Có là invariant cứng (deterministic) | Accepted | 2026-06-15 |
 | [0015](0015-chat-conversation-sse.md) | Tầng hội thoại (Conversation) + SSE streaming | Accepted | 2026-06-15 |
 | [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Proposed** | 2026-06-26 |
+| [0017](0017-internal-demo-feature-package.md) | Gói tính năng DEMO NỘI BỘ: Knowledge Graph + AP đầy đủ + agent trên mock (nới tạm freeze 0016) | Accepted | 2026-06-29 |
 
 > ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 đã Accepted nhưng **CHƯA implement** (BLOCKING Phase 2 số). Lộ trình code song song: [../work-packages/](../work-packages/) · [../AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
 

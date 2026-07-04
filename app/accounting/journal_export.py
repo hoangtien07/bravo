@@ -47,6 +47,19 @@ def to_csv(payload: dict) -> bytes:
     return ("﻿" + buf.getvalue()).encode("utf-8")
 
 
+def batch_to_csv(payloads: list[dict]) -> bytes:
+    """Xuất GỘP nhiều bút toán vào 1 CSV (mỗi bút toán cách nhau 1 dòng trống) — nhập tay theo lô."""
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    for i, p in enumerate(payloads):
+        if i > 0:
+            writer.writerow([])
+            writer.writerow([])
+        for row in journal_to_rows(p):
+            writer.writerow(row)
+    return ("﻿" + buf.getvalue()).encode("utf-8")
+
+
 def to_xlsx(payload: dict) -> bytes:
     """XLSX — chỉ khả dụng nếu cài openpyxl (tùy chọn, không bắt buộc cho air-gap)."""
     from openpyxl import Workbook  # optional dep -> ImportError nếu chưa cài

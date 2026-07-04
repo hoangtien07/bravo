@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh. Ca: máy móc thiết bị ≥30tr -> TSCĐ 211 + VAT 1332 + cờ thời gian sử dụng (TT45). Tổng ≥20tr -> cờ TT219. -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAA</KHHDon>
+      <SHDon>0000201</SHDon>
+      <NLap>2026-02-10</NLap>
+      <DVTTe>VND</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY THIẾT BỊ DEMO</Ten><MST>0100100008</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Máy móc thiết bị sản xuất dây chuyền</THHDVu><DVTinh>Bộ</DVTinh>
+          <SLuong>1</SLuong><DGia>50000000</DGia><ThTien>50000000</ThTien>
+          <TSuat>10%</TSuat><TThue>5000000</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>50000000</TgTCThue>
+        <TgTThue>5000000</TgTThue>
+        <TgTTTBSo>55000000</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

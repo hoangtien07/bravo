@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh. Ca: tên hàng KHÔNG khớp rule -> mặc định 6428 + needs_review (kế toán chọn TK). -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAA</KHHDon>
+      <SHDon>0000204</SHDon>
+      <NLap>2026-02-13</NLap>
+      <DVTTe>VND</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY DEMO A</Ten><MST>0100100008</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Vật phẩm khuyến mãi tặng khách hàng</THHDVu><DVTinh>Cái</DVTinh>
+          <SLuong>100</SLuong><DGia>50000</DGia><ThTien>5000000</ThTien>
+          <TSuat>10%</TSuat><TThue>500000</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>5000000</TgTCThue>
+        <TgTThue>500000</TgTThue>
+        <TgTTTBSo>5500000</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

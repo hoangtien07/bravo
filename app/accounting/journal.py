@@ -60,6 +60,7 @@ class JournalEntryPayload(BaseModel):
     needs_review: bool = False
     validation_flags: list[str] = Field(default_factory=list)
     engine_values: list[str] = Field(default_factory=list)  # số nguồn+dẫn-xuất (str cho JSON/verify-gate)
+    invoice_lines: list[dict] = Field(default_factory=list)  # dòng hàng GỐC (xem lại — không dùng tính toán)
 
     @model_validator(mode="after")
     def _enforce_number_integrity(self):
@@ -134,11 +135,20 @@ def build_journal_entry(inv: Invoice, *, coa: CoaCatalog | None = None,
     engine |= {money.D(ln.debit) for ln in lines if ln.debit > 0}
     engine |= {money.D(ln.credit) for ln in lines if ln.credit > 0}
 
+    inv_lines = [
+        {"stt": ln.stt, "ten_hang": ln.ten_hang, "dvt": ln.dvt,
+         "so_luong": str(ln.so_luong) if ln.so_luong is not None else None,
+         "don_gia": str(ln.don_gia) if ln.don_gia is not None else None,
+         "thanh_tien": str(ln.thanh_tien) if ln.thanh_tien is not None else None,
+         "thue_suat": ln.thue_suat,
+         "tien_thue": str(ln.tien_thue) if ln.tien_thue is not None else None}
+        for ln in inv.lines
+    ]
     return JournalEntryPayload(
         invoice=InvoiceMeta(mst_ban=inv.mst_ban, ten_ban=inv.ten_ban, so_hoa_don=inv.so_hoa_don,
                             ky_hieu=inv.ky_hieu, mau_so=inv.mau_so, ngay_lap=inv.ngay_lap,
                             source_hash=inv.source_hash),
         lines=lines, total_debit=total_debit, total_credit=total_debit,
         needs_review=needs_review, validation_flags=flags,
-        engine_values=sorted(str(x) for x in engine),
+        engine_values=sorted(str(x) for x in engine), invoice_lines=inv_lines,
     )
