@@ -7,6 +7,7 @@ import { ChatView } from "@/features/chat/ChatView";
 import { MoneyEnginePage } from "@/features/money/MoneyEnginePage";
 import { GraphView } from "@/features/graph/GraphView";
 import { AnomalyPage } from "@/features/anomaly/AnomalyPage";
+import { TaxPage } from "@/features/tax/TaxPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SharedPage } from "@/features/shared/SharedPage";
 
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/money-engine" element={<MoneyEnginePage />} />
         <Route path="/graph" element={<GraphView />} />
         <Route path="/anomaly" element={<AnomalyPage />} />
+        <Route path="/tax" element={<TaxPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

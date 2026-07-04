@@ -91,3 +91,16 @@ journal_entries:
   - { id: "PKT-2026-0231", ngay: "2026-02-19", gio: "11:05", ncc: "CTY Nước Sạch", so_tien: 3450000, dien_giai: "Tiền nước", tk_no: "6427", tk_co: "112" }
   - { id: "PKT-2026-0232", ngay: "2026-02-20", gio: "15:30", ncc: "CTY Bao Bì", so_tien: 27900000, dien_giai: "Mua bao bì", tk_no: "153", tk_co: "331" }
   - { id: "PKT-2026-0233", ngay: "2026-02-21", gio: "09:50", ncc: "CTY Thép Miền Nam", so_tien: 98120000, dien_giai: "Mua thép", tk_no: "152", tk_co: "331" }
+
+# DEMO đối chiếu thuế: hoá đơn GTGT đầu ra/vào (tien_thue = VND). Có LỆCH chủ đích với tờ khai.
+invoices:
+  - { id: "HD-0001", loai: "dau_ra", ky: "2026-Q2", mst: "0300120019", thue_suat: 10, tien_thue: 5000000 }
+  - { id: "HD-0002", loai: "dau_ra", ky: "2026-Q2", mst: "0300120088", thue_suat: 8,  tien_thue: 2400000 }
+  - { id: "HD-0003", loai: "dau_ra", ky: "2026-Q2", mst: "0300120099", thue_suat: 10, tien_thue: 3000000 }
+  - { id: "HD-1001", loai: "dau_vao", ky: "2026-Q2", mst: "0100100008", thue_suat: 10, tien_thue: 4000000 }
+  - { id: "HD-1002", loai: "dau_vao", ky: "2026-Q2", mst: "0100100123", thue_suat: 10, tien_thue: 2500000 }
+  - { id: "HD-0009", loai: "dau_ra", ky: "2026-Q2", mst: "0300120077", thue_suat: 15, tien_thue: 1500000 }  # thuế suất LẠ
+
+# Tờ khai GTGT DEMO (khai đầu ra THIẾU so với tổng hoá đơn -> engine bắt lệch).
+tax_returns:
+  - { ky: "2026-Q2", thue_dau_ra_khai: 9000000, thue_dau_vao_khai: 6500000 }

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent import anomaly
+from app.agent import anomaly, tax
 from app.agent.tools import payload_hash
 from app.data_layer.mock_source import MockDataSource
 from app.database import get_db
@@ -39,5 +39,23 @@ async def scan_anomaly(identity: Identity = Depends(require_permission("draft:cr
         if payload_hash(payload) in existing:
             continue
         await draft_queue.create_draft(db, identity, kind="anomaly_flag", payload=payload)
+        created += 1
+    return ScanOut(created=created, total_flags=len(flags))
+
+
+@router.post("/agents/tax/reconcile", response_model=ScanOut)
+async def reconcile_tax(identity: Identity = Depends(require_permission("draft:create")),
+                        db: AsyncSession = Depends(get_db)) -> ScanOut:
+    """Đối chiếu hoá đơn ↔ tờ khai (Lớp 2) -> draft kiến nghị `tax_adjustment` chờ duyệt."""
+    src = MockDataSource()
+    flags = tax.reconcile(src.fetch_block("invoices"), src.fetch_block("tax_returns"))
+    existing = {d.payload_hash for d in
+                await draft_queue.list_drafts(db, identity, status="pending", kind="tax_adjustment")}
+    created = 0
+    for f in flags:
+        payload = f.to_payload()
+        if payload_hash(payload) in existing:
+            continue
+        await draft_queue.create_draft(db, identity, kind="tax_adjustment", payload=payload)
         created += 1
     return ScanOut(created=created, total_flags=len(flags))

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, FileText, MessageSquarePlus, Receipt, Share2, Trash2 } from "lucide-react";
+import { AlertTriangle, FileCheck2, FileText, MessageSquarePlus, Receipt, Share2, Trash2 } from "lucide-react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -46,6 +46,9 @@ export function ConversationSidebar() {
         </Link>
         <Link to="/anomaly" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
           <AlertTriangle className="h-4 w-4" /> Soi bất thường
+        </Link>
+        <Link to="/tax" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
+          <FileCheck2 className="h-4 w-4" /> Trợ lý thuế
         </Link>
       </nav>
       <div className="px-3 py-1 text-xs font-medium text-muted-foreground">Lịch sử</div>
