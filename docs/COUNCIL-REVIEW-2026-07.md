@@ -148,13 +148,14 @@ Mục tiêu: mọi tuyên bố (CI xanh, DONE, test, on-prem) thành SỰ THẬT
 
 **DoD Wave 0:** CI xanh với Postgres thật + ruff chặn; code đã push; docs không tự mâu thuẫn; ADR-0016 đã chốt; không còn secret/legacy/nhãn-mock-thiếu. **Không viết feature mới.**
 
-### WAVE 1 — "Hết giả" (2–3 tuần)
-Track A (LLM plumbing): router streaming thật + usage token thật; structured output JSON-mode/guided_json + retry có ngân sách; streaming end-to-end tôn trọng verify-gate (xoá `_chunk_text`); mount MCP + integration test token.
-Track B (product surface, song song): trang Drafts queue + nút xuất CSV/XLSX; upload chứng từ qua UI; admin tối thiểu (CRUD user/phòng ban/đổi mật khẩu); nối `create_journal_entry` vào payload thật.
-**Cắt:** memory eviction Letta-style → thay bằng hard-cap recall + log.
+### WAVE 1 — "Hết giả" ✅ ĐÃ LÀM (2026-07-05)
+Track A (LLM plumbing): ✅ router.chat_stream token thật + usage; ✅ structured output json_object/guided_json + retry 1 lần có ngân sách; ✅ streaming E2E tôn trọng verify-gate (bỏ `_chunk_text`, compose token thật opt-in); ✅ mount MCP `/mcp` + token extraction + test.
+Track B (product surface): ✅ trang Drafts queue `/drafts` + xuất CSV/XLSX từng cái + lô; ✅ upload tài liệu `/documents`; ✅ admin tối thiểu `/admin` (CRUD user/phòng ban/đổi+reset mật khẩu); ✅ `create_journal_entry` payload thật qua Number-Integrity Gate.
+**Cắt (giữ nguyên):** memory eviction Letta-style — chưa làm, chờ log user thật.
 
-### WAVE 2 — "Enterprise floor" (3–4 tuần)
-OIDC (Authlib) + Keycloak self-host federate LDAP/AD; observability (prometheus-fastapi-instrumentator + OTel → `grafana/otel-lgtm`, **không** Langfuse ở bậc này); rate-limit (slowapi) + GPU concurrency semaphore; cost/token tracking từ usage thật; backup `pg_dump` + **restore drill thật**; mở rộng boot-guard.
+### WAVE 2 — "Enterprise floor" ✅ ĐÃ LÀM (2026-07-05)
+✅ OIDC (Authlib) gate theo settings + Keycloak compose (`deploy/docker-compose.keycloak.yml`, `docs/SSO-OIDC.md`); ✅ observability (`/metrics` prometheus-fastapi-instrumentator + OTel OTLP → otel-lgtm compose); ✅ rate-limit slowapi/người + GPU concurrency semaphore; ✅ cost/token tracking từ usage thật (`/api/admin/usage` + bảng Admin); ✅ backup `scripts/backup.sh` + `docs/RUNBOOK-DR.md`; ✅ boot-guard mở rộng.
+> **Còn cần hạ tầng ngoài để chốt:** chạy Keycloak thật (OIDC end-to-end), GPU thật (đo pass^k local + sizing), và **chạy drill restore thật** để điền RTO vào RUNBOOK. Code + compose + gate đã sẵn.
 
 ### WAVE 3 — "Giá trị thật theo ADR-0016" (song song từ khi W1.6–W1.9 xong; cổng L2→L3)
 AP E2E trên ≥50 hoá đơn thật; export chuẩn nhập BRAVO (golden-file test); corpus thật + đo recall@k/MRR; Qwen local trên GPU thật + pass^k + GPU sizing note; offline bundle air-gap.
