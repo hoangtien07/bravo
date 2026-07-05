@@ -23,10 +23,10 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0013](0013-reuse-vs-rewrite-and-topology.md) | Reuse-vs-rewrite & topology: BALANCED_REUSE (reuse library proven, hand-roll glue invariant, modular-monolith) | Accepted | 2026-06-11 |
 | [0014](0014-journal-entry-validator.md) | Journal-entry validator: Nợ=Có là invariant cứng (deterministic) | Accepted | 2026-06-15 |
 | [0015](0015-chat-conversation-sse.md) | Tầng hội thoại (Conversation) + SSE streaming | Accepted | 2026-06-15 |
-| [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Proposed** | 2026-06-26 |
+| [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Accepted** | 2026-07-05 |
 | [0017](0017-internal-demo-feature-package.md) | Gói tính năng DEMO NỘI BỘ: Knowledge Graph + AP đầy đủ + agent trên mock (nới tạm freeze 0016) | Accepted | 2026-06-29 |
 
-> ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 đã Accepted nhưng **CHƯA implement** (BLOCKING Phase 2 số). Lộ trình code song song: [../work-packages/](../work-packages/) · [../AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
+> ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 (verify-gate) **đã implement** — nối vào agent loop (`app/agent/loop.py`, gate `verify_numbers` tại `_finish_answer`), có test (`tests/test_grounding.py`). Trạng thái triển khai chi tiết: **nguồn sự thật = [../work-packages/STATUS.md](../work-packages/STATUS.md)**. Đánh giá tổng thể mức độ trưởng thành: [../COUNCIL-REVIEW-2026-07.md](../COUNCIL-REVIEW-2026-07.md).
 
 ## Quyết định đang chờ (backlog — sẽ thành ADR khi chốt)
 Tham chiếu [../ARCHITECTURE.md §5](../ARCHITECTURE.md) và [../VISION.md §8](../VISION.md):

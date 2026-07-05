@@ -1,7 +1,7 @@
 # Work Packages — gói việc song song để code BRAVO agentic (demo)
 
 > Mục đích: chia việc thành các **gói tự-chứa** để mở **nhiều Claude chat làm đồng thời**. Mỗi gói = một spec cho một chat. Viết để **Opus 4.8 hiểu & implement** mà **không over-engineer**.
-> **Trạng thái: CHƯA CODE.** Đây là spec. Hướng kiến trúc: [ADR-0013 BALANCED_REUSE](../adr/0013-reuse-vs-rewrite-and-topology.md). Scope demo: [AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
+> **Trạng thái: ĐÃ CODE — 8/8 WP DONE** (suite xanh; nguồn sự thật = [STATUS.md](STATUS.md)). File này là **spec gốc** giữ lại để tra cứu hợp đồng/interface, KHÔNG phản ánh trạng thái hiện tại. Hướng kiến trúc: [ADR-0013 BALANCED_REUSE](../adr/0013-reuse-vs-rewrite-and-topology.md). Scope demo: [AGENTIC-PLAN.md](../AGENTIC-PLAN.md).
 
 ## Luật cho MỖI Claude chat (đọc trước khi code)
 1. **Đọc [CONTRACTS.md](CONTRACTS.md) TRƯỚC** — nó định nghĩa mọi interface dùng chung. Code đúng theo hợp đồng → các gói ghép được mà không cần biết nội bộ của nhau.
