@@ -4,9 +4,15 @@ EVERY LLM call goes through here. Router picks local vs cloud based on:
 deployment config (cloud on/off) + sensitivity of the context + task. Default LOCAL.
 FAIL-CLOSED: if sensitivity is unknown OR cloud disabled OR any context is sensitive
 → run LOCAL. Sensitive data (accounting/HR/PII) is pinned local and never egresses.
+
+`chat()` = buffered completion (returns text + decision carrying REAL token usage).
+`chat_stream()` = token streaming primitive (yields real deltas from the model, then a
+final usage event). Both preserve audit-then-egress (ADR-0011): the cloud egress is
+audited BEFORE the request opens.
 """
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from openai import AsyncOpenAI
@@ -32,6 +38,11 @@ class RoutingDecision:
     backend: str  # "local" | "cloud"
     model: str
     reason: str
+    # Token usage THẬT từ response (W1.2). 0 nếu backend không trả usage (một số vLLM/Ollama
+    # cũ) -> caller có thể ước lượng thay thế. total_tokens dùng cho budget + cost-tracking.
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
 
 
 def decide(sensitive: bool | None, allow_cloud_task: bool = False) -> RoutingDecision:
@@ -67,21 +78,86 @@ async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
     await db.commit()
 
 
-async def chat(messages: list[dict], *, context: list | None = None,
-               sensitive: bool | None = None, allow_cloud_task: bool = False,
-               db=None, **kwargs) -> tuple[str, RoutingDecision]:
-    """Route a chat completion. Returns (text, decision).
-
-    WP-C: nếu caller KHÔNG truyền `sensitive` nhưng có `context` (chunks + metric-results),
-    router TỰ phân loại độ nhạy (fail-closed) — không tin tham số thủ công. Mọi lời gọi cloud
-    được audit TRƯỚC khi gọi (audit-then-egress).
-    """
+def _classify(sensitive: bool | None, context: list | None) -> bool | None:
+    """WP-C: nếu caller không truyền `sensitive` nhưng có `context`, tự phân loại (fail-closed)."""
     if sensitive is None and context is not None:
         from app.security.sensitivity import classify_context
-        sensitive = classify_context(context)
+        return classify_context(context)
+    return sensitive
+
+
+def _structured_kwargs(d: RoutingDecision, schema: dict | None) -> dict:
+    """Structured-output plumbing (W1.3). Trả kwargs bơm vào completions.create theo backend.
+
+    - cloud (OpenAI-compatible): response_format json_object (được hỗ trợ rộng; prompt đã yêu
+      cầu 'chỉ JSON'). json_schema strict không phải endpoint nào cũng chịu -> dùng json_object.
+    - local (vLLM): guided_json (outlines) ép đúng schema — mạnh hơn hẳn. Ollama bỏ qua (nó
+      nhận `format=json` qua đường khác). Tắt bằng settings.structured_output=False.
+    """
+    if schema is None or not _settings.structured_output:
+        return {}
+    if d.backend == "cloud":
+        return {"response_format": {"type": "json_object"}}
+    # local vLLM guided decoding
+    return {"extra_body": {"guided_json": schema}}
+
+
+async def chat(messages: list[dict], *, context: list | None = None,
+               sensitive: bool | None = None, allow_cloud_task: bool = False,
+               json_schema: dict | None = None, db=None, **kwargs) -> tuple[str, RoutingDecision]:
+    """Route a chat completion. Returns (text, decision) — decision carries REAL token usage.
+
+    `json_schema` bật structured output (json_object cloud / guided_json vLLM). Router tự phân
+    loại độ nhạy từ `context` (fail-closed → local). Cloud egress được audit TRƯỚC khi gọi.
+    """
+    sensitive = _classify(sensitive, context)
     d = decide(sensitive, allow_cloud_task)
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
         await _audit_egress(db, d, messages)  # fail-closed: audit trước, lỗi audit -> không egress
+    kwargs.update(_structured_kwargs(d, json_schema))
     resp = await client.chat.completions.create(model=d.model, messages=messages, **kwargs)
+    _apply_usage(d, getattr(resp, "usage", None))
     return resp.choices[0].message.content or "", d
+
+
+async def chat_stream(messages: list[dict], *, context: list | None = None,
+                      sensitive: bool | None = None, allow_cloud_task: bool = False,
+                      db=None, **kwargs) -> AsyncIterator[dict]:
+    """Token-streaming primitive (W1.1). Yields REAL deltas from the model:
+
+        {"type": "delta", "text": "..."}          # nhiều event, token thật
+        {"type": "done", "decision": RoutingDecision, "text": "<full>"}   # 1 event cuối
+
+    Giữ audit-then-egress: cloud egress audit TRƯỚC khi mở stream. include_usage=True để lấy
+    token usage THẬT ở chunk cuối (OpenAI-compatible + vLLM hỗ trợ).
+    """
+    sensitive = _classify(sensitive, context)
+    d = decide(sensitive, allow_cloud_task)
+    client = _cloud if d.backend == "cloud" else _local
+    if d.backend == "cloud":
+        await _audit_egress(db, d, messages)
+    stream = await client.chat.completions.create(
+        model=d.model, messages=messages, stream=True,
+        stream_options={"include_usage": True}, **kwargs)
+    parts: list[str] = []
+    async for chunk in stream:
+        if getattr(chunk, "usage", None):
+            _apply_usage(d, chunk.usage)
+        choices = getattr(chunk, "choices", None) or []
+        if not choices:
+            continue
+        delta = getattr(choices[0].delta, "content", None) if choices[0].delta else None
+        if delta:
+            parts.append(delta)
+            yield {"type": "delta", "text": delta}
+    yield {"type": "done", "decision": d, "text": "".join(parts)}
+
+
+def _apply_usage(d: RoutingDecision, usage) -> None:
+    if not usage:
+        return
+    d.prompt_tokens = int(getattr(usage, "prompt_tokens", 0) or 0)
+    d.completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
+    d.total_tokens = int(getattr(usage, "total_tokens", 0)
+                         or (d.prompt_tokens + d.completion_tokens))

@@ -96,12 +96,28 @@ class AgentDecision(BaseModel):
     question: str | None = None                   # clarifying question (action == "clarify")
 
 
-async def _parse_decision(text: str) -> AgentDecision:
-    """Validate raw LLM text into AgentDecision.
+# JSON schema của AgentDecision cho structured output (W1.3) — dùng cho guided_json (vLLM)
+# và tài liệu hoá dạng bắt buộc. Cloud chỉ cần json_object; schema này ép chặt hơn ở local.
+_DECISION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "action": {"type": "string", "enum": ["tool", "answer", "clarify"]},
+        "tool": {"type": ["string", "null"]},
+        "args": {"type": "object"},
+        "answer": {"type": ["string", "null"]},
+        "question": {"type": ["string", "null"]},
+    },
+    "required": ["action"],
+}
 
-    Robust hơn: model mạnh (gpt-4o) đôi khi bọc JSON trong ```json hoặc kèm prose -> trước
-    tiên dọn rào code + trích object JSON đầu tiên rồi json.loads. Thất bại mới fallback sang
-    Pydantic AI FunctionModel (CONTRACTS §6). Invalid hẳn -> raise -> caller clarify.
+
+def _parse_decision_strict(text: str) -> tuple[AgentDecision, bool]:
+    """Validate raw LLM text into (AgentDecision, ok).
+
+    ok=True  -> trích được object JSON hợp lệ thành AgentDecision.
+    ok=False -> KHÔNG parse được: coi cả text là câu trả lời prose (graceful, giữ hành vi cũ)
+                và báo hiệu để caller có thể RETRY một lần (W1.3).
+    Dọn rào ```code``` + trích object JSON đầu tiên rồi json.loads.
     """
     import re as _re
 
@@ -113,14 +129,18 @@ async def _parse_decision(text: str) -> AgentDecision:
     m = _re.search(r"\{.*\}", cleaned, _re.DOTALL)
     if m:
         try:
-            return AgentDecision(**json.loads(m.group(0)))
+            return AgentDecision(**json.loads(m.group(0))), True
         except Exception:
             pass
-    # Model mạnh đôi khi trả PROSE không bọc JSON -> coi cả text là câu trả lời (graceful),
-    # tránh "clarify" cụt khó hiểu. (Bỏ fallback FunctionModel — nguồn lỗi 'Exceeded retries'.)
     return AgentDecision(
         action="answer",
-        answer=raw or "Không tìm thấy thông tin trong tài liệu nội bộ.")
+        answer=raw or "Không tìm thấy thông tin trong tài liệu nội bộ."), False
+
+
+async def _parse_decision(text: str) -> AgentDecision:
+    """Backward-compat wrapper (giữ chữ ký cũ) — bỏ cờ ok."""
+    parsed, _ok = _parse_decision_strict(text)
+    return parsed
 
 
 _SYSTEM = (
@@ -173,13 +193,33 @@ def _register_builtin_tools() -> None:
     if "create_journal_entry" not in REGISTRY:
         register(
             "create_journal_entry",
-            json_schema={"type": "object",
-                         "properties": {"account": {"type": "string"},
-                                        "amount": {"type": "number"},
-                                        "memo": {"type": "string"}},
-                         "required": ["account", "amount"]},
+            # Schema THẬT: bút toán kép nhiều dòng (mỗi dòng Nợ HOẶC Có). LLM chỉ ĐỀ XUẤT;
+            # payload_builder VALIDATE cân Nợ=Có trước khi tạo nháp (ADR-0004/0014).
+            json_schema={
+                "type": "object",
+                "properties": {
+                    "lines": {
+                        "type": "array",
+                        "description": "Các dòng bút toán; mỗi dòng chỉ Nợ HOẶC Có (>0).",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "account": {"type": "string", "description": "Số hiệu TK (TT99)"},
+                                "debit": {"type": "number"},
+                                "credit": {"type": "number"},
+                                "memo": {"type": "string"},
+                                "source_ref": {"type": "string"},
+                            },
+                            "required": ["account"],
+                        },
+                    },
+                    "invoice": {"type": "object", "description": "Metadata chứng từ (tuỳ chọn)"},
+                },
+                "required": ["lines"],
+            },
             read_only=False,                      # WRITE -> draft only (invariant #2)
             required_permission="draft:create",
+            payload_builder=_build_journal_payload,
         )(_stub_create_journal_entry)
 
 
@@ -200,7 +240,36 @@ def _metric_lookup(metric_id: str, params: dict | None = None, *, identity: Iden
 
 
 def _stub_create_journal_entry(**kwargs):  # never executed (write -> draft); here for schema
-    return {"note": "stub — đường ghi đi qua draft_queue.create_draft (WP-E)."}
+    return {"note": "đường ghi đi qua draft_queue.create_draft sau payload_builder (WP-E/W1.9)."}
+
+
+def _build_journal_payload(args: dict) -> dict:
+    """W1.9: dựng JournalEntryPayload từ đề xuất của LLM và VALIDATE cân Nợ=Có (ADR-0014).
+
+    LLM chỉ đề xuất các dòng; số KHÔNG do LLM tính hợp lệ hoá — model_validator của
+    JournalEntryPayload chặn lệch/bịa số. Lỗi -> raise -> call_tool trả isError (không tạo
+    nháp hỏng). Kết quả .model_dump(mode='json') KHỚP schema mà journal_export tiêu thụ.
+    """
+    from app.accounting.journal import InvoiceMeta, JournalEntryPayload, JournalLine
+    from app.data_layer import money
+
+    raw_lines = args.get("lines") or []
+    lines = [JournalLine(
+        account=str(ln.get("account", "")).strip(),
+        debit=money.D(ln.get("debit", 0) or 0),
+        credit=money.D(ln.get("credit", 0) or 0),
+        memo=str(ln.get("memo", "") or ""),
+        source_ref=ln.get("source_ref"),
+    ) for ln in raw_lines]
+    total_debit = money.money_sum([ln.debit for ln in lines])
+    total_credit = money.money_sum([ln.credit for ln in lines])
+    inv = args.get("invoice") or {}
+    payload = JournalEntryPayload(
+        invoice=InvoiceMeta(**{k: v for k, v in inv.items() if k in InvoiceMeta.model_fields}),
+        lines=lines, total_debit=total_debit, total_credit=total_credit,
+        doc_type=args.get("doc_type", "manual_agent"),
+    )
+    return payload.model_dump(mode="json")
 
 
 _register_builtin_tools()
@@ -221,21 +290,53 @@ class AgentSession:
 
     async def _llm_decide(self, messages: list[dict],
                           context_objs: list) -> tuple[AgentDecision, int]:
-        """One structured step: router.chat (auto-classify egress, audited) -> Pydantic AI validate.
+        """One structured step: router.chat (auto-classify egress, audited) -> validate.
 
         Router TỰ phân loại độ nhạy từ `context_objs` (chunks + metric-results) — fail-closed →
-        local (WP-C seam-1, invariant #4). Demo cho phép cloud với ngữ cảnh KHÔNG nhạy; số liệu
-        tài chính THẬT (is_demo=False) → local. `db` để audit-then-egress trước khi rời mạng.
+        local (WP-C seam-1, invariant #4). `db` để audit-then-egress trước khi rời mạng.
+
+        W1.3: bật structured output (json_schema) để model ép JSON. Nếu output KHÔNG parse được
+        thành tool-call hợp lệ -> RETRY đúng 1 lần kèm thông báo lỗi (tính vào budget qua token).
+        W1.2: token dùng usage THẬT từ response (fallback ước lượng nếu backend không trả usage).
         """
-        text, _decision = await llm.chat(
-            messages, context=context_objs, db=self.db,
+        text, decision = await llm.chat(
+            messages, context=context_objs, db=self.db, json_schema=_DECISION_SCHEMA,
             allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.1)
-        # Track egress: if ANY llm call this turn routed to cloud, the turn is cloud-routed
-        # (the pass^k egress HARD-FAIL detector keys off `routed_cloud` in the step result).
-        if getattr(_decision, "backend", "local") == "cloud":
+        if getattr(decision, "backend", "local") == "cloud":
             self._routed_cloud = True
-        approx_tokens = len(text) // 4 + sum(len(m["content"]) for m in messages) // 4
-        return await _parse_decision(text), approx_tokens
+        tokens = self._usage_tokens(decision, text, messages)
+
+        parsed, ok = _parse_decision_strict(text)
+        if not ok and getattr(self, "_allow_decide_retry", True):
+            # Một lần sửa lỗi: nói rõ output sai để model trả đúng JSON. Chống vòng lặp retry
+            # vô hạn bằng cờ (chỉ retry 1 lần/lượt-quyết-định).
+            retry_msgs = messages + [
+                {"role": "assistant", "content": text},
+                {"role": "user", "content": (
+                    "Output vừa rồi KHÔNG phải một object JSON hợp lệ. Trả lời LẠI, CHỈ một "
+                    "object JSON đúng một trong ba dạng đã nêu, KHÔNG kèm văn bản/markdown.")},
+            ]
+            text2, d2 = await llm.chat(
+                retry_msgs, context=context_objs, db=self.db, json_schema=_DECISION_SCHEMA,
+                allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.0)
+            if getattr(d2, "backend", "local") == "cloud":
+                self._routed_cloud = True
+            tokens += self._usage_tokens(d2, text2, retry_msgs)
+            parsed2, ok2 = _parse_decision_strict(text2)
+            self._decide_retries = getattr(self, "_decide_retries", 0) + 1
+            if ok2:
+                return parsed2, tokens
+            # Vẫn hỏng -> coi text2 là câu trả lời prose (graceful), giữ hành vi cũ.
+            return parsed2, tokens
+        return parsed, tokens
+
+    @staticmethod
+    def _usage_tokens(decision, text: str, messages: list[dict]) -> int:
+        """Token THẬT từ router usage; fallback ước lượng len//4 nếu backend không trả usage."""
+        real = int(getattr(decision, "total_tokens", 0) or 0)
+        if real > 0:
+            return real
+        return len(text) // 4 + sum(len(m["content"]) for m in messages) // 4
 
     async def _audit(self, action: str, detail: dict) -> None:
         """Best-effort audit. Budget-stop and tool events are auditable (ADR-0010)."""
@@ -259,9 +360,12 @@ class AgentSession:
     async def _close_run(self, status: str) -> None:
         try:
             from app.agent import runs
-            await runs.finish_run(self.db, self.agent_run_id, status=status, checkpoint_state={
-                "created_draft": getattr(self, "_created_draft", False),
-                "routed_cloud": getattr(self, "_routed_cloud", False)})
+            await runs.finish_run(
+                self.db, self.agent_run_id, status=status,
+                tokens_used=getattr(self, "_tokens_used", 0),
+                checkpoint_state={
+                    "created_draft": getattr(self, "_created_draft", False),
+                    "routed_cloud": getattr(self, "_routed_cloud", False)})
         except Exception:
             pass
 
@@ -390,6 +494,7 @@ class AgentSession:
         tracker = _BudgetTracker(self.budget)
         self._routed_cloud = False             # set True by _llm_decide if a call hits cloud
         self._created_draft = False            # set True khi tool ghi tạo draft chờ duyệt
+        self._tokens_used = 0                  # token THẬT tích luỹ cả lượt (W1.2) -> AgentRun
         self.agent_run_id = uuid.uuid4()       # 1 lượt = 1 AgentRun (drafts của lượt link vào)
         await self._open_run()
 
@@ -408,6 +513,7 @@ class AgentSession:
                     return await self._finish_clarify(
                         f"Tôi chưa hiểu rõ yêu cầu, bạn nói rõ hơn được không? ({e})", citations)
                 tracker.tokens += used
+                self._tokens_used += used
                 tracker.steps += 1                    # an LLM decision counts as a step
 
                 if decision.action == "clarify":
@@ -460,44 +566,76 @@ class AgentSession:
                     "session_id": str(self.session_id)}
 
     # --- streaming (P-chat: SSE) ---------------------------------------------------
-    @staticmethod
-    def _chunk_text(text: str, size: int = 48):
-        for i in range(0, len(text), size):
-            yield text[i:i + size]
+    # W1.4: hết "streaming giả" (cắt chuỗi 48 ký tự). Hai chế độ, tôn trọng verify-gate:
+    #   (a) lượt CÓ engine_values (tài chính) -> BUFFER + verify-gate TRƯỚC, phát answer đã kiểm
+    #       chứng nguyên khối (KHÔNG token-stream số chưa qua gate — giữ invariant #3 / ADR-0012).
+    #   (b) lượt THUẦN TRI THỨC (không engine_values) -> COMPOSE bằng chat_stream: token THẬT từ
+    #       model chảy thẳng ra SSE (grounded iff có citation — không bị number-gate).
 
-    def _verdict(self, answer: str, engine_values: list, citations: list):
-        """Verify-gate (invariant #3) — giống _finish_answer: financial-only. Trả (safe, grounded, unmatched)."""
+    _COMPOSE_SYSTEM = (
+        "Bạn là BRAVO AI Copilot. Viết CÂU TRẢ LỜI CUỐI bằng TIẾNG VIỆT, văn xuôi (KHÔNG JSON, "
+        "KHÔNG markdown rào code). CHỈ dùng NGỮ CẢNH đã cho + LỊCH SỬ; gắn trích dẫn [N] vào mỗi "
+        "ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Ngữ cảnh không chứa câu trả lời -> "
+        "'Không tìm thấy thông tin trong tài liệu nội bộ.'")
+
+    async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
         if engine_values:
+            # (a) tài chính: buffered verify-gate, phát nguyên khối đã kiểm chứng.
             verdict = verify_numbers(answer, engine_values)
-            safe = verdict.safe_answer if not verdict.grounded else answer
-            return safe, verdict.grounded, verdict.unmatched
-        return answer, bool(citations), []
+            safe = answer if verdict.grounded else verdict.safe_answer
+            grounded, unmatched = verdict.grounded, verdict.unmatched
+            await self._safe_recall_add("assistant", safe)
+            await self._close_run(self._terminal_status())
+            yield {"type": "answer", "delta": safe}
+            yield {"type": "done", "grounded": grounded, "unmatched": unmatched,
+                   "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
+                   "session_id": str(self.session_id)}
+            return
 
-    async def _stream_answer(self, answer: str, engine_values: list, citations: list):
-        # Verify-gate chạy trên answer ĐẦY ĐỦ TRƯỚC khi stream (không lọt số chưa kiểm chứng).
-        safe, grounded, unmatched = self._verdict(answer, engine_values, citations)
-        await self._safe_recall_add("assistant", safe)
+        # (b) tri thức: token-stream THẬT (compose) nếu bật cờ; nếu không, phát answer đã quyết
+        # nguyên khối (đúng, không cắt giả). engine_values rỗng -> không bị number-gate.
+        final = ""
+        if _settings.stream_compose_answer:
+            compose = [{"role": "system", "content": self._COMPOSE_SYSTEM}, *messages[2:]]
+            parts: list[str] = []
+            try:
+                async for ev in llm.chat_stream(
+                        compose, context=engine_values, db=self.db,
+                        allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.2):
+                    if ev["type"] == "delta":
+                        parts.append(ev["text"])
+                        yield {"type": "answer", "delta": ev["text"]}
+                    elif ev["type"] == "done" and getattr(
+                            ev.get("decision"), "backend", "local") == "cloud":
+                        self._routed_cloud = True
+                final = "".join(parts).strip()
+            except Exception:
+                final = ""
+        if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
+            final = answer
+            yield {"type": "answer", "delta": final}
+        await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
-        for ch in self._chunk_text(safe):
-            yield {"type": "answer", "delta": ch}
-        yield {"type": "done", "grounded": grounded, "unmatched": unmatched, "citations": citations,
-               "routed_cloud": getattr(self, "_routed_cloud", False), "session_id": str(self.session_id)}
+        yield {"type": "done", "grounded": bool(citations), "unmatched": [],
+               "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
+               "session_id": str(self.session_id)}
 
     async def _stream_clarify(self, question: str, citations: list):
         await self._safe_recall_add("assistant", question)
         await self._close_run(self._terminal_status())
-        for ch in self._chunk_text(question):
-            yield {"type": "answer", "delta": ch}
+        yield {"type": "answer", "delta": question}
         yield {"type": "done", "grounded": True, "clarify": True, "citations": citations,
                "routed_cloud": getattr(self, "_routed_cloud", False), "session_id": str(self.session_id)}
 
     async def step_stream(self, user_message: str):
         """STREAMING của step() — async generator yield event dict cho SSE. Tái dùng
         _prepare_turn + budget + AgentRun lifecycle. Bước DECIDE không stream (JSON strict);
-        chỉ câu trả lời cuối stream (chunk chuỗi)."""
+        câu trả lời cuối: token THẬT từ model (lượt tri thức) hoặc nguyên khối đã verify-gate
+        (lượt tài chính) — xem _stream_answer (W1.4)."""
         tracker = _BudgetTracker(self.budget)
         self._routed_cloud = False
         self._created_draft = False
+        self._tokens_used = 0
         self.agent_run_id = uuid.uuid4()
         await self._open_run()
         yield {"type": "id", "conversation_id": str(self.session_id),
@@ -517,6 +655,7 @@ class AgentSession:
                         yield ev
                     return
                 tracker.tokens += used
+                self._tokens_used += used
                 tracker.steps += 1
                 yield {"type": "step", "action": decision.action, "step_n": tracker.steps}
 
@@ -526,7 +665,8 @@ class AgentSession:
                         yield ev
                     return
                 if decision.action == "answer":
-                    async for ev in self._stream_answer(decision.answer or "", engine_values, citations):
+                    async for ev in self._stream_answer(
+                            decision.answer or "", messages, engine_values, citations):
                         yield ev
                     return
                 if not decision.tool:

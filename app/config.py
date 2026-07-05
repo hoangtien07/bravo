@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
     rerank_enabled: bool = False
     rerank_provider: str = "viranker"
+    # Structured output cho bước decide của agent (W1.3): json_object (cloud) / guided_json
+    # (vLLM). Tắt -> chỉ dựa prompt + parser fallback. Bật mặc định (giảm output hỏng).
+    structured_output: bool = True
+    # W1.4: lượt tri thức -> COMPOSE câu trả lời bằng chat_stream (token THẬT chảy ra SSE).
+    # Đây là LỜI GỌI LLM THỨ HAI (tái sinh câu trả lời) nên OFF mặc định (không double-cost,
+    # test/eval ổn định); demo bật STREAM_COMPOSE_ANSWER=true để có streaming token thật. Khi
+    # OFF: phát answer đã quyết ở bước decide dưới dạng một delta (đúng, không cắt giả).
+    stream_compose_answer: bool = False
     # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).
@@ -62,6 +70,9 @@ class Settings(BaseSettings):
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"
+
+    # MCP server scoped-by-token tại /mcp (W1.5). Tắt nếu không muốn expose.
+    mcp_enabled: bool = True
 
     # CORS: origin được phép gọi API từ trình duyệt khác origin. RỖNG ở prod (SPA serve
     # same-origin từ FastAPI -> không cần CORS). Dev Vite (:5173) proxy /api hoặc gọi thẳng

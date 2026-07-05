@@ -29,6 +29,17 @@ logging.basicConfig(level=getattr(logging, settings.log_level.upper(), logging.I
 _log = logging.getLogger("bravo")
 
 
+# MCP server (scoped-by-token) — build một lần để mount + chạy lifespan (W1.5). Lỗi import
+# (chưa cài `mcp`) -> None, app vẫn boot bình thường (fail-safe).
+_mcp_app = None
+if settings.mcp_enabled:
+    try:
+        from app.mcp.server import create_mcp_server
+        _mcp_app = create_mcp_server().streamable_http_app()
+    except Exception as _exc:  # noqa: BLE001
+        logging.getLogger("bravo").warning("MCP không mount được: %s", _exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: boot-guard (fail-closed nếu prod còn secret mặc định) + nạp metric catalog.
@@ -40,8 +51,28 @@ async def lifespan(app: FastAPI):
     # Import data_layer kích hoạt register_catalog() (side-effect) -> REGISTRY đầy đủ lúc runtime.
     from app.data_layer.semantic import REGISTRY
 
-    _log.info("BRAVO startup: env=%s · metric catalog=%d metric", settings.env, len(REGISTRY.ids()))
-    yield
+    _log.info("BRAVO startup: env=%s · metric catalog=%d metric · mcp=%s",
+              settings.env, len(REGISTRY.ids()), "on" if _mcp_app else "off")
+    # MCP streamable-HTTP cần chạy session-manager task-group qua lifespan của chính nó. Vào/ra
+    # THỦ CÔNG + try/except: session-manager chỉ cho run() 1 lần/instance -> prod (1 vòng đời)
+    # chạy bình thường; test mở nhiều TestClient lifecycle thì vòng sau bỏ qua an toàn (test
+    # không gọi /mcp). Lỗi khởi động MCP không được làm sập app.
+    _mcp_cm = None
+    if _mcp_app is not None:
+        try:
+            _mcp_cm = _mcp_app.router.lifespan_context(_mcp_app)
+            await _mcp_cm.__aenter__()
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("MCP lifespan không khởi động (bỏ qua): %s", exc)
+            _mcp_cm = None
+    try:
+        yield
+    finally:
+        if _mcp_cm is not None:
+            try:
+                await _mcp_cm.__aexit__(None, None, None)
+            except Exception:  # noqa: BLE001
+                pass
     # Shutdown
 
 
@@ -53,6 +84,11 @@ app = FastAPI(
 )
 
 app.include_router(api_router, prefix="/api")
+
+# MCP scoped-by-token tại /mcp (streamable-HTTP). Claude Desktop/Code kết nối bằng bearer =
+# MCP token (HMAC-hash -> Identity), mọi tool chạy qua RLS. Mount sau khi app tạo (W1.5).
+if _mcp_app is not None:
+    app.mount("/mcp", _mcp_app)
 
 # CORS: chỉ bật khi có origin cấu hình (dev Vite :5173). Prod để rỗng -> middleware không
 # thêm header cross-origin (SPA same-origin, không cần).

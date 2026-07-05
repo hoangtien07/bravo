@@ -38,6 +38,18 @@ dependencies = [
     # Worker (tùy chọn; ingest hiện chạy đồng bộ, có thể bỏ nếu không dùng arq)
     "arq>=0.26",
     "redis>=5.0",
+    # MCP server (scoped-by-token) — mount /mcp cho Claude Desktop/Code (W1.5). Pure-python.
+    "mcp>=1.2",
+    # Observability (W2.2): metrics Prometheus + tracing OTel (self-host, air-gap-friendly).
+    "prometheus-fastapi-instrumentator>=7.0",
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-instrumentation-fastapi>=0.48b0",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
+    # Rate-limit per-user (W2.3)
+    "slowapi>=0.1.9",
+    # OIDC SSO (W2.1) — Authorization Code + PKCE; LDAP/AD federate qua Keycloak (không tự bind).
+    "authlib>=1.3",
+    "itsdangerous>=2.1",                 # SessionMiddleware cho OIDC state/nonce
 ]
 
 [project.optional-dependencies]

@@ -29,6 +29,9 @@ class Tool:
     read_only: bool = True             # đọc = auto-run; ghi = False -> draft
     requires_approval: bool = False    # ghi -> True (HITL, ADR + VISION §2)
     required_permission: str | None = None  # vd "metric:read"; None = ai cũng gọi được
+    # Tool GHI: chuyển+VALIDATE args -> payload draft (vd Number-Integrity Gate Nợ=Có). Raise
+    # -> call_tool trả isError (không tạo draft hỏng). None -> payload = args nguyên (W1.9).
+    payload_builder: Callable[[dict], dict] | None = None
 
     def __post_init__(self) -> None:
         # Write tools must go through approval — keep the two flags consistent so a
@@ -41,12 +44,13 @@ REGISTRY: dict[str, Tool] = {}
 
 
 def register(name: str, *, json_schema: dict | None = None, read_only: bool = True,
-             requires_approval: bool = False, required_permission: str | None = None):
+             requires_approval: bool = False, required_permission: str | None = None,
+             payload_builder: Callable[[dict], dict] | None = None):
     def deco(fn: Callable) -> Callable:
         REGISTRY[name] = Tool(
             name=name, fn=fn, json_schema=json_schema or {},
             read_only=read_only, requires_approval=requires_approval,
-            required_permission=required_permission,
+            required_permission=required_permission, payload_builder=payload_builder,
         )
         return fn
     return deco
@@ -109,10 +113,20 @@ async def call_tool(name: str, args: dict, identity: Identity, *, db=None,
     if not tool.read_only:
         if db is None:
             return {"isError": True, "error": "Tool ghi cần db để tạo draft (không tự thực thi)."}
+        # Build+VALIDATE payload (W1.9): vd journal_entry qua Number-Integrity Gate (Nợ=Có).
+        # Đề xuất lệch/bịa số bị chặn Ở ĐÂY -> isError, KHÔNG tạo draft hỏng (invariant #3/#14).
+        payload = args
+        if tool.payload_builder is not None:
+            try:
+                payload = tool.payload_builder(args)
+            except Exception as e:
+                await _audit_attempt(db, agent_run_id, identity, name, args, "failed", str(e))
+                return {"isError": True,
+                        "error": f"Bút toán đề xuất không hợp lệ (không tạo nháp): {e}"}
         from app.erp import draft_queue
         try:
             draft = await draft_queue.create_draft(
-                db, identity, kind=name, payload=args, agent_run_id=agent_run_id)
+                db, identity, kind=name, payload=payload, agent_run_id=agent_run_id)
         except TypeError:
             # Stub/real create_draft signature drift (WP-E): fall back without agent_run_id.
             draft = await draft_queue.create_draft(db, identity, kind=name, payload=args)

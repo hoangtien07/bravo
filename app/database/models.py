@@ -147,6 +147,9 @@ class AgentRun(Base):
     employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     status: Mapped[str] = mapped_column(String(40), default="running")  # running|paused_for_approval|done|failed
     checkpoint_state: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # Token usage THẬT của lượt (W1.2) — nền cho cost-tracking (W2.4). 0 nếu backend không trả
+    # usage. routed_cloud/backend nằm trong checkpoint_state.
+    tokens_used: Mapped[int] = mapped_column(Integer, default=0)
     idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

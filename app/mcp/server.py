@@ -7,7 +7,7 @@ returns data its owner may see. Out-of-scope is hinted by count only (SECURITY-R
 NOTE: FastMCP's auth/context API is version-sensitive — `_token_from_context` is the
 single integration point to verify against the pinned `mcp` package.
 """
-from __future__ import annotations
+from mcp.server.fastmcp import Context, FastMCP
 
 from app.database import async_session_factory
 from app.rag import retriever
@@ -29,16 +29,25 @@ async def kb_search(token: str, query: str, top_n: int = 8) -> str:
 
 def create_mcp_server():
     """Build the FastMCP server exposing scoped KB tools."""
-    from mcp.server.fastmcp import Context, FastMCP  # lazy import
-
     mcp = FastMCP("bravo")
 
     def _token_from_context(ctx: Context) -> str | None:
-        # TODO(verify): extract Authorization bearer from the MCP request context.
+        """Trích bearer token từ MCP request context (streamable-HTTP).
+
+        FastMCP đặt request ASGI tại ctx.request_context.request; header là Starlette Headers
+        (case-insensitive). Nhiều lớp getattr để bền với thay đổi phiên bản `mcp` (đã pin >=1.2).
+        """
         req = getattr(ctx, "request_context", None)
-        headers = getattr(getattr(req, "request", None), "headers", {}) or {}
-        auth = headers.get("authorization") or headers.get("Authorization") or ""
-        return auth.removeprefix("Bearer ").strip() or None
+        request = getattr(req, "request", None)
+        headers = getattr(request, "headers", None)
+        auth = ""
+        if headers is not None:
+            # Starlette Headers hỗ trợ .get() case-insensitive; fallback dict.
+            try:
+                auth = headers.get("authorization") or ""
+            except Exception:
+                auth = ""
+        return auth.removeprefix("Bearer ").removeprefix("bearer ").strip() or None
 
     @mcp.tool()
     async def search_kb(query: str, ctx: Context) -> str:

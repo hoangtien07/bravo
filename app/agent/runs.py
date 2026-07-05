@@ -24,7 +24,7 @@ async def start_run(db: AsyncSession, *, run_id: uuid.UUID, session_id: uuid.UUI
 
 
 async def finish_run(db: AsyncSession, run_id: uuid.UUID, *, status: str,
-                     checkpoint_state: dict | None = None) -> None:
+                     checkpoint_state: dict | None = None, tokens_used: int | None = None) -> None:
     from app.database.models import AgentRun
 
     run = await db.get(AgentRun, run_id)
@@ -33,6 +33,8 @@ async def finish_run(db: AsyncSession, run_id: uuid.UUID, *, status: str,
     run.status = status
     if checkpoint_state is not None:
         run.checkpoint_state = checkpoint_state
+    if tokens_used is not None:
+        run.tokens_used = int(tokens_used)
     await db.commit()
 
 
