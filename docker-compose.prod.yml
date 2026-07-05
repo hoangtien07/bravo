@@ -12,8 +12,19 @@ services:
     ports: []          # reached only by Caddy via the compose network (api:8000)
     environment:
       ENV: production
+    # File system (xử lý dữ liệu file):
+    #  - file_system/ = CORPUS gốc (read-only). gitignore + không nằm trong image -> BẮT BUỘC
+    #    bind-mount để container đọc được lúc ingest và mở file gốc (routes_sources).
+    #  - data/uploads = tài liệu/hoá đơn người dùng UPLOAD lúc chạy (mutable) -> named volume
+    #    để KHÔNG mất khi tạo lại container; nằm trong phạm vi backup (scripts/backup.sh).
+    volumes:
+      - ./file_system:/app/file_system:ro
+      - uploads:/app/data/uploads
     restart: unless-stopped
   worker:
+    volumes:
+      - ./file_system:/app/file_system:ro
+      - uploads:/app/data/uploads
     restart: unless-stopped
 
   caddy:
@@ -29,3 +40,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  uploads:          # tài liệu upload lúc chạy (bền qua tạo-lại container; được backup)

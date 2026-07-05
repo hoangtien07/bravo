@@ -15,10 +15,19 @@ CONN="$(printf '%s' "$DBURL" | sed 's#+asyncpg##')"
 echo "[backup] pg_dump -> $DEST/db_$TS.dump"
 pg_dump -Fc "$CONN" -f "$DEST/db_$TS.dump"
 
-# Tài liệu upload + file gốc (không nằm trong DB).
+# Tài liệu upload (mutable, KHÔNG nằm trong DB). Hai trường hợp:
+#  - Dev/bind-mount: thư mục host data/uploads tồn tại -> tar thẳng.
+#  - Prod/named-volume 'uploads' (docker-compose.prod.yml): tar nội dung volume qua busybox.
+UPLOAD_VOL="${UPLOAD_VOLUME:-bravo_uploads}"   # đổi nếu tên project compose khác
 if [ -d data/uploads ]; then
-  echo "[backup] tar data/uploads -> $DEST/uploads_$TS.tgz"
+  echo "[backup] tar data/uploads (host) -> $DEST/uploads_$TS.tgz"
   tar czf "$DEST/uploads_$TS.tgz" data/uploads
+elif command -v docker >/dev/null && docker volume inspect "$UPLOAD_VOL" >/dev/null 2>&1; then
+  echo "[backup] tar docker volume $UPLOAD_VOL -> $DEST/uploads_$TS.tgz"
+  docker run --rm -v "$UPLOAD_VOL":/vol -v "$(cd "$DEST" && pwd)":/out busybox \
+    tar czf "/out/uploads_$TS.tgz" -C /vol .
+else
+  echo "[backup] (bỏ qua uploads: không thấy host dir lẫn volume $UPLOAD_VOL)"
 fi
 
 # Giữ 14 bản gần nhất (retention).
