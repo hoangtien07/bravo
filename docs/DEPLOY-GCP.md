@@ -76,20 +76,24 @@ bravo có **ba loại dữ liệu file**, xử lý KHÁC nhau. Hiểu đúng ch�
 
 | Loại | Đường dẫn | Tính chất | Có trong image? | Persistence | Backup |
 |------|-----------|-----------|:---:|-------------|:---:|
-| **Corpus gốc** | `file_system/` | Đọc-only, tài liệu BRAVO 10 (118MB), **gitignored** | ❌ | Bind-mount `:ro` từ host | Không cần (scp lại được) |
+| **Corpus gốc** | `file_system/` | Đọc-only, tài liệu BRAVO 10 (118MB), **đã version trong git** | ❌ (bind-mount) | Bind-mount `:ro` từ host | Không cần (git pull lại được) |
 | **Tài liệu upload** | `data/uploads/` (trong container `/app/data/uploads`) | Mutable, người dùng upload runtime | ❌ | **Named volume `uploads`** | ✅ BẮT BUỘC |
 | **CSDL** | Postgres volume `pgdata` | Nháp/audit/hội thoại/chunk/vector | — | Named volume `pgdata` | ✅ BẮT BUỘC |
 
 ### 3.1 Corpus `file_system/` — bind-mount read-only
 
-Corpus **bị gitignore** (không nằm trong git, không nằm trong Docker image). Vì vậy trên VM phải
-**copy lên** rồi **bind-mount** vào container (đã cấu hình sẵn trong `docker-compose.prod.yml`:
+Corpus **đã được version trong git** (bỏ gitignore) nên `git clone`/`git pull` trên VM là **có
+sẵn corpus** — không phải scp 118MB. Nó **không** nằm trong Docker image (Dockerfile không COPY),
+nên vẫn phải **bind-mount** vào container (đã cấu hình trong `docker-compose.prod.yml`:
 `./file_system:/app/file_system:ro`).
 
 ```bash
-# Từ MÁY BẠN (có file_system/): copy 118MB lên VM
-gcloud compute scp --recurse ./file_system bravo:~/bravo/file_system --zone=$ZONE
+# Trên VM: corpus có sẵn ngay sau git clone/pull. (Trước đây phải scp — nay không cần.)
+cd ~/bravo && git pull
 ```
+
+> Nếu corpus phình lớn (>vài trăm MB) hoặc thêm nhiều PDF nặng, chuyển sang **Git LFS** hoặc
+> **GCS** — xem [DOCUMENT-MANAGEMENT.md](DOCUMENT-MANAGEMENT.md).
 
 Vì sao read-only: corpus là nguồn tri thức bất biến; container chỉ **đọc** để (a) ingest lúc bootstrap,
 (b) mở file gốc khi bấm trích dẫn (`routes_sources.py::source_file` tìm trong `file_system/`).
