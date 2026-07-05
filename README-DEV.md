@@ -8,7 +8,10 @@ cp .env.example .env            # bật preset DEMO CLOUD-ONLY (OpenAI) hoặc L
 docker compose up postgres redis -d
 pip install -e ".[dev]"         # core = cloud-only nhẹ; `.[local]` = bge-m3/Docling (cần GPU/bake)
 alembic upgrade head
-python scripts/seed_demo.py     # 5 user demo (mật khẩu demo123)
+python -m scripts.seed_demo      # 5 tài khoản demo (mật khẩu demo123) + token MCP demo
+python -m scripts.seed_content   # 4 bút toán nháp mẫu (màn hình không rỗng khi test)
+# Tài khoản: giamdoc(admin) · ketoan(maker) · ketoantruong(checker+MCP) · kinhdoanh · nhansu(HR)
+# Luồng admin BE+FE + checklist test nội bộ: docs/ADMIN-FLOW-PLAN.md
 
 # Frontend React (Vite). Build 1 lần -> uvicorn serve dist ở /static + SPA-fallback:
 cd frontend-react && npm install && npm run build && cd ..
