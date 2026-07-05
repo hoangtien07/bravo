@@ -14,7 +14,6 @@ is an optional extra step run with a LOCAL judge (app.eval.faithfulness).
 from __future__ import annotations
 
 import sys
-import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

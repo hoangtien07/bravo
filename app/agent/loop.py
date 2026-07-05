@@ -28,7 +28,6 @@ import json
 import time
 import uuid
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -46,9 +45,6 @@ from app.security.rls import Identity, frame_untrusted
 _settings = get_settings()
 
 # Pydantic AI as a pure structured-output validator (no model ownership).
-from pydantic_ai import Agent
-from pydantic_ai.models.function import FunctionModel
-from pydantic_ai.messages import ModelResponse, TextPart
 
 
 # --------------------------------------------------------------------------------------

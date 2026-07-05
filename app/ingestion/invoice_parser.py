@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
 try:  # XXE-safe cho XML không tin cậy

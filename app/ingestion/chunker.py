@@ -53,13 +53,15 @@ def _split_long(text: str) -> list[str]:
         t = _ntok(sent)
         if t > MAX_TOKENS:  # a single huge sentence -> token-window split
             if buf:
-                pieces.append(" ".join(buf)); buf, count = [], 0
+                pieces.append(" ".join(buf))
+                buf, count = [], 0
             pieces.extend(_hard_split(sent, MAX_TOKENS))
             continue
         if count + t > MAX_TOKENS and buf:
             pieces.append(" ".join(buf))
             buf, count = _tail_overlap(buf)   # mang đuôi sang -> overlap giữa các chunk
-        buf.append(sent); count += t
+        buf.append(sent)
+        count += t
     if buf:
         pieces.append(" ".join(buf))
     return pieces

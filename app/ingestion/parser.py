@@ -20,6 +20,7 @@ is guarded with getattr so it degrades gracefully; verify against the pinned ver
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -61,10 +62,8 @@ def detect_kind(path: str | Path) -> Kind:
 # A "tabular" line: >=3 runs of digits separated by >=2 spaces (column gutters) — the
 # signature of an accounting table laid out in a digital PDF. Tuned to avoid matching
 # prose (which has at most 1-2 such runs) and page footers.
-import re as _re
-
-_NUMCOL = _re.compile(r"\d[\d.,]*")
-_GUTTER = _re.compile(r"\S {2,}\S")
+_NUMCOL = re.compile(r"\d[\d.,]*")
+_GUTTER = re.compile(r"\S {2,}\S")
 
 
 def _line_is_tabular(line: str) -> bool:

@@ -20,15 +20,15 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field, model_validator
 
-# TT219/2013 Đ.15: hoá đơn mua vào từng lần ≥ 20 triệu phải có chứng từ thanh toán KHÔNG dùng
-# tiền mặt mới được khấu trừ VAT đầu vào. Lằn ranh này kiểm được; phương thức thanh toán thật
-# KHÔNG suy ra được từ hoá đơn -> cờ chờ kế toán (non-invasive).
-VAT_NONCASH_THRESHOLD = Decimal("20000000")
-
 from app.accounting.account_mapper import map_invoice
 from app.accounting.coa import CoaCatalog, load_coa
 from app.data_layer import money
 from app.ingestion.invoice_parser import Invoice, validate_invoice
+
+# TT219/2013 Đ.15: hoá đơn mua vào từng lần ≥ 20 triệu phải có chứng từ thanh toán KHÔNG dùng
+# tiền mặt mới được khấu trừ VAT đầu vào. Lằn ranh này kiểm được; phương thức thanh toán thật
+# KHÔNG suy ra được từ hoá đơn -> cờ chờ kế toán (non-invasive).
+VAT_NONCASH_THRESHOLD = Decimal("20000000")
 
 
 class JournalLine(BaseModel):

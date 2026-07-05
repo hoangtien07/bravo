@@ -69,8 +69,23 @@ alembic upgrade head
 
 ## Test & CI
 ```bash
-pytest -q                                   # ~140 test (DB-integration skip nếu Postgres tắt)
+# 1) Cài dev deps vào venv (pytest/ruff/mypy). Với uv:
+VIRTUAL_ENV=.venv uv pip install pytest pytest-asyncio ruff mypy   # hoặc: pip install -e ".[dev]"
+
+# 2) Postgres phải chạy + đã migrate. Khi chạy pytest TRỰC TIẾP (không trong container),
+#    DATABASE_URL phải trỏ 'localhost' (host 'postgres'/'redis' chỉ resolve trong docker network).
+docker compose up postgres redis -d
+export DATABASE_URL="postgresql+asyncpg://bravo:bravo@localhost:5432/bravo"
+alembic upgrade head
+
+# 3) Chạy suite — kỳ vọng: 157 passed, 5 skipped (ragas/docling importorskip cho tới khi cài .[local]/ragas)
+pytest -q
 python -m app.eval.run --passk --mock --k=8 # eval HARD-FAIL gate (deterministic)
 cd frontend-react && npm run build          # tsc + vite (typecheck FE)
 ```
-CI: `.github/workflows/ci.yml` (ruff + pytest + eval gate).
+> ⚠️ Nếu KHÔNG export `DATABASE_URL=...localhost...`, 7 test DB-integration sẽ **FAIL** (không phải skip):
+> probe `_db_available()` dò `localhost` (docker map port → thấy mở) nhưng engine đọc `get_settings().database_url`
+> = host `postgres` từ `.env` → lỗi name-resolution. Đây là ranh giới dev-env, không phải bug code.
+>
+> CI: `.github/workflows/ci.yml` (ruff **blocking** + pytest với **Postgres service** + eval gate). Trong CI
+> `DATABASE_URL` trỏ service `postgres` và `alembic upgrade head` chạy trước pytest → test DB-integration CHẠY thật.
