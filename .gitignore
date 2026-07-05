@@ -29,8 +29,10 @@ models/
 *.gguf
 *.faiss
 storage/
-# Enterprise corpus for Demo A (PDF/DOCX ~129MB) — ship out-of-band, ingest locally
-file_system/
+# Corpus BRAVO 10 (file_system/, ~118MB PDF) ĐƯỢC version để deploy khỏi phải scp lại lên VM
+# (git pull là có corpus). PDF ≤19MB/file — trong hạn GitHub. Nếu corpus phình lớn về sau, chuyển
+# sang Git LFS hoặc GCS (xem docs/DOCUMENT-MANAGEMENT.md). KHÔNG version tài liệu upload runtime
+# (data/uploads đã bị ignore ở trên — đó là dữ liệu người dùng, không thuộc source).
 
 # OS / editor
 .DS_Store
