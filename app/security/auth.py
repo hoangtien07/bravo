@@ -75,6 +75,13 @@ def require_permission(permission: str):
     return _dep
 
 
+async def require_admin(identity: Identity = Depends(get_current_identity)) -> Identity:
+    """Chỉ admin (quản trị user/phòng ban). Khác require_permission: is_admin cứng."""
+    if not identity.is_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Chỉ quản trị viên")
+    return identity
+
+
 async def resolve_mcp_identity(token: str, db: AsyncSession) -> Identity | None:
     """Resolve an MCP bearer token (plaintext) to an Identity via its stored hash."""
     digest = hash_token(token)

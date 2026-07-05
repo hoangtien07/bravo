@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, FileCheck2, FileText, MessageSquarePlus, Receipt, Share2, Trash2 } from "lucide-react";
+import { AlertTriangle, FileCheck2, FileText, Inbox, MessageSquarePlus, Receipt, Share2, Shield, Trash2, Upload } from "lucide-react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -41,6 +41,12 @@ export function ConversationSidebar() {
         <Link to="/money-engine" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
           <Receipt className="h-4 w-4" /> Hoá đơn → bút toán
         </Link>
+        <Link to="/drafts" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
+          <Inbox className="h-4 w-4" /> Hàng đợi duyệt
+        </Link>
+        <Link to="/documents" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
+          <Upload className="h-4 w-4" /> Tài liệu tri thức
+        </Link>
         <Link to="/graph" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
           <Share2 className="h-4 w-4" /> Bản đồ tri thức
         </Link>
@@ -50,6 +56,11 @@ export function ConversationSidebar() {
         <Link to="/tax" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
           <FileCheck2 className="h-4 w-4" /> Trợ lý thuế
         </Link>
+        {identity?.is_admin && (
+          <Link to="/admin" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
+            <Shield className="h-4 w-4" /> Quản trị
+          </Link>
+        )}
       </nav>
       <div className="px-3 py-1 text-xs font-medium text-muted-foreground">Lịch sử</div>
       <div className="flex-1 overflow-y-auto px-2 space-y-0.5">

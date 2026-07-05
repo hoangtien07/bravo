@@ -8,6 +8,9 @@ import { MoneyEnginePage } from "@/features/money/MoneyEnginePage";
 import { GraphView } from "@/features/graph/GraphView";
 import { AnomalyPage } from "@/features/anomaly/AnomalyPage";
 import { TaxPage } from "@/features/tax/TaxPage";
+import { DraftsQueuePage } from "@/features/drafts/DraftsQueuePage";
+import { DocumentsPage } from "@/features/documents/DocumentsPage";
+import { AdminPage } from "@/features/admin/AdminPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SharedPage } from "@/features/shared/SharedPage";
 
@@ -34,6 +37,9 @@ export default function App() {
         <Route path="/" element={<ChatView />} />
         <Route path="/c/:id" element={<ChatView />} />
         <Route path="/money-engine" element={<MoneyEnginePage />} />
+        <Route path="/drafts" element={<DraftsQueuePage />} />
+        <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/graph" element={<GraphView />} />
         <Route path="/anomaly" element={<AnomalyPage />} />
         <Route path="/tax" element={<TaxPage />} />

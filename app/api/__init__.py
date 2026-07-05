@@ -4,6 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api import (
+    routes_admin,
     routes_agent,
     routes_agents,
     routes_ask,
@@ -17,6 +18,7 @@ from app.api import (
 
 router = APIRouter()
 router.include_router(routes_auth.router, tags=["auth"])
+router.include_router(routes_admin.router, tags=["admin"])
 router.include_router(routes_sources.router, tags=["knowledge"])
 router.include_router(routes_graph.router, tags=["knowledge"])
 router.include_router(routes_agents.router, tags=["agents"])
