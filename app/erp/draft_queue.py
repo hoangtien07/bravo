@@ -114,7 +114,10 @@ async def approve_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUI
     draft.status = "approved"
     db.add(AuditLog(actor_id=identity.employee_id, action="draft.approve",
                     detail={"draft_id": str(draft_id)}))
-    # TODO(Phase 3): push approved draft to BRAVO ERP staging (ERP-INTEGRATION-REQUEST §3).
+    # Đầu ra của draft đã duyệt = XUẤT FILE để kế toán nhập tay (journal_export), KHÔNG ghi
+    # thẳng ERP. Đây là quyết định chốt của ADR-0016 (Accepted 2026-07-05): con người là cổng
+    # ghi cuối (non-invasive hơn) + bỏ phụ thuộc ERP API. Nối ERP staging là nâng cấp tùy chọn
+    # Phase sau, KHÔNG gating — không giữ TODO ở đây để tránh hiểu nhầm còn việc phải làm.
     await db.commit()
     # W2.3 "duyệt = thực thi": nếu draft thuộc một AgentRun chờ duyệt -> đánh dấu run done.
     if draft.agent_run_id is not None:

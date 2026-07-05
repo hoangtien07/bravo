@@ -63,6 +63,15 @@ class Settings(BaseSettings):
     # Worker
     redis_url: str = "redis://localhost:6379/0"
 
+    # CORS: origin được phép gọi API từ trình duyệt khác origin. RỖNG ở prod (SPA serve
+    # same-origin từ FastAPI -> không cần CORS). Dev Vite (:5173) proxy /api hoặc gọi thẳng
+    # -> đặt "http://localhost:5173". Danh sách phân tách bằng dấu phẩy.
+    cors_allow_origins: str = ""
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_allow_origins.split(",") if o.strip()]
+
     def validate_boot(self) -> None:
         """Fail-closed boot guard (DEPLOY-DEMO.md hứa điều này). Ở staging/production:
         chặn khởi động nếu secret còn mặc định/quá ngắn, hoặc bật cloud mà thiếu key.

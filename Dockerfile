@@ -2,7 +2,8 @@
 # On-prem target: build once, run air-gapped. Models (Qwen/bge-m3) served separately.
 
 # --- Frontend build stage: biên dịch React SPA (frontend-react/dist) -------------------
-# Không có stage này thì runtime rơi về bản tĩnh cũ frontend/ (dist bị .gitignore).
+# dist bị .gitignore nên phải build trong image. Không build được -> app vẫn boot, chỉ
+# không phục vụ trang tĩnh (app/main.py guard _FRONTEND.exists()).
 FROM node:20-slim AS frontend-build
 WORKDIR /fe
 COPY frontend-react/package.json frontend-react/package-lock.json* ./
@@ -33,8 +34,7 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY scripts ./scripts
-COPY frontend ./frontend
-# React SPA đã build (ưu tiên hơn frontend/ — app/main.py:19-21)
+# React SPA đã build (frontend-react/dist)
 COPY --from=frontend-build /fe/dist ./frontend-react/dist
 
 EXPOSE 8000

@@ -8,17 +8,17 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import router as api_router
 from app.config import get_settings
 
-# Ưu tiên SPA React đã build (frontend-react/dist); fallback bản vanilla cũ (frontend/).
+# SPA React đã build. `if _FRONTEND.exists()` bên dưới cho phép app vẫn boot khi chưa
+# `npm run build` (dev/test/CI thuần backend) — chỉ không phục vụ trang tĩnh.
 _ROOT = Path(__file__).resolve().parent.parent
 _FRONTEND = _ROOT / "frontend-react" / "dist"
-if not _FRONTEND.exists():
-    _FRONTEND = _ROOT / "frontend"
 
 settings = get_settings()
 
@@ -53,6 +53,17 @@ app = FastAPI(
 )
 
 app.include_router(api_router, prefix="/api")
+
+# CORS: chỉ bật khi có origin cấu hình (dev Vite :5173). Prod để rỗng -> middleware không
+# thêm header cross-origin (SPA same-origin, không cần).
+if settings.cors_origin_list:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origin_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.middleware("http")
@@ -103,7 +114,8 @@ async def health() -> dict[str, str]:
 
 
 # Frontend SPA: assets dưới /static; deep-link (/c/:id, /money-engine, /shared/:token) ->
-# SPA-fallback trả index.html để react-router xử lý (không 404).
+# SPA-fallback trả index.html để react-router xử lý (không 404). Guard exists(): app boot
+# được ngay cả khi chưa build dist (dev backend / CI).
 if _FRONTEND.exists():
     app.mount("/static", StaticFiles(directory=str(_FRONTEND)), name="static")
 
