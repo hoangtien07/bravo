@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Check, FileCheck2, Info, ScanLine, X } from "lucide-react";
 import { api } from "@/api/client";
 import { Badge, Button, Card } from "@/components/ui";
+import { DemoBanner } from "@/components/DemoBanner";
 import { fmtMoney } from "@/lib/utils";
 import type { Draft } from "@/api/types";
 
@@ -58,6 +59,7 @@ export function TaxPage() {
       </header>
 
       <div className="mx-auto max-w-3xl p-4 space-y-3">
+        <DemoBanner note="Lớp 2 (đối chiếu hoá đơn ↔ tờ khai) chạy trên số mock; phần tra cứu luật (RAG) hoạt động trên tài liệu thật đã nạp." />
         <div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
           <Info className="h-4 w-4 shrink-0 mt-0.5" />
           <div>

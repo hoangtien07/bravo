@@ -3,9 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Button, Card, Input } from "@/components/ui";
 import { useAuth } from "@/store/auth";
 
+// Prefill CHỈ khi build demo bật cờ (VITE_DEMO_LOGIN=email:password). Bản production
+// build không có cờ này -> ô trống, bundle không chứa credential.
+const _demo = (import.meta.env.VITE_DEMO_LOGIN ?? "").split(":");
+const DEMO_EMAIL = _demo[0] ?? "";
+const DEMO_PW = _demo[1] ?? "";
+
 export function LoginPage() {
-  const [email, setEmail] = useState("ketoan@bravo.vn");
-  const [pw, setPw] = useState("demo123");
+  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [pw, setPw] = useState(DEMO_PW);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const { login } = useAuth();

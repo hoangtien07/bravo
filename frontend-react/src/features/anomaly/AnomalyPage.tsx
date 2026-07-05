@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, Check, ScanLine, X } from "lucide-react";
 import { api } from "@/api/client";
 import { Badge, Button, Card } from "@/components/ui";
+import { DemoBanner } from "@/components/DemoBanner";
 import { fmtMoney } from "@/lib/utils";
 import type { Draft } from "@/api/types";
 
@@ -62,6 +63,7 @@ export function AnomalyPage() {
       </header>
 
       <div className="mx-auto max-w-3xl p-4 space-y-3">
+        <DemoBanner />
         <p className="text-xs text-muted-foreground">
           Engine tất định soi bút toán/hoá đơn bất thường (trùng · số tròn lớn · ngoài giờ) →
           tạo <b>cờ đỏ chờ kế toán xác nhận</b>. AI chỉ nghi ngờ + dẫn bằng chứng, KHÔNG tự kết luận gian lận.
