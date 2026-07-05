@@ -1,0 +1,17 @@
+# Keycloak self-host cho SSO/OIDC (W2.1) — chồng lên docker-compose.yml. Air-gap được.
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.keycloak.yml up -d
+#
+# Keycloak federate LDAP/AD (User Federation trong admin console) -> app chỉ nói OIDC (Authlib),
+# KHÔNG tự bind LDAP. Sau khi lên:
+#   1) Tạo realm 'bravo'; 2) Client 'bravo' (confidential, redirect http://<app>/api/auth/oidc/callback);
+#   3) User Federation -> LDAP trỏ AD của khách; 4) Điền OIDC_* trong .env (xem docs/SSO-OIDC.md).
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev            # DEV: đổi sang 'start' + DB Postgres riêng khi production
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin      # ĐỔI trước khi dùng thật
+      KC_HTTP_PORT: "8080"
+    ports:
+      - "8080:8080"

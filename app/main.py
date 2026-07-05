@@ -101,6 +101,28 @@ if settings.cors_origin_list:
         allow_headers=["*"],
     )
 
+# Rate-limit (W2.3): gắn limiter + handler 429. Bật theo settings.rate_limit_per_minute.
+from app.ratelimit import limiter  # noqa: E402
+
+app.state.limiter = limiter
+if settings.rate_limit_per_minute > 0:
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
+    app.add_middleware(SlowAPIMiddleware)
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Session cho OIDC state/nonce (W2.1) — chỉ thêm khi bật OIDC.
+if settings.oidc_enabled:
+    from starlette.middleware.sessions import SessionMiddleware
+    app.add_middleware(SessionMiddleware, secret_key=settings.session_secret,
+                       same_site="lax", https_only=settings.env in ("staging", "production", "prod"))
+
+# Observability (W2.2): /metrics + OTel tracing (fail-safe, self-host).
+from app.observability import setup as _obs_setup  # noqa: E402
+
+_obs_setup(app)
+
 
 @app.middleware("http")
 async def request_logger(request: Request, call_next):

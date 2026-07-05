@@ -14,6 +14,7 @@ interface AdminUser {
   department_ids: string[];
 }
 interface Dept { id: string; name: string; sensitive: boolean; }
+interface UsageRow { employee_id: string; email: string | null; turns: number; tokens: number; est_cost: number; }
 
 // Quản trị tối thiểu (W1.8): tạo user + phòng ban + reset mật khẩu — không cần chạy script.
 export function AdminPage() {
@@ -22,6 +23,7 @@ export function AdminPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [depts, setDepts] = useState<Dept[]>([]);
   const [perms, setPerms] = useState<string[]>([]);
+  const [usage, setUsage] = useState<UsageRow[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
 
   // form tạo user
@@ -33,6 +35,7 @@ export function AdminPage() {
     api<AdminUser[]>("/api/admin/users").then(setUsers).catch((e) => setMsg(String(e)));
     api<Dept[]>("/api/admin/departments").then(setDepts).catch(() => {});
     api<string[]>("/api/admin/permissions").then(setPerms).catch(() => {});
+    api<UsageRow[]>("/api/admin/usage?days=7").then(setUsage).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -142,6 +145,31 @@ export function AdminPage() {
             <UserPlus className="h-4 w-4" /> Tạo
           </Button>
         </Card>
+
+        {/* Usage / chi phí (W2.4) — token THẬT 7 ngày */}
+        {usage.length > 0 && (
+          <Card className="p-0 overflow-hidden">
+            <div className="px-3 py-2 text-sm font-medium border-b border-border">Token & chi phí (7 ngày)</div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b border-border">
+                  <th className="px-3 py-2">Người dùng</th><th className="text-right">Lượt</th>
+                  <th className="text-right">Token</th><th className="text-right pr-3">Ước phí</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usage.map((u) => (
+                  <tr key={u.employee_id} className="border-b border-border">
+                    <td className="px-3 py-1.5">{u.email || u.employee_id.slice(0, 8)}</td>
+                    <td className="text-right tabular">{u.turns}</td>
+                    <td className="text-right tabular">{u.tokens.toLocaleString("vi-VN")}</td>
+                    <td className="text-right tabular pr-3">{u.est_cost.toLocaleString("vi-VN", { maximumFractionDigits: 4 })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
 
         {/* Danh sách user */}
         <Card className="p-0 overflow-hidden">

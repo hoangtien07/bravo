@@ -1,0 +1,18 @@
+# Observability self-host (W2.2) — chồng lên docker-compose.yml. Air-gap: kéo image 1 lần.
+#   docker compose -f docker-compose.yml -f deploy/docker-compose.observability.yml up -d
+#
+# grafana/otel-lgtm = 1 image gộp Prometheus + Tempo + Loki + Grafana (nhẹ cho L2, không cần
+# ClickHouse như Langfuse v3). Bravo phơi /metrics (Prometheus scrape) + đẩy OTLP trace.
+services:
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - "3000:3000"     # Grafana UI
+      - "4318:4318"     # OTLP/HTTP nhận trace
+    # Prometheus bên trong tự scrape; cấu hình scrape target 'api:8000/metrics' nếu cần.
+
+  api:
+    environment:
+      # Bật tracing: trỏ OTLP/HTTP tới collector nội bộ.
+      OTEL_EXPORTER_ENDPOINT: "http://otel-lgtm:4318/v1/traces"
+      METRICS_ENABLED: "true"

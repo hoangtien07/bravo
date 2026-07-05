@@ -10,7 +10,7 @@ import json
 import secrets
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import delete, select
@@ -20,6 +20,7 @@ from app.agent import conversations as conv_svc
 from app.agent.loop import AgentSession
 from app.database import get_db
 from app.database.models import Conversation, ConversationMessage, MemoryBlock
+from app.ratelimit import chat_limit, limiter
 from app.security.auth import get_current_identity, require_permission
 from app.security.rls import Identity, conversation_scope_filter
 
@@ -65,7 +66,8 @@ async def _messages(db: AsyncSession, conv_id: uuid.UUID) -> list[ConversationMe
 # Streaming chat turn (SSE).
 # --------------------------------------------------------------------------------------
 @router.post("/chat/{conversation_id}/messages")
-async def chat_stream(conversation_id: uuid.UUID, body: ChatIn,
+@limiter.limit(chat_limit)
+async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn,
                       identity: Identity = Depends(require_permission("doc:read")),
                       db: AsyncSession = Depends(get_db)):
     # Ownership: không được post vào session của người khác (chống forgery session_id).

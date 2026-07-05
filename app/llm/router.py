@@ -12,6 +12,7 @@ audited BEFORE the request opens.
 """
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
@@ -20,6 +21,10 @@ from openai import AsyncOpenAI
 from app.config import get_settings
 
 _settings = get_settings()
+
+# GPU on-prem chịu được ~1-2 stream đồng thời (W2.3). Semaphore chặn quá tải -> request thứ
+# N+1 CHỜ (không treo GPU). Áp cho cả chat lẫn chat_stream. max<=0 -> không giới hạn.
+_llm_sema = asyncio.Semaphore(max(1, _settings.llm_max_concurrency))
 
 # timeout/max_retries: một lời gọi đi lạc (vd fail-closed về local nhưng KHÔNG có LLM local)
 # phải FAIL NHANH + rõ, thay vì treo (mặc định client ~10 phút) khiến UI "không có response".
@@ -116,8 +121,10 @@ async def chat(messages: list[dict], *, context: list | None = None,
     if d.backend == "cloud":
         await _audit_egress(db, d, messages)  # fail-closed: audit trước, lỗi audit -> không egress
     kwargs.update(_structured_kwargs(d, json_schema))
-    resp = await client.chat.completions.create(model=d.model, messages=messages, **kwargs)
+    async with _llm_sema:
+        resp = await client.chat.completions.create(model=d.model, messages=messages, **kwargs)
     _apply_usage(d, getattr(resp, "usage", None))
+    _record_metrics(d)
     return resp.choices[0].message.content or "", d
 
 
@@ -137,20 +144,22 @@ async def chat_stream(messages: list[dict], *, context: list | None = None,
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
         await _audit_egress(db, d, messages)
-    stream = await client.chat.completions.create(
-        model=d.model, messages=messages, stream=True,
-        stream_options={"include_usage": True}, **kwargs)
-    parts: list[str] = []
-    async for chunk in stream:
-        if getattr(chunk, "usage", None):
-            _apply_usage(d, chunk.usage)
-        choices = getattr(chunk, "choices", None) or []
-        if not choices:
-            continue
-        delta = getattr(choices[0].delta, "content", None) if choices[0].delta else None
-        if delta:
-            parts.append(delta)
-            yield {"type": "delta", "text": delta}
+    async with _llm_sema:
+        stream = await client.chat.completions.create(
+            model=d.model, messages=messages, stream=True,
+            stream_options={"include_usage": True}, **kwargs)
+        parts: list[str] = []
+        async for chunk in stream:
+            if getattr(chunk, "usage", None):
+                _apply_usage(d, chunk.usage)
+            choices = getattr(chunk, "choices", None) or []
+            if not choices:
+                continue
+            delta = getattr(choices[0].delta, "content", None) if choices[0].delta else None
+            if delta:
+                parts.append(delta)
+                yield {"type": "delta", "text": delta}
+    _record_metrics(d)
     yield {"type": "done", "decision": d, "text": "".join(parts)}
 
 
@@ -161,3 +170,12 @@ def _apply_usage(d: RoutingDecision, usage) -> None:
     d.completion_tokens = int(getattr(usage, "completion_tokens", 0) or 0)
     d.total_tokens = int(getattr(usage, "total_tokens", 0)
                          or (d.prompt_tokens + d.completion_tokens))
+
+
+def _record_metrics(d: RoutingDecision) -> None:
+    """Ghi Prometheus counter (W2.2) — best-effort, không làm vỡ lời gọi."""
+    try:
+        from app.observability import record_llm
+        record_llm(d.backend, d.prompt_tokens, d.completion_tokens)
+    except Exception:
+        pass

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api, auth as tokenStore } from "@/api/client";
 import { Button, Card, Input } from "@/components/ui";
 import { useAuth } from "@/store/auth";
 
@@ -14,8 +15,22 @@ export function LoginPage() {
   const [pw, setPw] = useState(DEMO_PW);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
-  const { login } = useAuth();
+  const [oidc, setOidc] = useState(false);
+  const { login, loadMe } = useAuth();
   const nav = useNavigate();
+
+  // OIDC callback redirect về /login#token=<jwt> -> lưu token + vào app (W2.1).
+  useEffect(() => {
+    const m = window.location.hash.match(/token=([^&]+)/);
+    if (m) {
+      tokenStore.set(decodeURIComponent(m[1]));
+      window.location.hash = "";
+      loadMe().then(() => nav("/"));
+      return;
+    }
+    api<{ oidc_enabled: boolean }>("/api/auth/config")
+      .then((c) => setOidc(c.oidc_enabled)).catch(() => {});
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +57,12 @@ export function LoginPage() {
           {err && <p className="text-sm text-destructive">{err}</p>}
           <Button type="submit" className="w-full" disabled={busy}>{busy ? "Đang đăng nhập…" : "Đăng nhập"}</Button>
         </form>
+        {oidc && (
+          <a href="/api/auth/oidc/login"
+             className="mt-3 block text-center rounded-md border border-border px-4 py-2 text-sm hover:bg-muted">
+            Đăng nhập bằng SSO (AD/LDAP)
+          </a>
+        )}
       </Card>
     </div>
   );

@@ -13,11 +13,13 @@ from app.api import (
     routes_drafts,
     routes_graph,
     routes_invoices,
+    routes_oidc,
     routes_sources,
 )
 
 router = APIRouter()
 router.include_router(routes_auth.router, tags=["auth"])
+router.include_router(routes_oidc.router, tags=["auth"])
 router.include_router(routes_admin.router, tags=["admin"])
 router.include_router(routes_sources.router, tags=["knowledge"])
 router.include_router(routes_graph.router, tags=["knowledge"])

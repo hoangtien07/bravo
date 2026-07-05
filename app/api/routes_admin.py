@@ -195,3 +195,51 @@ async def create_department(body: DeptIn, _: Identity = Depends(require_admin),
     await db.commit()
     await db.refresh(d)
     return DeptOut(id=d.id, name=d.name, sensitive=d.sensitive)
+
+
+# --------------------------------------------------------------------------------------
+# Usage / cost tracking (W2.4) — tổng hợp token THẬT từ AgentRun theo người dùng.
+# --------------------------------------------------------------------------------------
+class UsageRow(BaseModel):
+    employee_id: uuid.UUID
+    email: str | None = None
+    turns: int
+    tokens: int
+    est_cost: float
+
+
+@router.get("/admin/usage", response_model=list[UsageRow])
+async def usage(days: int = 7, _: Identity = Depends(require_admin),
+                db: AsyncSession = Depends(get_db)) -> list[UsageRow]:
+    """Token + ước phí theo người dùng trong N ngày gần nhất (AgentRun.tokens_used THẬT).
+
+    est_cost = tokens/1e6 × trung bình (prompt+completion rate) — ước lượng blended vì AgentRun
+    lưu tổng token, không tách. Đơn giá đặt ở settings.cost_per_1m_* (mặc định 0 -> chi phí 0).
+    """
+    from datetime import timedelta
+
+    from sqlalchemy import func
+
+    from app.config import get_settings
+    from app.database.models import AgentRun, Employee
+
+    s = get_settings()
+    blended = (s.cost_per_1m_prompt_tokens + s.cost_per_1m_completion_tokens) / 2.0
+    # func.now() - interval: dùng timedelta bind qua Python (đơn giản, không cần dialect interval).
+    since = func.now() - timedelta(days=max(1, days))
+    rows = (await db.execute(
+        select(AgentRun.employee_id,
+               func.count().label("turns"),
+               func.coalesce(func.sum(AgentRun.tokens_used), 0).label("tokens"))
+        .where(AgentRun.created_at >= since)
+        .group_by(AgentRun.employee_id)
+        .order_by(func.sum(AgentRun.tokens_used).desc().nullslast()))).all()
+    # nhãn email
+    emp_rows = (await db.execute(select(Employee.id, Employee.email))).all()
+    emails = {eid: em for eid, em in emp_rows}
+    out = []
+    for eid, turns, tokens in rows:
+        tok = int(tokens or 0)
+        out.append(UsageRow(employee_id=eid, email=emails.get(eid), turns=int(turns),
+                            tokens=tok, est_cost=round(tok / 1_000_000 * blended, 4)))
+    return out

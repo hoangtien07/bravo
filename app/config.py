@@ -74,6 +74,26 @@ class Settings(BaseSettings):
     # MCP server scoped-by-token tại /mcp (W1.5). Tắt nếu không muốn expose.
     mcp_enabled: bool = True
 
+    # --- Observability (W2.2) — self-host, air-gap ---
+    metrics_enabled: bool = True                 # phơi /metrics (Prometheus scrape)
+    otel_exporter_endpoint: str = ""             # OTLP/HTTP collector; rỗng = tắt tracing
+
+    # --- Rate-limit + GPU concurrency (W2.3) ---
+    rate_limit_per_minute: int = 30              # req/phút/người cho endpoint chat; 0 = tắt
+    llm_max_concurrency: int = 2                 # số lời gọi LLM đồng thời (GPU on-prem ~1-2)
+
+    # --- Cost tracking (W2.4) — ước phí từ token usage thật (đơn vị tuỳ chọn: USD/1M token) ---
+    cost_per_1m_prompt_tokens: float = 0.0
+    cost_per_1m_completion_tokens: float = 0.0
+
+    # --- OIDC SSO (W2.1) — bật khi có IdP (Keycloak self-host federate LDAP/AD) ---
+    oidc_enabled: bool = False
+    oidc_issuer: str = ""                        # vd http://keycloak:8080/realms/bravo
+    oidc_client_id: str = ""
+    oidc_client_secret: str = ""
+    oidc_redirect_uri: str = ""                  # vd https://app/api/auth/oidc/callback
+    session_secret: str = "change-me-session"    # SessionMiddleware (OIDC state/nonce)
+
     # CORS: origin được phép gọi API từ trình duyệt khác origin. RỖNG ở prod (SPA serve
     # same-origin từ FastAPI -> không cần CORS). Dev Vite (:5173) proxy /api hoặc gọi thẳng
     # -> đặt "http://localhost:5173". Danh sách phân tách bằng dấu phẩy.
@@ -101,6 +121,24 @@ class Settings(BaseSettings):
             raise RuntimeError(
                 "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
             )
+        # W2.6: tự-duyệt là lỗ hổng maker-checker ở prod -> cấm.
+        if self.allow_self_approval:
+            raise RuntimeError(
+                "[boot-guard] allow_self_approval=true KHÔNG được phép ở prod (maker-checker)."
+            )
+        # OIDC bật -> phải đủ cấu hình + session_secret mạnh (không mặc định).
+        if self.oidc_enabled:
+            if self.session_secret in weak or self.session_secret == "change-me-session" \
+                    or len(self.session_secret) < 16:
+                raise RuntimeError(
+                    "[boot-guard] oidc_enabled=true nhưng session_secret còn mặc định/quá ngắn."
+                )
+            if not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret
+                    and self.oidc_redirect_uri):
+                raise RuntimeError(
+                    "[boot-guard] oidc_enabled=true nhưng thiếu oidc_issuer/client_id/"
+                    "client_secret/redirect_uri."
+                )
 
 
 @lru_cache
