@@ -1,5 +1,11 @@
 version: TT200->TT99/2025
 effective_from: '2026-01-01'
+effective_to: null
+reviewed_by: null
+reviewed_at: null
+approved_for_prod: false
+legal_basis: Đối chiếu TT200/2014 -> TT99/2025 (chuyển đổi hệ thống TK)
+tier: STATUTORY
 source: file_system/Danh mục TK TT99.xlsx · sheet 'Sự khác biệt'
 note: Sinh tự động — needs_confirm=True (THEM/BO/KHAC) cần kế toán xác nhận.
 
@@ -15,7 +21,7 @@ entries:
   name_tt99: Tiền gửi không kỳ hạn
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '113'
   name_tt200: Tiền đang chuyển
   name_tt99: Tiền đang chuyển
@@ -31,9 +37,9 @@ entries:
 - code: '128'
   name_tt200: Đầu tư nắm giữ đến ngày đáo hạn
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Giữ nguyên
-  needs_confirm: false
+  needs_confirm: true
 - code: '1281'
   name_tt200: Tiền gửi có kỳ hạn
   name_tt99: Tiền gửi có kỳ hạn
@@ -177,7 +183,7 @@ entries:
   name_tt99: Sản phẩm
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '156'
   name_tt200: Hàng hóa
   name_tt99: Hàng hóa
@@ -195,7 +201,7 @@ entries:
   name_tt99: Nguyên liệu, vật tư tại kho bảo thuế
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '161'
   name_tt200: Chi sự nghiệp
   name_tt99: Không còn
@@ -289,15 +295,15 @@ entries:
 - code: '221'
   name_tt200: Đầu tư vào công ty con
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '222'
   name_tt200: Đầu tư vào công ty liên doanh, liên kết
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '228'
   name_tt200: Đầu tư khác
   name_tt99: Đầu tư khác
@@ -373,9 +379,9 @@ entries:
 - code: '2413'
   name_tt200: Chi phí sửa chữa lớn TSCĐ
   name_tt99: Sửa chữa, bảo dưỡng định kỳ TSCĐ
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Cập nhật tên 2413
-  needs_confirm: false
+  needs_confirm: true
 - code: '2414'
   name_tt200: —
   name_tt99: Nâng cấp, cải tạo TSCĐ
@@ -387,19 +393,19 @@ entries:
   name_tt99: Chi phí chờ phân bổ
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '243'
   name_tt200: Tài sản thuế TNDN hoãn lại
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '244'
   name_tt200: Cầm cố, thế chấp, ký quỹ, ký cược
   name_tt99: Ký quỹ, ký cược
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '331'
   name_tt200: Phải trả người bán
   name_tt99: Phải trả người bán
@@ -517,9 +523,9 @@ entries:
 - code: '337'
   name_tt200: Thanh toán theo tiến độ kế hoạch hợp đồng xây dựng
   name_tt99: Thanh toán theo tiến độ hợp đồng xây dựng
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Rút gọn tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '338'
   name_tt200: Phải trả, phải nộp khác
   name_tt99: Phải trả, phải nộp khác
@@ -567,7 +573,7 @@ entries:
   name_tt99: Doanh thu chờ phân bổ
   change: DOI_TEN
   note: Đổi tên TK 3387 thành “Doanh thu chờ phân bổ”
-  needs_confirm: false
+  needs_confirm: true
 - code: '3388'
   name_tt200: Phải trả, phải nộp khác
   name_tt99: Phải trả, phải nộp khác
@@ -577,9 +583,9 @@ entries:
 - code: '341'
   name_tt200: Vay & nợ thuê tài chính
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '3411'
   name_tt200: Các khoản đi vay
   name_tt99: Các khoản đi vay
@@ -667,9 +673,9 @@ entries:
 - code: '353'
   name_tt200: Quỹ khen thưởng phúc lợi
   name_tt99: Quỹ khen thưởng, phúc lợi
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '3531'
   name_tt200: Quỹ khen thưởng
   name_tt99: Quỹ khen thưởng
@@ -711,7 +717,7 @@ entries:
   name_tt99: Quỹ phát triển khoa học và công nghệ đã hình thành tài sản
   change: DOI_TEN
   note: Đổi tên
-  needs_confirm: false
+  needs_confirm: true
 - code: '357'
   name_tt200: Quỹ bình ổn giá
   name_tt99: Quỹ bình ổn giá
@@ -723,7 +729,7 @@ entries:
   name_tt99: Như TT200
   change: DOI_TEN
   note: Đổi tên TK 4112 thành “Thặng dư vốn”
-  needs_confirm: false
+  needs_confirm: true
 - code: '4111'
   name_tt200: Vốn góp của chủ sở hữu
   name_tt99: Vốn góp của chủ sở hữu
@@ -735,7 +741,7 @@ entries:
   name_tt99: Thặng dư vốn
   change: DOI_TEN
   note: Đổi tên TK 4112 thành “Thặng dư vốn”
-  needs_confirm: false
+  needs_confirm: true
 - code: '4113'
   name_tt200: Quyền chọn chuyển đổi trái phiếu
   name_tt99: Quyền chọn chuyển đổi trái phiếu
@@ -751,15 +757,15 @@ entries:
 - code: '412'
   name_tt200: Chênh lệch đánh giá lại tài sản
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '413'
   name_tt200: Chênh lệch tỷ giá hối đoái
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không liệt kê cấp 2
-  needs_confirm: false
+  needs_confirm: true
 - code: '414'
   name_tt200: Quỹ đầu tư phát triển
   name_tt99: Quỹ đầu tư phát triển
@@ -775,15 +781,15 @@ entries:
 - code: '418'
   name_tt200: Các quỹ khác thuộc vốn chủ sở hữu
   name_tt99: Như TT200
-  change: KHONG_DOI
+  change: DOI_TEN
   note: Không đổi
-  needs_confirm: false
+  needs_confirm: true
 - code: '419'
   name_tt200: Cổ phiếu quỹ
   name_tt99: Cổ phiếu mua lại của chính mình
   change: DOI_TEN
   note: Đổi tên TK
-  needs_confirm: false
+  needs_confirm: true
 - code: '4211'
   name_tt200: Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước
   name_tt99: Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối năm trước
@@ -801,7 +807,7 @@ entries:
   name_tt99: LN sau thuế chưa phân phối
   change: DOI_TEN
   note: Đổi tên TK cấp 2 – nhấn mạnh lũy kế
-  needs_confirm: false
+  needs_confirm: true
 - code: '441'
   name_tt200: Nguồn vốn đầu tư XDCB
   name_tt99: —
@@ -997,9 +1003,10 @@ entries:
 - code: '6415'
   name_tt200: Chi phí bảo hành sản phẩm, hàng hóa
   name_tt99: Thuế, phí, lệ phí
-  change: KHONG_DOI
-  note: Đổi TK 6415 thành “Thuế, phí, lệ phí”
-  needs_confirm: false
+  change: DOI_TEN
+  note: TT99 đổi nội dung TK 6415 (TT200 "Chi phí bảo hành" -> TT99 "Thuế, phí, lệ
+    phí") — kế toán XÁC NHẬN chuyển đổi
+  needs_confirm: true
 - code: '6417'
   name_tt200: Chi phí dịch vụ mua ngoài
   name_tt99: Chi phí dịch vụ mua ngoài

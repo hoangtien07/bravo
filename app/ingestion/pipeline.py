@@ -14,7 +14,7 @@ from app.database.models import Chunk, Department, Source, SourceDepartment
 from app.ingestion.chunker import chunk as chunk_blocks
 from app.ingestion.parser import detect_kind, parse
 from app.rag.embedding import embed
-from app.security.sensitivity import DEFAULT_SENSITIVE_KNOWLEDGE_TYPES
+from app.security.sensitivity import ingest_sensitive
 
 
 async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> int:
@@ -42,15 +42,19 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
         blocks = heading_chunk(blocks)  # section-level chunks (heading + start page)
     blocks = chunk_blocks(blocks)       # split over-long sections + drop tiny ones
 
-    # Egress-guard (invariant #4): nguồn thuộc phòng nhạy HOẶC loại tri thức nhạy -> KHÔNG
-    # cloud-embed (raise nếu provider cloud). Tài liệu nhạy (lương/kế toán/PII) phải local.
-    is_sensitive = (source.knowledge_type or "").strip().lower() in DEFAULT_SENSITIVE_KNOWLEDGE_TYPES
-    if dept_ids and not is_sensitive:
+    # Egress-guard (invariant #4, fail-closed): nguồn nhạy (loại tri thức/phòng ban nhạy) HOẶC
+    # 'không rõ scope' (global + không knowledge_type) -> embed LOCAL (raise nếu provider cloud).
+    # Quyết định tập trung ở sensitivity.ingest_sensitive (thuần, test được).
+    touches_sensitive_dept = False
+    if dept_ids:
         n_sensitive = (await db.execute(
             select(func.count()).select_from(Department)
             .where(Department.id.in_(dept_ids), Department.sensitive.is_(True))
         )).scalar() or 0
-        is_sensitive = n_sensitive > 0
+        touches_sensitive_dept = n_sensitive > 0
+    is_sensitive = ingest_sensitive(
+        source.knowledge_type, has_departments=bool(dept_ids),
+        touches_sensitive_dept=touches_sensitive_dept)
     vectors = embed([b.text for b in blocks], sensitive=is_sensitive)
 
     for b, vec in zip(blocks, vectors, strict=True):

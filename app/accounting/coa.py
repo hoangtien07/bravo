@@ -8,11 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
 
 import yaml
-
-_DATA = Path(__file__).resolve().parent / "data"
 
 
 @dataclass(frozen=True)
@@ -52,8 +49,13 @@ class CoaCatalog:
 
 @lru_cache
 def load_coa(version: str = "v2025") -> CoaCatalog:
-    """Nạp danh mục TK đã freeze. fail-closed: file thiếu -> raise (không đoán)."""
-    raw = yaml.safe_load((_DATA / f"coa_tt99_{version}.yaml").read_text(encoding="utf-8"))
+    """Nạp danh mục TK đã freeze. fail-closed: file thiếu -> raise (không đoán).
+
+    Qua cổng quản trị (header bắt buộc + fail-loud khi chưa duyệt ở prod) — CoA là tầng LUẬT."""
+    fname = f"coa_tt99_{version}.yaml"
+    from app.accounting.rules_governance import resolve_data_file, validate_header
+    raw = yaml.safe_load(resolve_data_file(fname).read_text(encoding="utf-8"))
+    validate_header(fname, raw)
     by_code = {
         a["code"]: Account(
             code=a["code"], name=a["name"], level=int(a["level"]),

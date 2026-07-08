@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.accounting import journal_export
 from app.database import get_db
-from app.database.models import Draft
+from app.database.models import AuditLog, Draft
 from app.erp import draft_queue
 from app.security.auth import require_permission
 from app.security.rls import Identity
@@ -57,7 +57,12 @@ async def list_drafts(status: str | None = Query(None, description="pending|appr
                       kind: str | None = Query(None),
                       identity: Identity = Depends(require_permission("draft:approve")),
                       db: AsyncSession = Depends(get_db)) -> list[DraftOut]:
-    return [_out(d) for d in await draft_queue.list_drafts(db, identity, status=status, kind=kind)]
+    rows = await draft_queue.list_drafts(db, identity, status=status, kind=kind)
+    # Audit truy cập đặc quyền (PDPD/NĐ13 & NĐ356: draft chứa PII lương/HR -> xem/liệt kê có vết).
+    db.add(AuditLog(actor_id=identity.employee_id, action="draft.list",
+                    detail={"status": status or "", "kind": kind or "", "count": len(rows)}))
+    await db.commit()
+    return [_out(d) for d in rows]
 
 
 class BatchExportIn(BaseModel):

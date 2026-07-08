@@ -1,5 +1,11 @@
 version: TT99/2025
 effective_from: '2026-01-01'
+effective_to: null
+reviewed_by: null
+reviewed_at: null
+approved_for_prod: false
+legal_basis: Thông tư 99/2025/TT-BTC — hệ thống tài khoản kế toán DN
+tier: STATUTORY
 source: file_system/Danh mục TK TT99.xlsx · sheet 'HTTK theo TT99'
 note: Sinh tự động bởi scripts/build_coa_from_xlsx.py — KHÔNG sửa tay.
 

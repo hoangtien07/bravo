@@ -15,15 +15,15 @@ Default folder: ./file_system  (recursively picks up the chapter subfolder).
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import re
-import sys
 from pathlib import Path
 
 from sqlalchemy import delete, select
 
 from app.database import async_session_factory
-from app.database.models import Chunk, Source, SourceDepartment
+from app.database.models import Chunk, Department, Source, SourceDepartment
 from app.ingestion.pipeline import ingest_source
 
 DEFAULT_DIR = Path("file_system")
@@ -55,13 +55,25 @@ def _collect(folder: Path) -> list[Path]:
     return sorted(files, key=lambda p: str(p).lower())
 
 
-async def main(folder: Path) -> None:
+async def _resolve_department(db, name: str):
+    """Tra Department theo tên -> id. Fail-closed: không thấy -> DỪNG (không nạp nhầm GLOBAL)."""
+    did = (await db.execute(
+        select(Department.id).where(Department.name == name))).scalar_one_or_none()
+    if did is None:
+        raise SystemExit(f"[ingest] Không tìm thấy phòng ban '{name}'. Tạo phòng ban trước "
+                         f"(fail-closed — KHÔNG nạp tài liệu phòng vào phạm vi GLOBAL).")
+    return did
+
+
+async def main(folder: Path, department: str | None = None) -> None:
     files = _collect(folder)
     if not files:
         print(f"Không thấy tài liệu (pdf/docx/xlsx) trong {folder}")
         return
-    print(f"Nạp {len(files)} tài liệu BRAVO 10 từ {folder} ...")
+    scope = f"phòng '{department}'" if department else "GLOBAL (toàn công ty)"
+    print(f"Nạp {len(files)} tài liệu BRAVO 10 từ {folder} — scope: {scope} ...")
     async with async_session_factory() as db:
+        dept_id = await _resolve_department(db, department) if department else None
         for f in files:
             kt = _knowledge_type(f.name)
             # Idempotent: xoá MỌI source cùng filename (+chunks/scope) trước khi nạp lại — chạy
@@ -76,7 +88,12 @@ async def main(folder: Path) -> None:
                 await db.commit()
             src = Source(filename=f.name, knowledge_type=kt, status="pending")
             db.add(src)
-            await db.flush()  # scope: no departments => GLOBAL (toàn công ty đọc được)
+            await db.flush()
+            # Scope RLS: có --department -> SourceDepartment (pipeline tự lan department_ids xuống
+            # chunk). Không có -> GLOBAL (chỉ dùng cho corpus công khai như user-guide).
+            if dept_id is not None:
+                db.add(SourceDepartment(source_id=src.id, department_id=dept_id))
+                await db.flush()
             try:
                 n = await ingest_source(db, src.id, str(f))
                 print(f"  ✓ {f.name}: {n} chunks  [{kt}]")
@@ -88,5 +105,10 @@ async def main(folder: Path) -> None:
 
 
 if __name__ == "__main__":
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_DIR
-    asyncio.run(main(target))
+    ap = argparse.ArgumentParser(description="Nạp corpus tri thức (GLOBAL hoặc theo phòng ban).")
+    ap.add_argument("folder", nargs="?", default=str(DEFAULT_DIR), help="Thư mục tài liệu")
+    ap.add_argument("--department", "-d", default=None,
+                    help="Scope corpus vào 1 phòng ban (RLS). Bỏ trống = GLOBAL (chỉ cho corpus "
+                         "công khai). Phòng phải tồn tại (fail-closed).")
+    args = ap.parse_args()
+    asyncio.run(main(Path(args.folder), args.department))

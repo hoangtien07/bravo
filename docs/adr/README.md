@@ -25,6 +25,7 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0015](0015-chat-conversation-sse.md) | Tầng hội thoại (Conversation) + SSE streaming | Accepted | 2026-06-15 |
 | [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Accepted** | 2026-07-05 |
 | [0017](0017-internal-demo-feature-package.md) | Gói tính năng DEMO NỘI BỘ: Knowledge Graph + AP đầy đủ + agent trên mock (nới tạm freeze 0016) | Accepted | 2026-06-29 |
+| [0018](0018-agentic-packaging-knowledge-as-data.md) | Đóng gói agentic: knowledge/rule-as-data + config-as-boot (single-tenant); cổng L3 cho multi-tenant/DSL; mốc chuyển-local trước dữ liệu thật | Accepted (hẹp) | 2026-07-09 |
 
 > ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 (verify-gate) **đã implement** — nối vào agent loop (`app/agent/loop.py`, gate `verify_numbers` tại `_finish_answer`), có test (`tests/test_grounding.py`). Trạng thái triển khai chi tiết: **nguồn sự thật = [../work-packages/STATUS.md](../work-packages/STATUS.md)**. Đánh giá tổng thể mức độ trưởng thành: [../COUNCIL-REVIEW-2026-07.md](../COUNCIL-REVIEW-2026-07.md).
 

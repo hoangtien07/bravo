@@ -58,6 +58,47 @@ def _first_dept(identity: Identity) -> uuid.UUID:
     return identity.department_ids[0] if identity.department_ids else uuid.UUID(int=0)
 
 
+# --- Draft leak probe (Phase 0.3): draft phòng B không được lọt sang approver phòng A ---
+@dataclass
+class DraftLeakReport:
+    actor_dept: uuid.UUID
+    leaked_draft_ids: list[str]
+
+    @property
+    def leaked(self) -> bool:
+        return bool(self.leaked_draft_ids)
+
+
+def draft_leaked(draft, actor: Identity, foreign_dept: uuid.UUID) -> bool:
+    """PURE predicate (test được không cần DB): `draft` thuộc RIÊNG `foreign_dept` mà `actor`
+    KHÔNG có quyền thấy. Draft global (department_id=None) là dùng-chung chủ ý -> KHÔNG tính rò.
+    Đây chính là lớp bất thường mà lỗ 'draft agent = global' từng gây ra (OWASP ASI03)."""
+    dep = getattr(draft, "department_id", None)
+    return bool(
+        dep is not None
+        and dep == foreign_dept
+        and dep not in actor.department_ids
+        and actor.scope_level("draft", "approve") != "all"
+        and not actor.is_admin
+    )
+
+
+async def probe_draft_leak(db: AsyncSession, actor: Identity,
+                           foreign_dept: uuid.UUID) -> DraftLeakReport:
+    """List drafts như `actor` (RLS-in-query) rồi soi có draft nào thuộc RIÊNG `foreign_dept`."""
+    from app.erp import draft_queue
+    drafts = await draft_queue.list_drafts(db, actor)
+    leaked = [str(d.id) for d in drafts if draft_leaked(d, actor, foreign_dept)]
+    return DraftLeakReport(_first_dept(actor), leaked)
+
+
+async def assert_no_draft_leak(db: AsyncSession, actor: Identity,
+                               foreign_dept: uuid.UUID) -> DraftLeakReport | None:
+    """Return report nếu rò (None = PASS). CI gate cho maker-checker RLS."""
+    r = await probe_draft_leak(db, actor, foreign_dept)
+    return r if r.leaked else None
+
+
 async def assert_no_leak(db: AsyncSession, actor: Identity, foreign_dept: uuid.UUID,
                          queries: list[str]) -> list[LeakReport]:
     """Return all leaking probes (empty list = PASS). Use as a CI gate."""

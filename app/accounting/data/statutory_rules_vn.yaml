@@ -1,0 +1,38 @@
+version: vn-statutory-2026.1
+effective_from: '2026-01-01'
+effective_to: null
+reviewed_by: null            # CHỜ kế toán BRAVO duyệt (fail-loud ở prod tới khi có)
+reviewed_at: null
+approved_for_prod: false     # ở prod: loader TỪ CHỐI nạp khi != true (fail-loud). local: cảnh báo.
+legal_basis: "TT45/2013/TT-BTC; TT219/2013/TT-BTC; Luật Thuế GTGT; NQ giảm VAT 8% theo kỳ"
+tier: STATUTORY
+note: >-
+  Tham số LUẬT (statutory) — GLOBAL, KHOÁ, chỉ đổi theo văn bản pháp luật; phòng ban KHÔNG
+  override (khác với tầng CHÍNH SÁCH/GỢI Ý). Mỗi tham số có 'periods' được chọn theo NGÀY LẬP
+  chứng từ (ngay_lap), KHÔNG theo ngày hệ thống — tránh định khoản sai chứng từ giáp ranh kỳ.
+
+rules:
+  tscd_value_threshold:
+    tier: STATUTORY
+    unit: VND
+    legal_basis: "TT45/2013/TT-BTC Đ.3.1 — nguyên giá TSCĐ hữu hình ≥ 30 triệu đồng"
+    periods:
+      - { effective_from: '2013-06-10', value: 30000000 }
+
+  vat_noncash_threshold:
+    tier: STATUTORY
+    unit: VND
+    legal_basis: "TT219/2013/TT-BTC Đ.15 — hoá đơn ≥ 20 triệu cần chứng từ TT không tiền mặt"
+    periods:
+      - { effective_from: '2014-01-01', value: 20000000 }
+
+  vat_valid_rates:
+    tier: STATUTORY
+    legal_basis: "Luật Thuế GTGT; NQ giảm 8% theo kỳ (loại trừ một số ngành)"
+    note: >-
+      8% CHỈ áp trong kỳ được Quốc hội cho giảm VÀ loại trừ một số ngành (viễn thông, tài chính,
+      BĐS, khoáng sản...). Danh sách rate là điều kiện cần, KHÔNG đủ — sector-exclusion do kế toán
+      xác nhận ở HITL. KCT/KKKNT (không chịu thuế/không kê khai) xử lý riêng.
+    periods:
+      - { effective_from: '2014-01-01', rates: [0, 5, 10] }
+      - { effective_from: '2022-02-01', rates: [0, 5, 8, 10] }

@@ -1,4 +1,11 @@
 version: v1
+effective_from: '2026-01-01'
+effective_to: null
+reviewed_by: null            # CHỜ kế toán BRAVO duyệt (prod fail-loud tới khi có)
+reviewed_at: null
+approved_for_prod: false     # tầng SUGGESTION nháp — chưa duyệt cho prod
+legal_basis: "Nội bộ (gợi ý map tên hàng->TK); TK đích tuân danh mục TT99/2025"
+tier: SUGGESTION             # gợi ý: không khớp -> default + needs_review (kế toán quyết)
 # Bản nháp v1 — CẦN KẾ TOÁN BRAVO DUYỆT trước khi dùng thật (reviewed_by chưa có).
 # Mỗi rule: regex (trên tên hàng/dịch vụ, không phân biệt hoa thường) -> tài khoản Nợ.
 # Dừng ở rule ĐẦU TIÊN khớp (rule-first). TK đích phải POSTABLE trong CoA TT99.

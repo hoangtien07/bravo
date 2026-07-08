@@ -124,12 +124,23 @@ async def call_tool(name: str, args: dict, identity: Identity, *, db=None,
                 return {"isError": True,
                         "error": f"Bút toán đề xuất không hợp lệ (không tạo nháp): {e}"}
         from app.erp import draft_queue
+        # RLS scope (invariant #1): draft do agent tạo PHẢI thuộc đúng một phòng ban, KHÔNG
+        # rơi về NULL=global (nếu không, approver phòng khác thấy/duyệt được — OWASP ASI03).
+        dept_id = draft_queue.resolve_draft_department(identity, payload)
+        if dept_id is None and not identity.is_admin:
+            await _audit_attempt(db, agent_run_id, identity, name, args, "failed",
+                                 "unresolved department (fail-closed)")
+            return {"isError": True,
+                    "error": "Không xác định được phòng ban cho bản nháp (fail-closed): tài khoản "
+                             "người tạo không thuộc đúng một phòng ban. Không tạo nháp global."}
         try:
             draft = await draft_queue.create_draft(
-                db, identity, kind=name, payload=payload, agent_run_id=agent_run_id)
+                db, identity, kind=name, payload=payload, agent_run_id=agent_run_id,
+                department_id=dept_id)
         except TypeError:
             # Stub/real create_draft signature drift (WP-E): fall back without agent_run_id.
-            draft = await draft_queue.create_draft(db, identity, kind=name, payload=args)
+            draft = await draft_queue.create_draft(db, identity, kind=name, payload=args,
+                                                   department_id=dept_id)
         await _audit_attempt(db, agent_run_id, identity, name, args, "drafted", f"draft {draft.id}")
         return {"status": "pending_approval", "draft_id": str(draft.id), "is_write": True,
                 "message": "Đã tạo bản nháp chờ người duyệt (KHÔNG tự thực thi)."}

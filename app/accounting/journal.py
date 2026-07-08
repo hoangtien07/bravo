@@ -22,13 +22,22 @@ from pydantic import BaseModel, Field, model_validator
 
 from app.accounting.account_mapper import map_invoice
 from app.accounting.coa import CoaCatalog, load_coa
+from app.accounting.rules_governance import as_of_from_iso, statutory_field
 from app.data_layer import money
 from app.ingestion.invoice_parser import Invoice, validate_invoice
 
+
+def vat_noncash_threshold(as_of=None) -> Decimal:
+    """Ngưỡng hoá đơn cần chứng từ TT không tiền mặt để khấu trừ VAT (TT219/2013 Đ.15), theo
+    NGÀY LẬP chứng từ (rule-as-data, tầng LUẬT). as_of None -> phiên bản mới nhất."""
+    return Decimal(str(statutory_field("vat_noncash_threshold", "value", as_of)))
+
+
 # TT219/2013 Đ.15: hoá đơn mua vào từng lần ≥ 20 triệu phải có chứng từ thanh toán KHÔNG dùng
 # tiền mặt mới được khấu trừ VAT đầu vào. Lằn ranh này kiểm được; phương thức thanh toán thật
-# KHÔNG suy ra được từ hoá đơn -> cờ chờ kế toán (non-invasive).
-VAT_NONCASH_THRESHOLD = Decimal("20000000")
+# KHÔNG suy ra được từ hoá đơn -> cờ chờ kế toán (non-invasive). Hằng số = hiệu lực MỚI NHẤT
+# (giữ API cũ); đường dated dùng vat_noncash_threshold(as_of).
+VAT_NONCASH_THRESHOLD = vat_noncash_threshold()
 
 
 class JournalLine(BaseModel):
@@ -84,8 +93,10 @@ def build_journal_entry(inv: Invoice, *, coa: CoaCatalog | None = None,
                         version: str = "v1") -> JournalEntryPayload:
     """Hoá đơn -> bút toán nháp (cân Nợ=Có by-construction). Số từ hoá đơn (Decimal)."""
     coa = coa or load_coa()
-    proposal = map_invoice(inv, coa=coa, version=version)
+    as_of = as_of_from_iso(inv.ngay_lap)          # ngưỡng LUẬT theo NGÀY LẬP hoá đơn
+    proposal = map_invoice(inv, coa=coa, version=version, as_of=as_of)
     flags: list[str] = list(validate_invoice(inv)) + list(proposal.notes)
+    vat_threshold = vat_noncash_threshold(as_of)
 
     # Nợ: gộp thành tiền theo tài khoản đích.
     by_acct: dict[str, Decimal] = {}
@@ -109,7 +120,7 @@ def build_journal_entry(inv: Invoice, *, coa: CoaCatalog | None = None,
         # chứng từ thanh toán KHÔNG dùng tiền mặt, (iii) phục vụ SXKD chịu thuế. (ii) là lằn ranh
         # kiểm được; phương thức thanh toán & mục đích KHÔNG suy ra được từ hoá đơn -> cờ HITL.
         pay = inv.tong_thanh_toan
-        if pay is not None and money.quantize(pay) >= VAT_NONCASH_THRESHOLD:
+        if pay is not None and money.quantize(pay) >= vat_threshold:
             flags.append(
                 f"Hoá đơn ≥20tr ({money.quantize(pay):.0f}đ): khấu trừ VAT {vat:.0f}đ yêu cầu chứng từ "
                 f"thanh toán KHÔNG dùng tiền mặt (không xác minh được từ hoá đơn) — kế toán xác nhận"

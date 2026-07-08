@@ -180,9 +180,12 @@ async def test_call_tool_write_creates_draft_does_not_execute(monkeypatch):
     from app.erp import draft_queue
     monkeypatch.setattr(draft_queue, "create_draft", fake_create_draft)
 
+    # Draft do agent tạo phải scope theo phòng (fail-closed) -> identity có đúng 1 phòng ban.
+    writer = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
+                      permissions=frozenset({"draft:create"}))
     try:
         res = await call_tool("_t_write", {"account": "131", "amount": 100},
-                              _identity(perms={"draft:create"}), db=_FakeDB())
+                              writer, db=_FakeDB())
         assert res["status"] == "pending_approval"
         assert res["is_write"] is True
         assert created["n"] == 1           # draft created

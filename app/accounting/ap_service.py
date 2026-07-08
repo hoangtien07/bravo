@@ -22,7 +22,8 @@ async def create_invoice_draft(
     """Parse hoá đơn -> bút toán nháp. Scope draft theo phòng của người tạo (RLS)."""
     inv = parse_invoice_xml(xml_bytes, raw_xml_path=raw_xml_path)
     je = build_journal_entry(inv)
-    dept_id = identity.department_ids[0] if identity.department_ids else None
+    # Scope draft theo phòng người tạo (RLS, invariant #1) — helper dùng chung với agent path.
+    dept_id = draft_queue.resolve_draft_department(identity)
     draft = await draft_queue.create_draft(
         db, identity, kind="journal_entry", payload=je.model_dump(mode="json"),
         department_id=dept_id,

@@ -25,6 +25,28 @@ DEFAULT_SENSITIVE_KNOWLEDGE_TYPES: frozenset[str] = frozenset({
 })
 
 
+def ingest_sensitive(knowledge_type: str | None, *, has_departments: bool,
+                     touches_sensitive_dept: bool) -> bool:
+    """Quyết định egress khi NẠP một Source (fail-closed, invariant #4).
+
+    Nhạy (-> embed LOCAL, cấm cloud) nếu:
+      1. `knowledge_type` thuộc loại nhạy (kế toán/lương/HR/PII…), HOẶC
+      2. nguồn thuộc ≥1 phòng ban nhạy, HOẶC
+      3. **'không rõ scope'**: nguồn GLOBAL (không phòng ban) VÀ không có `knowledge_type` để
+         phán -> coi là nhạy. Vá lỗ: tài liệu nhạy nạp global-không-nhãn từng bị cloud-embed
+         (pipeline cũ bỏ qua check khi `dept_ids` rỗng). Tài liệu công khai hợp lệ luôn có
+         `knowledge_type` (vd 'guide') nên KHÔNG bị chặn -> demo không đổi.
+    """
+    kt = (knowledge_type or "").strip().lower()
+    if kt in DEFAULT_SENSITIVE_KNOWLEDGE_TYPES:
+        return True
+    if has_departments and touches_sensitive_dept:
+        return True
+    if not has_departments and not kt:
+        return True
+    return False
+
+
 def classify_context(
     items: Iterable[object],
     *,

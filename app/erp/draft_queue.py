@@ -38,6 +38,26 @@ def maker_checker_ok(approver_id: uuid.UUID, created_by: uuid.UUID, *,
     return True, None
 
 
+def resolve_draft_department(identity: Identity, payload: dict | None = None) -> uuid.UUID | None:
+    """Suy department cho draft do AGENT/dịch vụ tạo — scope maker-checker theo RLS (invariant #1).
+
+    Thứ tự: `department_id` tường minh trong payload -> phòng DUY NHẤT của identity -> None.
+    Trả None khi KHÔNG suy ra được (identity 0 hoặc >1 phòng, không có dept trong payload);
+    caller PHẢI fail-closed (từ chối tạo draft) thay vì để rơi về NULL=global — nếu không,
+    nháp của phòng B lọt sang approver phòng A (lỗ rò chéo phòng ban, OWASP ASI03).
+    """
+    if payload:
+        raw = payload.get("department_id")
+        if raw:
+            try:
+                return raw if isinstance(raw, uuid.UUID) else uuid.UUID(str(raw))
+            except (ValueError, AttributeError, TypeError):
+                pass
+    if len(identity.department_ids) == 1:
+        return identity.department_ids[0]
+    return None
+
+
 def draft_scope_filter(identity: Identity, action: str = "approve") -> "ColumnElement[bool]":
     """SQL predicate giới hạn Draft theo quyền (RLS-in-query). NULL department = global."""
     level = identity.scope_level("draft", action)

@@ -119,11 +119,15 @@ def _classify_change(name_tt200: str, name_tt99: str, note: str) -> tuple[str, b
     if t99 == "--" or n.startswith("bỏ") or "bỏ tk" in n:
         return "BO", True
     if "đổi tên" in n:
-        return "DOI_TEN", False
-    if "không đổi" in n or "giữ nguyên" in n:
-        return "KHONG_DOI", False
+        return "DOI_TEN", True
     if "điều chỉnh" in n or "khác" in n:
         return "KHAC", True
+    # Tên khác nhau (cả hai có mặt) KHÔNG được coi là 'không đổi' — ít nhất là đổi tên, cần kế
+    # toán xác nhận. Vá lỗi lớp 6415 (từng gắn KHONG_DOI dù tên đổi). Kiểm TRƯỚC nhánh 'không đổi'.
+    if t200 and t99 and t200 != "--" and t99 != "--" and t200 != t99:
+        return "DOI_TEN", True
+    if "không đổi" in n or "giữ nguyên" in n:
+        return "KHONG_DOI", False
     return "KHONG_DOI", False
 
 
@@ -170,14 +174,22 @@ if __name__ == "__main__":
     n2 = sum(1 for a in coa if a["level"] == 2)
     print(f"CoA: {len(coa)} accounts ({n1} cấp-1, {n2} cấp-2); crosswalk: {len(crosswalk)} entries")
 
+    # Header quản trị (Phase 1 rule-as-data): giữ nguyên khi regenerate để không phá cổng
+    # governance. reviewed_by/approved_for_prod = None/false -> prod fail-loud tới khi kế toán duyệt.
+    _gov = {"effective_to": None, "reviewed_by": None, "reviewed_at": None,
+            "approved_for_prod": False}
     out_dir = root / "app" / "accounting" / "data"
     _emit_yaml(out_dir / "coa_tt99_v2025.yaml",
-               {"version": "TT99/2025", "effective_from": "2026-01-01",
+               {"version": "TT99/2025", "effective_from": "2026-01-01", **_gov,
+                "legal_basis": "Thông tư 99/2025/TT-BTC — hệ thống tài khoản kế toán DN",
+                "tier": "STATUTORY",
                 "source": "file_system/Danh mục TK TT99.xlsx · sheet 'HTTK theo TT99'",
                 "note": "Sinh tự động bởi scripts/build_coa_from_xlsx.py — KHÔNG sửa tay."},
                "accounts", coa)
     _emit_yaml(out_dir / "crosswalk_tt200_tt99_v2025.yaml",
-               {"version": "TT200->TT99/2025", "effective_from": "2026-01-01",
+               {"version": "TT200->TT99/2025", "effective_from": "2026-01-01", **_gov,
+                "legal_basis": "Đối chiếu TT200/2014 -> TT99/2025 (chuyển đổi hệ thống TK)",
+                "tier": "STATUTORY",
                 "source": "file_system/Danh mục TK TT99.xlsx · sheet 'Sự khác biệt'",
                 "note": "Sinh tự động — needs_confirm=True (THEM/BO/KHAC) cần kế toán xác nhận."},
                "entries", crosswalk)

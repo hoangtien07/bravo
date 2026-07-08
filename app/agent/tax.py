@@ -9,9 +9,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from app.accounting.rules_governance import statutory_field
 from app.data_layer import money
 
-VALID_RATES = {0, 5, 8, 10}
+# Externalize ra statutory_rules_vn.yaml (tầng LUẬT). Set thuế suất hợp lệ MỚI NHẤT (2022+ gồm
+# 8% giảm theo NQ). LƯU Ý: 8% chỉ áp trong kỳ giảm + loại trừ ngành — điều kiện đủ do kế toán
+# xác nhận ở HITL (không mở logic ngành ở đây, giữ freeze demo). Đường dated: statutory_field(as_of).
+VALID_RATES = frozenset(statutory_field("vat_valid_rates", "rates"))
 
 
 @dataclass

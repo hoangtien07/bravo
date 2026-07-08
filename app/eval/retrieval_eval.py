@@ -45,8 +45,10 @@ async def _labels(db, chunks) -> dict[str, str]:
     return {str(s.id): f"{s.knowledge_type or ''} {s.filename or ''}" for s in rows}
 
 
-async def main(k: int = 6) -> float:
-    ident = Identity(employee_id=uuid.uuid4(), is_admin=True)  # admin -> không bị RLS lọc
+async def main(k: int = 6, identity: Identity | None = None) -> float:
+    # Mặc định admin (không bị RLS lọc). Truyền Identity phòng ban -> eval PER-DOMAIN dưới RLS
+    # (recall@k trong phạm vi phòng). Kết hợp probes.assert_no_leak để chặn rò chéo phòng (Phase 2).
+    ident = identity or Identity(employee_id=uuid.uuid4(), is_admin=True)
     hits = 0
     async with async_session_factory() as db:
         for q, exp in GOLD:

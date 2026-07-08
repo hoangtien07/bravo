@@ -6,14 +6,23 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
     env: str = "local"
     log_level: str = "INFO"
+
+    # Config-as-data (ADR-0018 packaging): thư mục OVERLAY chứa knowledge/rule runtime (COA, mapping,
+    # statutory...). Bind-mount read-only để cập nhật rule KHÔNG rebuild image; file thiếu -> fallback
+    # bản in-package (bravo ship CHẠY ĐƯỢC, khác agent-ai ship rỗng). Đọc lúc BOOT, single-tenant.
+    knowledge_dir: str = Field("", validation_alias="BRAVO_KNOWLEDGE_DIR")
+    # Manifest per-deploy (deploy/site.yaml): enabled_verticals + phòng ban + flags. Đọc 1 lần lúc
+    # boot trong validate_boot() (fail-closed). Rỗng = bỏ qua (dev/demo không bắt buộc).
+    site_config: str = Field("", validation_alias="SITE_CONFIG")
 
     # Database
     database_url: str = "postgresql+asyncpg://bravo:bravo@localhost:5432/bravo"
@@ -107,6 +116,10 @@ class Settings(BaseSettings):
         """Fail-closed boot guard (DEPLOY-DEMO.md hứa điều này). Ở staging/production:
         chặn khởi động nếu secret còn mặc định/quá ngắn, hoặc bật cloud mà thiếu key.
         Ở env=local (demo) là no-op để không cản trở phát triển."""
+        # Manifest deploy (nếu cấu hình): validate ở MỌI env — fail-closed khi sai (config-as-data).
+        if self.site_config:
+            from app.site_config import load_site_config
+            load_site_config(self.site_config)
         if self.env not in {"staging", "production", "prod"}:
             return
         weak = {"change-me", "change-me-in-production", "change-me-256-bit-random"}

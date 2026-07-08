@@ -1,0 +1,32 @@
+# Manifest per-deploy (config-as-data, ADR-0018) — MỘT deployment / MỘT doanh nghiệp (single-tenant).
+# Bind-mount read-only; trỏ tới bằng ENV: SITE_CONFIG=/etc/bravo/site.yaml
+# Đọc + validate MỘT LẦN lúc boot (Settings.validate_boot) — sai -> fail-closed, không khởi động.
+#
+# "Đóng gói theo doanh nghiệp" = deployment/DB RIÊNG mỗi công ty, mỗi cái một site.yaml.
+# KHÔNG có multi-tenant/per-request ở đây (gate L3 — ADR-0016 CUT#7).
+
+site: bravo-demo-noibo            # tên deployment (bắt buộc)
+
+# Vertical bật cho deployment này (bắt buộc, không rỗng). Hợp lệ: ap | anomaly | tax | graph.
+# AP = mũi nhọn ship. anomaly/tax/graph = DEMO NỘI BỘ (đóng băng 🧊, chưa cam kết sản xuất).
+enabled_verticals:
+  - ap
+  - anomaly
+  - tax
+  - graph
+
+# Phòng ban của deployment (tên hiển thị) — RLS scope thực thi ở DB, đây chỉ là nhãn/onboarding.
+departments:
+  - Kế toán
+  - Kinh doanh
+  - Nhân sự
+  - Ban Giám đốc
+
+# Overlay knowledge/rule (tuỳ chọn): đặt BRAVO_KNOWLEDGE_DIR trỏ thư mục chứa bản rule đã kế toán
+# duyệt (coa_tt99_*.yaml, mapping_rules_*.yaml, statutory_rules_vn.yaml). File thiếu -> fallback
+# bản in-package. Cập nhật rule KHÔNG rebuild image. Kèm checksum (site_config.payload_checksum)
+# để verify integrity khi giao air-gap.
+#
+# Model routing (tham khảo — dữ liệu THẬT phải LLM/embedding LOCAL, xem ADR-0018 mốc chuyển-local):
+#   embedding_provider: local            # bge-m3 (sản xuất). Cloud CHỈ cho corpus phi nhạy/giả.
+#   llm_local_model: Qwen3-32B-Instruct  # hoặc GLM-4.6 (MIT) — tránh Llama (license)
