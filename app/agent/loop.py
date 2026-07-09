@@ -34,6 +34,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import MemoryStore
+from app.agent.bravo_playbooks import render_playbook_hint
 from app.agent.tools import REGISTRY, call_tool, filter_tools_by_permission, register
 from app.config import get_settings
 from app.data_layer.grounding import verify_numbers
@@ -159,6 +160,11 @@ _SYSTEM = (
     "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer = 'Không tìm thấy thông "
     "tin trong tài liệu nội bộ.'\n"
     "- Phân biệt CHÍNH XÁC: mua hàng ≠ bán hàng; đầu vào ≠ đầu ra; phải thu ≠ phải trả; nhập ≠ xuất.\n"
+    "- Với nghiệp vụ BRAVO: CHỨNG TỪ TRƯỚC, HẠCH TOÁN SAU. Khi hỏi tự động hoá mua hàng/AP, "
+    "phải xác định loại chứng từ BRAVO và nguồn kế thừa trước khi nói định khoản.\n"
+    "- Không đề xuất SQL/update trực tiếp vào ERP; thay bằng draft/checklist/ngoại lệ chờ người duyệt.\n"
+    "- Câu hỏi thao tác ưu tiên user guide/mindmap; câu hỏi schema/bảng/procedure ưu tiên tài liệu kỹ thuật; "
+    "câu hỏi phạm vi/testcase ưu tiên KQPT/PTNV.\n"
     "- KHÔNG tự sinh số liệu — số phải đến từ tool/engine.\n"
     "CHỈ dùng action=clarify khi câu hỏi KHÔNG liên quan ngữ cảnh, HOẶC thiếu tham số bắt buộc "
     "để gọi tool — KHÔNG clarify khi đã có ngữ cảnh liên quan.\n"
@@ -479,10 +485,12 @@ class AgentSession:
         tools_desc = "\n".join(
             f"- {t.name}(schema={json.dumps(t.json_schema, ensure_ascii=False)})"
             f"{' [GHI->nháp]' if not t.read_only else ''}" for t in tools)
+        playbook_hint = render_playbook_hint(user_message)
 
         messages = [
             {"role": "system", "content": _SYSTEM},
             {"role": "system", "content": f"TOOL khả dụng:\n{tools_desc or '(không có)'}"},
+            *([{"role": "system", "content": playbook_hint}] if playbook_hint else []),
             *recall,  # multi-turn: lịch sử (đã DATA-frame) NẰM TRƯỚC câu hỏi
             {"role": "user",
              "content": f"NGỮ CẢNH (đánh số để trích dẫn [N]):\n{context or '(trống)'}\n\nCÂU HỎI: {user_message}"},
@@ -575,7 +583,9 @@ class AgentSession:
     _COMPOSE_SYSTEM = (
         "Bạn là BRAVO AI Copilot. Viết CÂU TRẢ LỜI CUỐI bằng TIẾNG VIỆT, văn xuôi (KHÔNG JSON, "
         "KHÔNG markdown rào code). CHỈ dùng NGỮ CẢNH đã cho + LỊCH SỬ; gắn trích dẫn [N] vào mỗi "
-        "ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Ngữ cảnh không chứa câu trả lời -> "
+        "ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Với nghiệp vụ BRAVO phải giữ nguyên tắc "
+        "chứng từ trước, hạch toán sau; không đề xuất SQL/update trực tiếp vào ERP; thiếu căn cứ "
+        "thì nêu ngoại lệ hoặc yêu cầu người dùng bổ sung. Ngữ cảnh không chứa câu trả lời -> "
         "'Không tìm thấy thông tin trong tài liệu nội bộ.'")
 
     async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):

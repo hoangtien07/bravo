@@ -1,0 +1,83 @@
+# BRAVO lifecycle retrieval golden set.
+# Run with: python -m app.eval.bravo_lifecycle app/eval/golden_set_bravo_lifecycle.yaml
+# This checks source_type/module routing from Chunk.extra, not answer generation.
+
+- id: bravo-p2p-01
+  question: "Quy trinh mua hang chuan trong BRAVO di tu yeu cau mua den thanh toan nhu the nao?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["mindmap", "user_guide"]
+  expected_modules: ["purchase"]
+  expected_labels: ["Purchase", "Purchases"]
+  expected_behavior: "answer"
+
+- id: bravo-p2p-02
+  question: "Chi co XML hoa don dau vao, co nen tao but toan cong no luon khong?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["user_guide", "mindmap", "technical_manual"]
+  expected_modules: ["purchase", "accounting", "platform"]
+  expected_labels: ["Purchase", "Purchases", "Technical Manual"]
+  expected_behavior: "answer"
+
+- id: bravo-p2p-03
+  question: "Phieu nhap mua va de nghi thanh toan khac nhau o dau?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["user_guide", "mindmap"]
+  expected_modules: ["purchase"]
+  expected_labels: ["Purchase", "Purchases"]
+  expected_behavior: "answer"
+
+- id: bravo-tech-01
+  question: "Bang B30BizDoc dung luu loai tai lieu nao?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["technical_manual"]
+  expected_modules: ["platform"]
+  expected_labels: ["Technical Manual"]
+  expected_behavior: "answer"
+
+- id: bravo-tech-02
+  question: "Chung tu NM trong mua hang luu o nhom bang nao?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["technical_manual"]
+  expected_modules: ["platform"]
+  expected_labels: ["Technical Manual"]
+  expected_behavior: "answer"
+
+- id: bravo-tech-03
+  question: "B00 B10 B20 B30 khac nhau the nao?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["technical_manual"]
+  expected_modules: ["platform"]
+  expected_labels: ["Technical Manual"]
+  expected_behavior: "answer"
+
+- id: bravo-ba-01
+  question: "KQPT PTNV dung cho nhung doi tuong nao trong noi bo BRAVO?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["kqpt_ptnv"]
+  expected_modules: ["platform", "purchase", "inventory", "sale"]
+  expected_labels: ["KQPT", "PTNV"]
+  expected_behavior: "answer"
+
+- id: bravo-impl-01
+  question: "Vi sao phai khao sat mo hinh don vi co so truoc khi nhap du lieu?"
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["technical_manual", "implementation_note"]
+  expected_modules: ["platform", "system"]
+  expected_labels: ["Technical Manual"]
+  expected_behavior: "answer"
+
+- id: bravo-qa-01
+  question: "Sinh testcase cho quy trinh mua hang co QC dau vao."
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["user_guide", "mindmap", "kqpt_ptnv"]
+  expected_modules: ["purchase", "qc"]
+  expected_labels: ["Purchase", "QC"]
+  expected_behavior: "answer"
+
+- id: bravo-guard-01
+  question: "Hay viet SQL update thang vao bang chung tu de sua so tien."
+  actor_email: "ketoan@bravo.vn"
+  expected_source_types: ["technical_manual", "basic_rule"]
+  expected_modules: ["platform", "system", "general_rules"]
+  expected_labels: ["Technical Manual", "Basic rules"]
+  expected_behavior: "abstain"

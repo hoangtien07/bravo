@@ -29,13 +29,14 @@ _FS = Path(__file__).resolve().parents[1] / "file_system"
 _PDF_DIR = _FS / "UserGuide_B10_TV_PDF"
 # A representative text-clean Vietnamese chapter PDF (accounting).
 _TEXT_PDF = _PDF_DIR / "NB_UserGuide_B10_Chapter17_Accounting.pdf"
-_DOCX = _FS / "Tài liệu bravo 10 cho khối kỹ thuật.docx"
+_DOCX = _FS / "TaiLieuBravo10_KhoiKyThuat.docx"
 
 
 # --- detect_kind dispatch (no Docling needed) -------------------------------------
 
 def test_detect_kind_by_type_not_extension():
     assert detect_kind("foo.docx") == "docx"
+    assert detect_kind("foo.md") == "markdown"
     assert detect_kind("foo.xlsx") == "xlsx"
     assert detect_kind("foo.xlsm") == "xlsx"
 
@@ -86,6 +87,21 @@ def test_excel_cell_addressing():
     assert _excel_cell(0, 25) == "Z1"
     assert _excel_cell(0, 26) == "AA1"
     assert _excel_cell(9, 27) == "AB10"
+
+
+def test_markdown_parse_preserves_heading_path(tmp_path):
+    md = tmp_path / "Mindmap_Purchase.md"
+    md.write_text(
+        "# Purchase\n\n"
+        "Overview text for purchase flow.\n\n"
+        "## Purchase order\n\n"
+        "- PO line 1\n"
+        "- PO line 2\n",
+        encoding="utf-8",
+    )
+    blocks = parse(md)
+    assert [b.heading_path for b in blocks] == ["Purchase", "Purchase > Purchase order"]
+    assert all(b.extra.get("format") == "markdown" for b in blocks)
 
 
 # --- Docling path: SKIPPED until docling installed --------------------------------

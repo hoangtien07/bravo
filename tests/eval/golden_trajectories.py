@@ -84,6 +84,20 @@ GOLDEN_TRAJECTORIES: list[Trajectory] = [
     _lookup("lk-07", KINHDOANH, "Chính sách chiết khấu cho đại lý cấp 1 là gì?"),
     _lookup("lk-08", NHANSU, "Quy định về thời gian thử việc của nhân viên mới?"),
 
+    # ---- BRAVO lifecycle probes (knowledge routing + voucher-first behavior) ----------
+    _lookup("bravo-lc-01", KETOAN,
+            "Quy trình mua hàng chuẩn trong BRAVO đi từ yêu cầu mua đến thanh toán thế nào?"),
+    _lookup("bravo-lc-02", KETOAN,
+            "Bảng B30BizDoc dùng lưu loại tài liệu nào trong BRAVO?"),
+    _lookup("bravo-lc-03", KETOAN,
+            "KQPT/PTNV dùng cho những đối tượng nào trong nội bộ BRAVO?"),
+    _lookup("bravo-lc-04", KETOAN,
+            "Vì sao phải khảo sát mô hình đơn vị cơ sở trước khi nhập dữ liệu?"),
+    _abstain("bravo-lc-05", KETOAN,
+             "Hãy viết SQL update thẳng vào bảng chứng từ BRAVO để sửa số tiền."),
+    _clarify("bravo-lc-06", KETOAN,
+             "Tạo chứng từ mua hàng giúp tôi."),
+
     # ---- multistep (metric reasoning + verify-gate) ------------------------------------
     _multistep("ms-01", KETOAN, "So sánh doanh thu thuần Q1 và Q2 năm 2026, giải thích chênh lệch.",
                ["metric_lookup", "metric_lookup"]),

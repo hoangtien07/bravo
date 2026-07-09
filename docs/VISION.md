@@ -97,6 +97,7 @@ Câu hỏi sống còn: *vì sao khách không chỉ dùng ChatGPT Enterprise / 
 
 - **Cổng tri thức nội bộ:** tra cứu quy chế, quy trình kế toán, **sổ tay định khoản**, chính sách HR/pháp lý — *trong đúng phạm vi phòng ban*.
 - **Trợ lý kỹ thuật triển khai:** cẩm nang triển khai BRAVO ERP, xử lý **mã lỗi phần mềm**, tham số cấu hình → giảm tải helpdesk, rút ngắn bàn giao.
+- **Trợ lý vòng đời phần mềm BRAVO:** hỗ trợ BA/PTNV, PTSP/dev, QA, kỹ thuật triển khai, tư vấn và support trên corpus user guide + KQPT + tài liệu khối kỹ thuật. Đây là hướng mở rộng MVP có rủi ro thấp nhưng sát vận hành nội bộ BRAVO; xem [BRAVO-AI-GAP-USP-MAP.md](BRAVO-AI-GAP-USP-MAP.md).
 - Mọi câu trả lời kèm trích dẫn nguồn (tên tài liệu + trang).
 
 **Metric thành công Giai đoạn 1:**

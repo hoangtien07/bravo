@@ -33,7 +33,9 @@ export SITE_CONFIG=/etc/bravo/site.yaml             # xem deploy/site.yaml.examp
 ## 3. Nạp corpus theo phòng ban (RLS scope)
 
 ```bash
-# Corpus công khai (user-guide) -> GLOBAL:
+# Corpus Demo A công khai -> GLOBAL.
+# Gồm user guide, mindmap, KQPT/PTNV, tài liệu kỹ thuật, BI/basic rules.
+# Metadata lấy từ file_system/bravo_corpus_manifest.yaml.
 python -m scripts.ingest_userguide file_system/
 # Corpus của một phòng -> scope RLS theo phòng (fail-closed nếu phòng chưa tồn tại):
 python -m scripts.ingest_userguide /data/ketoan --department "Kế toán"
@@ -42,6 +44,36 @@ python -m scripts.ingest_userguide /data/ketoan --department "Kế toán"
 nhạy **không rõ scope** (global + không knowledge_type) bị coi là nhạy → embed **local** (vá lỗ
 egress). Eval per-domain: `retrieval_eval.main(identity=<Identity phòng>)` + `probes.assert_no_leak`
 (chặn rò chéo phòng).
+
+BRAVO lifecycle retrieval gate:
+
+```bash
+python -m app.eval.bravo_lifecycle app/eval/golden_set_bravo_lifecycle.example.yaml
+```
+Gate này kiểm `Chunk.extra.source_type/module` để phát hiện câu hỏi schema bị kéo nhầm sang user
+guide, hoặc câu hỏi thao tác bị kéo nhầm sang tài liệu kỹ thuật.
+
+Lifecycle playbooks:
+
+```text
+file_system/bravo_lifecycle_playbooks.yaml
+file_system/bravo_ai_use_cases.yaml
+```
+Playbook định nghĩa output contract cho từng mode: end-user guidance, implementation support,
+BA/PTNV, technical impact, QA testcase, support/helpdesk, voucher assistant, dashboard explainer,
+governance/audit. Agent render playbook hint ngắn qua `app.agent.bravo_playbooks`; sửa playbook
+không cần đổi code nếu chỉ thay required output/guardrail/metric.
+
+Use-case matrix định nghĩa priority, stage, dependency và ROI metric. Kiểm nhất quán với playbook
+bằng `app.agent.bravo_use_cases.validate_use_cases`.
+
+Static readiness audit trước khi demo/ingest:
+
+```bash
+python -m app.eval.bravo_readiness
+```
+Audit này không cần DB/embedding/LLM; nó kiểm manifest có đủ file, playbook đủ mode, use-case khớp
+playbook, và golden lifecycle có đủ nhóm câu hỏi trọng yếu.
 
 ## 4. Air-gap payload — verify integrity
 

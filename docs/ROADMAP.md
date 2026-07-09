@@ -24,6 +24,9 @@
 ## Giai đoạn 1 — MVP: Cổng Tri thức & Vận hành
 *Giá trị: giảm tải helpdesk, rút ngắn bàn giao. Rủi ro: thấp (không chạm số liệu tài chính).*
 
+Use-case P0 tương ứng trong [../file_system/bravo_ai_use_cases.yaml](../file_system/bravo_ai_use_cases.yaml):
+`uc_knowledge_helpdesk`, `uc_implementation_checklist`.
+
 **1A. Ingestion + RAG có trích dẫn**
 - Nạp PDF/DOCX/XLSX qua Docling; mở rộng provenance (trang/sheet/ô).
 - Vector store + embedding cục bộ; retrieval lọc scope ở SQL.
@@ -55,6 +58,9 @@
 - **3B. Soạn nháp chứng từ/định khoản** (VISION §5.2.C) — draft cân nợ-có vào hàng đợi ERP.
 - **3C. Báo cáo quản trị NL** (VISION §5.2.D).
 - **Metric:** % nháp duyệt không sửa; số cờ rủi ro hợp lệ phát hiện sớm.
+
+Use-case phụ thuộc ERP trong ma trận: `uc_purchase_voucher_draft`, `uc_dashboard_explainer`,
+`uc_governance_audit`.
 
 ## Giai đoạn 4 — Đóng gói thương mại (add-on)
 - Helm chart / installer cho đội triển khai BRAVO cài tại site khách (vài giờ).

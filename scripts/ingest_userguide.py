@@ -7,8 +7,10 @@ docx / xlsx) + chunked + embedded into pgvector.
 
 Corpus (WP-A, Demo A) under `file_system/`:
   - UserGuide_B10_TV_PDF/*.pdf  : the 19 Vietnamese chapter guides (pypdf fast-path)
-  - UserGuide_B10_Basic rules.pdf, BRAVO_BI_Guidelines_Full.pdf : extra PDFs
-  - Tài liệu bravo 10 cho khối kỹ thuật.docx : DOCX (needs Docling — pypdf can't read it)
+  - Mindmaps/*.md : the 19 module mindmaps
+  - KQPT_PTNV/*.pdf : BRAVO analysis/design documents for BA-dev-QA-implementation
+  - UserGuide_B10_Basic_rules.pdf, BRAVO_BI_Guidelines_Full.pdf : extra PDFs
+  - TaiLieuBravo10_KhoiKyThuat.docx : DOCX (needs Docling — pypdf can't read it)
 
 Run (after env up + alembic upgrade): `python -m scripts.ingest_userguide [folder]`
 Default folder: ./file_system  (recursively picks up the chapter subfolder).
@@ -24,10 +26,12 @@ from sqlalchemy import delete, select
 
 from app.database import async_session_factory
 from app.database.models import Chunk, Department, Source, SourceDepartment
+from app.ingestion.manifest import load_manifest, manifest_index, source_extra
 from app.ingestion.pipeline import ingest_source
 
 DEFAULT_DIR = Path("file_system")
-_SUFFIXES = {".pdf", ".docx", ".xlsx", ".xlsm"}
+DEFAULT_MANIFEST = DEFAULT_DIR / "bravo_corpus_manifest.yaml"
+_SUFFIXES = {".pdf", ".docx", ".xlsx", ".xlsm", ".md", ".markdown"}
 
 
 def _knowledge_type(filename: str) -> str:
@@ -46,6 +50,8 @@ def _knowledge_type(filename: str) -> str:
         return "BRAVO 10 - Basic rules"
     if filename.lower().endswith(".docx"):
         return f"Tài liệu kỹ thuật - {stem}"
+    if filename.lower().endswith((".md", ".markdown")):
+        return f"Mindmap - {stem.replace('Mindmap_', '')}"
     return "BRAVO 10 User Guide"
 
 
@@ -65,17 +71,28 @@ async def _resolve_department(db, name: str):
     return did
 
 
-async def main(folder: Path, department: str | None = None) -> None:
+async def main(
+    folder: Path,
+    department: str | None = None,
+    manifest_path: Path | None = DEFAULT_MANIFEST,
+) -> None:
     files = _collect(folder)
     if not files:
-        print(f"Không thấy tài liệu (pdf/docx/xlsx) trong {folder}")
+        print(f"Không thấy tài liệu (pdf/docx/xlsx/md) trong {folder}")
         return
+    try:
+        manifest = load_manifest(manifest_path)
+        manifest_meta = manifest_index(manifest, folder) if manifest else {}
+    except ValueError as exc:
+        raise SystemExit(f"[ingest] {exc}") from exc
     scope = f"phòng '{department}'" if department else "GLOBAL (toàn công ty)"
     print(f"Nạp {len(files)} tài liệu BRAVO 10 từ {folder} — scope: {scope} ...")
     async with async_session_factory() as db:
         dept_id = await _resolve_department(db, department) if department else None
         for f in files:
-            kt = _knowledge_type(f.name)
+            rel = f.relative_to(folder).as_posix()
+            meta = manifest_meta.get(rel, {})
+            kt = str(meta.get("knowledge_type") or _knowledge_type(f.name))
             # Idempotent: xoá MỌI source cùng filename (+chunks/scope) trước khi nạp lại — chạy
             # lại script KHÔNG còn nhân đôi corpus (deep-dive: bản cũ tạo Source mới mỗi lần).
             old = list((await db.execute(
@@ -95,7 +112,9 @@ async def main(folder: Path, department: str | None = None) -> None:
                 db.add(SourceDepartment(source_id=src.id, department_id=dept_id))
                 await db.flush()
             try:
-                n = await ingest_source(db, src.id, str(f))
+                n = await ingest_source(
+                    db, src.id, str(f), source_extra=source_extra(meta, f, folder)
+                )
                 print(f"  ✓ {f.name}: {n} chunks  [{kt}]")
             except Exception as exc:  # noqa: BLE001
                 src.status = "failed"
@@ -110,5 +129,7 @@ if __name__ == "__main__":
     ap.add_argument("--department", "-d", default=None,
                     help="Scope corpus vào 1 phòng ban (RLS). Bỏ trống = GLOBAL (chỉ cho corpus "
                          "công khai). Phòng phải tồn tại (fail-closed).")
+    ap.add_argument("--manifest", default=str(DEFAULT_MANIFEST),
+                    help="YAML manifest gắn metadata nguồn; bỏ qua nếu file không tồn tại.")
     args = ap.parse_args()
-    asyncio.run(main(Path(args.folder), args.department))
+    asyncio.run(main(Path(args.folder), args.department, Path(args.manifest)))

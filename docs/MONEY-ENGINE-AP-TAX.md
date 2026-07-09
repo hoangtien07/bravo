@@ -2,6 +2,8 @@
 
 > Gộp **2 chỗ ăn tiền hàng đầu** từ [research/MONEY-SPOTS.md](research/MONEY-SPOTS.md) — AP automation ($ rõ nhất) + moat VN-native (TT99/hoá đơn-tờ khai) — thành **MỘT sản phẩm mạch lạc** (cùng thao tác trên một bộ dữ liệu: hoá đơn điện tử, hệ tài khoản, bút toán, tờ khai). **Chưa code — thiết kế.**
 > **Triết lý đào sâu:** tận dụng TỐI ĐA cái bravo ĐÃ CÓ làm **"đuôi"** (draft+maker-checker = close-the-loop có pricing power cao; verify-gate = không bịa số; calc Decimal + reconciliation; RLS; citations) — chỉ xây **"đầu"** còn thiếu (parser hoá đơn + map-TK + cross-check). Đây là cách rẻ nhất tới use-case có $ rõ.
+>
+> **Cập nhật nghiệp vụ:** AP automation phải bám theo [BRAVO-BUSINESS-CONTEXT.md](BRAVO-BUSINESS-CONTEXT.md): **chứng từ BRAVO trước, bút toán sau**. Hoá đơn XML là nguồn đầu vào; artifact chính nên là nháp `Phiếu nhập mua` / `Phiếu nhập khẩu` / `Phiếu nhập xuất thẳng` / `Chi phí mua hàng` / `Xuất trả NCC` / `Đề nghị thanh toán`. Bút toán chỉ là preview/hệ quả kiểm soát, không phải luồng nghiệp vụ duy nhất.
 
 ---
 
@@ -14,8 +16,9 @@ NĐ123/2020 + TT78/2021 + NĐ70/2025: hoá đơn điện tử VN có **schema XM
 Nguồn (XML hoá đơn / tờ khai / sổ ERP)
   → [DETERMINISTIC] parse XML hoá đơn (LLM chỉ khi scan/PDF)
   → [DETERMINISTIC] validate: MST hợp lệ · Σ dòng = tổng · thuế suất ∈ {0,5,8,10%} · trùng số
-  → [LLM-GỢI-Ý + catalog] map tài khoản TT99 (rule quyết định; LLM chỉ gợi ý khi mơ hồ)
-  → [DETERMINISTIC] dựng bút toán nháp, cân Nợ=Có (calc Decimal, reconciliation gate — ĐÃ CÓ)
+  → [DETERMINISTIC + rule] phân loại chứng từ BRAVO: nhập mua / nhập khẩu / nhập xuất thẳng / chi phí mua / trả NCC
+  → [LLM-GỢI-Ý + catalog] map vật tư/NCC/thuế/tài khoản TT99 (rule quyết định; LLM chỉ gợi ý khi mơ hồ)
+  → [DETERMINISTIC] dựng nháp chứng từ BRAVO + preview bút toán cân Nợ=Có (calc Decimal, reconciliation gate — ĐÃ CÓ)
   → [DETERMINISTIC] verify-gate: mọi số khớp hoá đơn nguồn + trích dẫn (ĐÃ CÓ)
   → [DETERMINISTIC] cross-check: hoá đơn ↔ tờ khai ↔ sổ → bắt sai lệch
   → [HITL] draft chờ duyệt (maker-checker, anti-self-approval — ĐÃ CÓ)
@@ -25,15 +28,16 @@ Nguồn (XML hoá đơn / tờ khai / sổ ERP)
 
 ---
 
-## 2. Use-case A — AP: hoá đơn đầu vào → định khoản nháp ($ rõ nhất)
+## 2. Use-case A — AP: hoá đơn đầu vào → chứng từ mua hàng nháp ($ rõ nhất)
 - **Input:** hoá đơn điện tử XML (cấu trúc) hoặc PDF/scan (Docling+OCR).
 - **Trích xuất:** XML → deterministic (MST, dòng hàng, tiền hàng, VAT, tổng). Scan → LLM extract + verify.
-- **Map TK (TT99):** theo loại hàng/dịch vụ + nhà cung cấp + lịch sử bút toán → gợi ý TK chi phí/hàng (152/156/211/627/641/642...) + **VAT đầu vào TK 1331**. Rule + catalog quyết; LLM chỉ gợi ý khi mơ hồ; người sửa được.
-- **Dựng bút toán:** `Nợ <chi phí/hàng> + Nợ 1331 / Có 331 (phải trả NCC)` — cân Nợ=Có (calc Decimal).
+- **Phân loại chứng từ BRAVO:** xác định đây là `Phiếu nhập mua`, `Phiếu nhập khẩu`, `Phiếu nhập xuất thẳng`, `Chi phí mua hàng`, `Xuất trả NCC` hay `Đề nghị thanh toán`. Nếu thiếu PO/lệnh nhập/QC/phiếu gốc thì gắn `needs_review`, không tự xác nhận công nợ.
+- **Map mã và TK (TT99):** theo loại hàng/dịch vụ + nhà cung cấp + lịch sử chứng từ → gợi ý mã vật tư, NCC, mã thuế, TK hàng/chi phí (152/156/211/627/641/642...) + VAT đầu vào. Rule + catalog quyết; LLM chỉ gợi ý khi mơ hồ; người sửa được.
+- **Dựng draft chứng từ:** tạo payload theo đúng loại chứng từ BRAVO, kèm preview định khoản như `Nợ <hàng/chi phí> + Nợ 1331 / Có 331` khi phù hợp; preview phải cân Nợ=Có (calc Decimal).
 - **Verify-gate:** mọi số khớp hoá đơn nguồn; trích dẫn tới hoá đơn (số/ký hiệu/dòng).
 - **HITL:** draft chờ kế toán duyệt (maker-checker).
 - **ROI:** số hoá đơn/giờ · **% nháp duyệt-không-sửa** · giảm $/hoá đơn (benchmark ~4x) · giảm sai sót nhập liệu.
-- **bravo có/thiếu:** ✅ draft+maker-checker · verify · calc Decimal · citations | ❌ **parser hoá đơn XML · map-TK engine · UI review**.
+- **bravo có/thiếu:** ✅ draft+maker-checker · verify · calc Decimal · citations | ❌ **parser hoá đơn XML · schema chứng từ BRAVO · map mã/TK engine · UI review theo chứng từ**.
 
 ## 3. Use-case B — Cross-check hoá đơn ↔ tờ khai ↔ sổ (MOAT — ngoại không làm được)
 - **Đối chiếu:** doanh thu sổ ↔ tờ khai GTGT/TNDN; hoá đơn đầu vào ↔ bảng kê tờ khai; tổng khớp.
@@ -66,15 +70,16 @@ Nguồn (XML hoá đơn / tờ khai / sổ ERP)
 | Trích dẫn nguồn | ✅ citations | trích tới dòng hoá đơn |
 | Phân quyền | ✅ RLS-in-SQL | scope theo phòng/đơn vị |
 | Bóc tài liệu | ⚠️ Docling (chưa cài) | parser XML hoá đơn (mới, deterministic) |
-| Map TK / đối soát | ❌ | **catalog TT99 + rule map + cross-check engine** |
+| Draft chứng từ BRAVO | ⚠️ draft generic | schema `purchase_receipt` / `import_purchase` / `purchase_expense` / `return_to_vendor` |
+| Map mã/TK / đối soát | ❌ | **catalog TT99 + rule map + cross-check engine** |
 
 ## 7. Lộ trình build — cái nào làm NGAY (không cần ERP)
-- **Làm NGAY (chỉ cần hoá đơn mẫu XML + bảng TK):** parser hoá đơn điện tử → validate → map-TK catalog TT99 → dựng bút toán nháp → verify (tất cả cắm vào draft/verify/calc ĐÃ CÓ). ⇒ **demo AP chạy trên hoá đơn THẬT, KHÔNG cần ERP** — đây là use-case "đinh" demo được sớm nhất với $ rõ.
+- **Làm NGAY (chỉ cần hoá đơn mẫu XML + bảng TK + schema chứng từ tối thiểu):** parser hoá đơn điện tử → validate → phân loại chứng từ BRAVO → map mã/TK catalog TT99 → dựng nháp chứng từ + preview bút toán → verify (cắm vào draft/verify/calc ĐÃ CÓ). ⇒ **demo AP chạy trên hoá đơn THẬT, KHÔNG cần ERP** — nhưng phải ghi rõ là nháp chứng từ cần kế toán xác nhận, không phải đã post ERP.
 - **TT99 migration:** cần bảng số dư (mock được trước, ERP thật sau).
 - **Cross-check:** cần tờ khai + sổ (cần ERP/dữ liệu thuế — sau).
 
 ## 8. Demo bán + metric ROI (2-3 kịch bản)
-1. **🔥 Thả 10 hoá đơn điện tử XML → 10 bút toán nháp** (cân Nợ=Có, map TK, VAT 1331) → kế toán Review/Approve. Metric: phút/hoá đơn, % duyệt-không-sửa.
+1. **🔥 Thả 10 hoá đơn điện tử XML → 10 nháp chứng từ mua hàng BRAVO** (phân loại nhập mua/nhập khẩu/nhập xuất thẳng, map mã/TK, preview bút toán cân) → kế toán Review/Approve. Metric: phút/hoá đơn, % duyệt-không-sửa.
 2. **🛡️ Cross-check tháng:** đối chiếu hoá đơn–tờ khai GTGT → bắt 2 sai lệch (1 hoá đơn bỏ sót, 1 NCC rủi ro) → draft kiến nghị. Metric: số sai lệch bắt được, tránh phạt.
 3. **📒 Di trú TT99:** map TK cũ→mới + chuyển số dư + bút toán chuyển đổi chờ duyệt. Metric: số TK map tự động, đáp ứng deadline.
 

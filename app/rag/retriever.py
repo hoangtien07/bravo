@@ -8,12 +8,13 @@ Every returned chunk carries provenance for citation (page/sheet/cell).
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Chunk
+from app.rag.bravo_intent import boost_for_bravo_intent
 from app.rag import rerank as _rerank
 from app.rag.embedding import embed_one
 from app.security.rls import Identity, chunk_scope_filter
@@ -32,6 +33,7 @@ class Retrieved:
     sheet_name: str | None
     cell_range: str | None
     score: float
+    extra: dict = field(default_factory=dict)
 
     def citation(self) -> str:
         loc = []
@@ -62,7 +64,7 @@ async def vector_search(db: AsyncSession, identity: Identity, query: str,
         Retrieved(
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
             page_number=c.page_number, sheet_name=c.sheet_name, cell_range=c.cell_range,
-            score=1.0 - float(dist),
+            score=1.0 - float(dist), extra=c.extra or {},
         )
         for c, dist in rows
     ]
@@ -104,7 +106,7 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
         Retrieved(
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
             page_number=c.page_number, sheet_name=c.sheet_name, cell_range=c.cell_range,
-            score=float(rank),
+            score=float(rank), extra=c.extra or {},
         )
         for c, rank in rows
     ]
@@ -128,7 +130,7 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
 
     dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
-    fused = rrf_fuse(dense, lexical)
+    fused = boost_for_bravo_intent(query, rrf_fuse(dense, lexical))
     if not fused:
         return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
@@ -148,5 +150,5 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
-    fused.sort(key=lambda r: r.score, reverse=True)
+    fused = boost_for_bravo_intent(query, fused)
     return fused[:top_n]

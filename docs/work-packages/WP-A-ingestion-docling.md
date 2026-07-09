@@ -3,7 +3,7 @@
 > Module: `app/ingestion`. **Đọc [CONTRACTS.md](CONTRACTS.md) trước.** Phụ thuộc: không.
 
 ## Mục tiêu
-Bóc tài liệu **không làm vỡ bảng tài chính** và **gắn provenance đủ để trích dẫn tới ô** (invariant #3). Nạp corpus Demo A (file trong `file_system/`, gồm `.docx`).
+Bóc tài liệu **không làm vỡ bảng tài chính** và **gắn provenance đủ để trích dẫn tới ô** (invariant #3). Nạp corpus Demo A (file trong `file_system/`, gồm `.docx`) và gắn taxonomy nguồn theo [../BRAVO-KB-TAXONOMY-EVAL.md](../BRAVO-KB-TAXONOMY-EVAL.md).
 
 ## Reuse (ADR-0013) — đừng tái tạo bánh xe
 - **Docling là dep CHÍNH** (gỡ khỏi optional trong [pyproject.toml](../../pyproject.toml)). Dùng `DocumentConverter` với `do_table_structure=True`, `do_ocr=False`.
@@ -15,19 +15,21 @@ Bóc tài liệu **không làm vỡ bảng tài chính** và **gắn provenance 
 **OUT (đừng làm):** OCR full-page (`do_ocr=False` — descope OCR scan, [ADR-0009]); vendor/fork code docsgpt; tự viết table-structure; parser cho định dạng ngoài PDF/DOCX/XLSX.
 
 ## Files
-`app/ingestion/parser.py` (dispatch + ParsedBlock) · `pdf_parser.py` (giữ pypdf fast-path) · `pipeline.py` (thêm nhánh xlsx) · `chunker.py` (giữ table-whole) · `pyproject.toml` (Docling→chính) · `scripts/ingest_userguide.py` (mở rộng nạp `file_system/`).
+`app/ingestion/parser.py` (dispatch + ParsedBlock) · `pdf_parser.py` (giữ pypdf fast-path) · `pipeline.py` (thêm nhánh xlsx/manifest metadata) · `chunker.py` (giữ table-whole) · `pyproject.toml` (Docling→chính) · `scripts/ingest_userguide.py` (mở rộng nạp `file_system/`).
 
 ## Việc cụ thể
 1. `parser.py`: hàm `detect_kind(path) -> {"pdf_text","pdf_table","docx","xlsx"}` (PDF: thử phát hiện bảng; nếu có → Docling). Mọi nhánh trả `list[ParsedBlock]` với `page_number|sheet_name|cell_range|heading_path|is_table`.
 2. PDF-có-bảng/DOCX/XLSX → Docling; map `TableItem` → ParsedBlock giữ nguyên ô; `is_table=True` (chunker không split).
 3. PDF text-thuần → giữ pypdf (page provenance).
-4. Nạp corpus Demo A: `Tài liệu bravo 10 cho khối kỹ thuật.docx`, `UserGuide_B10_Basic rules.pdf`, `BRAVO_BI_Guidelines_Full.pdf` + 19 chương → scope global (không nhạy).
+4. Nạp corpus Demo A: `TaiLieuBravo10_KhoiKyThuat.docx`, `UserGuide_B10_Basic_rules.pdf`, `BRAVO_BI_Guidelines_Full.pdf`, 19 chương user guide, 19 mindmap, 20 KQPT/PTNV và tài liệu kỹ thuật DLL → scope global (không nhạy), metadata theo `file_system/bravo_corpus_manifest.yaml`.
+5. Manifest ingest phải điền tối thiểu: `source_type`, `module`, `lifecycle_stage`, `audience`, `system_version`, `confidentiality`, `relative_path`; chunk dùng `extra` cho `business_object`, `bravo_doc_code`, `table_names`, `control_points` nếu bóc được.
 
 ## Acceptance (test)
 - PDF có bảng số → ô KHÔNG bị làm phẳng (giữ hàng/cột); 1 ô có `cell_range` không None.
 - `.docx` nạp được (pypdf không đọc được .docx — phải qua Docling).
 - XLSX: 1 số trích dẫn được tới `sheet_name`+`cell_range`.
 - User-guide PDF text-thuần vẫn ra tiếng Việt sạch + `page_number`.
+- Mỗi source Demo A có `knowledge_type` không rỗng; câu hỏi schema ưu tiên `technical_manual`, câu hỏi thao tác ưu tiên `user_guide`.
 - CI: test parse 1 file mẫu mỗi loại (pin Docling version).
 
 ## Invariant

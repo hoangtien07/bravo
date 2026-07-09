@@ -37,7 +37,7 @@ class ParsedBlock:
 
 
 # Kinds the dispatcher recognises (CONTRACTS §6 / WP-A item 1).
-Kind = str  # one of: "pdf_text" | "pdf_table" | "docx" | "xlsx"
+Kind = str  # one of: "pdf_text" | "pdf_table" | "docx" | "xlsx" | "markdown"
 
 
 def detect_kind(path: str | Path) -> Kind:
@@ -51,6 +51,8 @@ def detect_kind(path: str | Path) -> Kind:
     suffix = Path(path).suffix.lower()
     if suffix == ".docx":
         return "docx"
+    if suffix in (".md", ".markdown"):
+        return "markdown"
     if suffix in (".xlsx", ".xlsm"):
         return "xlsx"
     if suffix == ".pdf":
@@ -156,10 +158,56 @@ def parse(path: str | Path) -> list[ParsedBlock]:
     (table structure on, OCR off). Every branch returns list[ParsedBlock].
     """
     kind = detect_kind(path)
+    if kind == "markdown":
+        return _parse_markdown(path)
     if kind == "pdf_text":
         from app.ingestion.pdf_parser import parse_pdf
         return parse_pdf(path)
     return _parse_docling(path, kind)
+
+
+_MD_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
+
+
+def _parse_markdown(path: str | Path) -> list[ParsedBlock]:
+    """Parse Markdown into heading-bounded blocks.
+
+    Mindmap exports are structured prose/list documents, not paged files. We preserve the
+    heading stack as `heading_path`; page/sheet/cell provenance intentionally remains None.
+    """
+    text = Path(path).read_text(encoding="utf-8-sig")
+    blocks: list[ParsedBlock] = []
+    heading_stack: list[str] = []
+    buf: list[str] = []
+
+    def flush() -> None:
+        body = "\n".join(buf).strip()
+        if body:
+            blocks.append(ParsedBlock(
+                text=body,
+                heading_path=" > ".join(heading_stack) or None,
+                extra={"format": "markdown"},
+            ))
+        buf.clear()
+
+    for line in text.splitlines():
+        m = _MD_HEADING.match(line)
+        if m:
+            flush()
+            level = len(m.group(1))
+            title = m.group(2).strip()
+            heading_stack = heading_stack[: max(level - 1, 0)] + [title]
+            continue
+        buf.append(line)
+    flush()
+
+    if not blocks and text.strip():
+        blocks.append(ParsedBlock(
+            text=text.strip(),
+            heading_path=Path(path).stem,
+            extra={"format": "markdown"},
+        ))
+    return blocks
 
 
 def _parse_docling(path: str | Path, kind: Kind) -> list[ParsedBlock]:

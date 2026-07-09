@@ -17,7 +17,12 @@ from app.rag.embedding import embed
 from app.security.sensitivity import ingest_sensitive
 
 
-async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> int:
+async def ingest_source(
+    db: AsyncSession,
+    source_id: uuid.UUID,
+    path: str,
+    source_extra: dict | None = None,
+) -> int:
     """Ingest one source file. Returns number of chunks stored."""
     source = await db.get(Source, source_id)
     if source is None:
@@ -58,10 +63,12 @@ async def ingest_source(db: AsyncSession, source_id: uuid.UUID, path: str) -> in
     vectors = embed([b.text for b in blocks], sensitive=is_sensitive)
 
     for b, vec in zip(blocks, vectors, strict=True):
+        extra = dict(source_extra or {})
+        extra.update(b.extra or {})
         db.add(Chunk(
             source_id=source.id, content=b.text, embedding=vec,
             page_number=b.page_number, sheet_name=b.sheet_name, cell_range=b.cell_range,
-            heading_path=b.heading_path, is_table=b.is_table, extra=b.extra,
+            heading_path=b.heading_path, is_table=b.is_table, extra=extra,
             department_ids=dept_ids,
         ))
     source.status = "ready"

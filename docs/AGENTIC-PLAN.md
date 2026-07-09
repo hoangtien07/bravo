@@ -42,7 +42,7 @@ Mỗi cấu phần của đề xuất được xếp vào một trong ba nhóm:
 ## 2. Hai phần demo (đầu ra trình diễn)
 
 ### Demo A — Chat AI hướng dẫn (knowledge assistant)
-- **Nội dung:** cẩm nang BRAVO 10 (19 chương đã nạp) **+ file bổ sung** về *doanh nghiệp BRAVO* và *quy trình triển khai phần mềm* (chủ dự án sẽ cung cấp → nạp qua pipeline ingestion sẵn có).
+- **Nội dung:** cẩm nang BRAVO 10 (19 chương đã nạp) **+ tài liệu khối kỹ thuật + KQPT/PTNV + basic rules + dashboard/mẫu in/file attached/offline mobile**. Trọng tâm không chỉ là hướng dẫn end-user, mà còn là trợ lý cho BA, PTSP/dev, QA, kỹ thuật triển khai, tư vấn và support. Bản đồ cơ hội: [BRAVO-AI-GAP-USP-MAP.md](BRAVO-AI-GAP-USP-MAP.md); taxonomy/eval nguồn: [BRAVO-KB-TAXONOMY-EVAL.md](BRAVO-KB-TAXONOMY-EVAL.md).
 - **Năng lực:** hỏi-đáp tra cứu có **trích dẫn nguồn (tên tài liệu + trang)**; cơ chế **từ chối** khi thiếu căn cứ.
 - **Nền tảng:** đã có sẵn (Phase 1 code xong) — RAG hybrid + rerank + citations. Việc cần: nạp file mới + chỉnh prompt hệ thống cho ngữ cảnh "trợ lý hướng dẫn triển khai".
 - **Đây là phần rủi ro thấp, giá trị nhanh** — giảm tải helpdesk/rút ngắn bàn giao (đo bằng % câu tự phục vụ).
@@ -88,8 +88,8 @@ Mỗi cấu phần của đề xuất được xếp vào một trong ba nhóm:
 - **L3. Clarify-as-tool** — agent **hỏi lại** khi mơ hồ thay vì đoán (human-on-the-loop nhẹ). *Acceptance: câu mơ hồ → clarify, không đoán.*
 
 ### WS-K — Demo A: Chat AI hướng dẫn
-- **K1. Nạp file bổ sung** (doanh nghiệp BRAVO + quy trình triển khai) qua pipeline ingestion sẵn có; gắn scope global (không nhạy). *Acceptance: hỏi về quy trình triển khai → trả lời + trích dẫn đúng trang.*
-- **K2. Prompt hệ thống "trợ lý hướng dẫn triển khai"** + cơ chế từ chối khi ngoài tài liệu. *Acceptance: câu ngoài KB → từ chối, không bịa.*
+- **K1. Nạp file bổ sung** (doanh nghiệp BRAVO + quy trình triển khai) qua pipeline ingestion sẵn có; gắn `source_type/module/lifecycle/audience` theo [BRAVO-KB-TAXONOMY-EVAL.md](BRAVO-KB-TAXONOMY-EVAL.md) và [../file_system/bravo_corpus_manifest.yaml](../file_system/bravo_corpus_manifest.yaml), scope global với tài liệu không nhạy. *Acceptance: hỏi về quy trình triển khai → trả lời + trích dẫn đúng trang và đúng loại nguồn.*
+- **K2. Prompt hệ thống "trợ lý hướng dẫn triển khai"** + cơ chế từ chối khi ngoài tài liệu; routing theo intent giữa user guide, KQPT/PTNV và tài liệu kỹ thuật. *Acceptance: câu ngoài KB → từ chối, không bịa; câu hỏi schema không lấy user guide làm nguồn chính.*
 
 ### WS-M — Demo B: Mock financial layer (TT99)
 *Toàn bộ làm với MOCK DataSource — không chờ ERP.*

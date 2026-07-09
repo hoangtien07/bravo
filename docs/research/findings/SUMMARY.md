@@ -1,7 +1,7 @@
 # SUMMARY — Tổng hợp Deep Research (5 track)
 
 > Tổng hợp chéo 5 báo cáo deep research (A–E), chạy 2026-06-08, kiểm chứng đối kháng 3 phiếu. Mục tiêu: cải thiện dự án, tránh lỗi triển khai, tìm điểm mạnh, định vị BRAVO AI trên thị trường VN.
-> Báo cáo gốc: [A](A-competitive-landscape.md) · [B](B-academic-technical.md) · [C](C-deployment-pitfalls.md) · [D](D-vietnam-market-positioning.md) · [E](E-vietnam-legal.md) · [F — re-verify rate-limit](F-reverification.md) · [G — ~17 đối thủ](G-competitor-deep-dive.md) · [H — tầng số liệu (semantic/calc/table-RAG)](H-data-layer-techniques.md) · [I — model tiếng Việt](I-vietnamese-models.md) · [J — RAG/agent/eval](J-rag-agent-eval.md) · [**L — nghiệp vụ agent đối thủ thực chạy + gap-analysis AP (2026-07)**](L-agent-jobs-gap-2026-07.md).
+> Báo cáo gốc: [A](A-competitive-landscape.md) · [B](B-academic-technical.md) · [C](C-deployment-pitfalls.md) · [D](D-vietnam-market-positioning.md) · [E](E-vietnam-legal.md) · [F — re-verify rate-limit](F-reverification.md) · [G — ~17 đối thủ](G-competitor-deep-dive.md) · [H — tầng số liệu (semantic/calc/table-RAG)](H-data-layer-techniques.md) · [I — model tiếng Việt](I-vietnamese-models.md) · [J — RAG/agent/eval](J-rag-agent-eval.md) · [**L — nghiệp vụ agent đối thủ thực chạy + gap-analysis AP (2026-07)**](L-agent-jobs-gap-2026-07.md) · [**M — technical decision synthesis sau 2 lượt research (2026-07-09)**](M-technical-decision-synthesis-2026-07-09.md) · [**N — agent AI có end user thật và workflow optimization (2026-07-09)**](N-agent-end-user-workflows-2026-07-09.md) · [**O — 360 gap & improvement review (2026-07)**](O-360-gap-improvement-review-2026-07.md).
 
 ## 1. Năm kết luận lớn (đã kiểm chứng)
 
