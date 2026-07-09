@@ -10,6 +10,12 @@ defaults:
   confidentiality: public_internal
   department_scope: global
   evidence_level: primary
+  # KB version-awareness (VersionRAG mitigation). Flows into Chunk.extra; retrieval demotes
+  # non-approved docs (app/rag/kb_lifecycle.py). Owner overrides per-source khi có bản mới:
+  #   approved_status: superseded  + superseded_by: <id bản thay thế>
+  doc_version: B10R1
+  owner: bravo_product
+  approved_status: approved         # approved | draft | superseded | deprecated
 
 sources:
   # --- User guide chapters -------------------------------------------------------

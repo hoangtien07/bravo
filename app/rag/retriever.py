@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Chunk
 from app.rag.bravo_intent import boost_for_bravo_intent
+from app.rag.kb_lifecycle import apply_version_policy
 from app.rag import rerank as _rerank
 from app.rag.embedding import embed_one
 from app.security.rls import Identity, chunk_scope_filter
@@ -130,7 +131,8 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
 
     dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
-    fused = boost_for_bravo_intent(query, rrf_fuse(dense, lexical))
+    # intent boost -> version policy (current version wins over superseded/deprecated).
+    fused = apply_version_policy(boost_for_bravo_intent(query, rrf_fuse(dense, lexical)))
     if not fused:
         return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
@@ -150,5 +152,5 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
-    fused = boost_for_bravo_intent(query, fused)
+    fused = apply_version_policy(boost_for_bravo_intent(query, fused))
     return fused[:top_n]
