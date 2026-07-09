@@ -1,0 +1,249 @@
+# BRAVO AI use-case matrix.
+# Purpose: prioritize concrete AI capabilities across the software/business lifecycle.
+# Links each use case to a lifecycle playbook, source taxonomy, deliverables, guardrails,
+# ROI metric, and dependency level.
+
+version: 1
+
+use_cases:
+  - id: uc_knowledge_helpdesk
+    name: User guide and helpdesk copilot
+    mode: end_user_guidance
+    usp: user_guide_helpdesk_copilot
+    priority: P0
+    stage: knowledge_pilot
+    lifecycle_stage: end_user_guidance
+    personas: [support, consultant, key_user, end_user]
+    problem: Users and support staff struggle to find the right BRAVO function, menu, prerequisite, or permission rule.
+    input_sources: [user_guide, mindmap, basic_rule]
+    output_artifacts:
+      - cited answer
+      - step-by-step user guidance
+      - prerequisite checklist
+      - safe escalation note
+    guardrails:
+      - cite every instruction group
+      - do not invent menu steps
+      - check permission/config before calling something a bug
+    success_metrics:
+      - self-service ticket rate
+      - first-response time
+      - repeated-question reduction
+    erp_dependency: none
+    readiness: now
+
+  - id: uc_implementation_checklist
+    name: Implementation and go-live copilot
+    mode: implementation_support
+    usp: implementation_copilot
+    priority: P0
+    stage: knowledge_pilot
+    lifecycle_stage: implementation
+    personas: [implementation_engineer, consultant, support, admin]
+    problem: Wrong branch/base-unit/warehouse/opening-balance setup creates expensive rework after data entry.
+    input_sources: [technical_manual, basic_rule, kqpt_ptnv, mindmap]
+    output_artifacts:
+      - go-live checklist
+      - setup risk warning
+      - reconciliation checklist
+      - handover packet
+    guardrails:
+      - do not recommend production data edits
+      - require confirmation of organization/base-unit model
+      - respect data locks and permissions
+    success_metrics:
+      - implementation hours reduced
+      - go-live defect count
+      - checklist completion rate
+    erp_dependency: none
+    readiness: now
+
+  - id: uc_ba_scope_assistant
+    name: BA/PTNV scope and survey assistant
+    mode: ba_support
+    usp: ba_ptnv_copilot
+    priority: P1
+    stage: lifecycle_copilot
+    lifecycle_stage: ba_analysis
+    personas: [ba, product_owner, consultant, qa, developer]
+    problem: KQPT/PTNV documents are long and hard to reuse across similar customer requirements.
+    input_sources: [kqpt_ptnv, mindmap, user_guide, legal_standard]
+    output_artifacts:
+      - similar-case summary
+      - scope boundary
+      - survey questions
+      - acceptance criteria
+      - exception list
+    guardrails:
+      - separate standard BRAVO behavior from customer-specific customization
+      - mark assumptions
+      - do not add requirements beyond cited scope
+    success_metrics:
+      - KQPT drafting time reduced
+      - reuse rate of prior analysis
+      - BA-dev-QA clarification rounds
+    erp_dependency: none
+    readiness: next
+
+  - id: uc_customization_impact
+    name: Customization impact copilot
+    mode: technical_impact
+    usp: customization_impact_copilot
+    priority: P1
+    stage: lifecycle_copilot
+    lifecycle_stage: customization
+    personas: [developer, technical_lead, implementation_engineer, qa]
+    problem: Customer requests become layout/report/procedure/code edits whose cross-module impact is hard to see.
+    input_sources: [technical_manual, kqpt_ptnv, report_template, basic_rule]
+    output_artifacts:
+      - change classification
+      - affected object map
+      - upstream/downstream impact
+      - regression test plan
+      - review checkpoint
+    guardrails:
+      - do not generate direct SQL/update statements
+      - do not assert schema impact without technical source
+      - include rollback/review checkpoint
+    success_metrics:
+      - impact analysis time reduced
+      - regression defects reduced
+      - release-note quality
+    erp_dependency: none
+    readiness: next
+
+  - id: uc_testcase_generator
+    name: BRAVO testcase copilot
+    mode: qa_testcase
+    usp: testcase_copilot
+    priority: P1
+    stage: lifecycle_copilot
+    lifecycle_stage: qa_testing
+    personas: [qa, ba, developer, consultant]
+    problem: Manual testcase writing misses exception, permission, approval, data-lock, and reconciliation scenarios.
+    input_sources: [kqpt_ptnv, user_guide, technical_manual, mindmap]
+    output_artifacts:
+      - happy-path test cases
+      - negative/exception cases
+      - role and RLS cases
+      - data-lock and approval cases
+      - reconciliation checks
+    guardrails:
+      - include permission/data-lock tests for ERP workflows
+      - do not claim full coverage without source scope
+      - separate ERP API dependencies
+    success_metrics:
+      - testcase authoring time reduced
+      - defect escape rate
+      - permission issue detection
+    erp_dependency: none
+    readiness: next
+
+  - id: uc_support_escalation_packet
+    name: Support escalation packet copilot
+    mode: support_helpdesk
+    usp: user_guide_helpdesk_copilot
+    priority: P1
+    stage: lifecycle_copilot
+    lifecycle_stage: support
+    personas: [support, consultant, implementation_engineer]
+    problem: Hard tickets require repeated back-and-forth because logs, screenshots, module, version, and data context are missing.
+    input_sources: [user_guide, basic_rule, technical_manual, kqpt_ptnv, support_ticket]
+    output_artifacts:
+      - likely cause categories
+      - safe user checks
+      - technical checks
+      - escalation packet
+      - confidence boundary
+    guardrails:
+      - do not diagnose data corruption without evidence
+      - request sensitive data only when necessary and scoped
+      - distinguish standard guidance from workaround
+    success_metrics:
+      - ticket resolution time
+      - escalation quality
+      - repeated-ticket reduction
+    erp_dependency: optional_read
+    readiness: next
+
+  - id: uc_purchase_voucher_draft
+    name: BRAVO purchase voucher assistant
+    mode: voucher_assistant
+    usp: bravo_voucher_assistant
+    priority: P2
+    stage: erp_aware_copilot
+    lifecycle_stage: end_user_productivity
+    personas: [accountant, buyer, warehouse, consultant]
+    problem: AP automation that jumps from invoice XML to journal entry misses BRAVO's voucher-first workflow.
+    input_sources: [user_guide, technical_manual, mindmap, operational_data]
+    output_artifacts:
+      - voucher type classification
+      - lineage checklist
+      - exception list
+      - draft voucher recommendation
+      - journal preview
+    guardrails:
+      - voucher first, accounting after
+      - no direct ERP write or approval
+      - mark needs_review when PO/receipt/QC lineage is missing
+      - numbers must come from deterministic parser or ERP data
+    success_metrics:
+      - vouchers per hour
+      - draft approval-without-edit rate
+      - input error reduction
+    erp_dependency: read_and_draft
+    readiness: later
+
+  - id: uc_dashboard_explainer
+    name: Management dashboard explainer
+    mode: dashboard_explainer
+    usp: management_dashboard_explainer
+    priority: P2
+    stage: erp_aware_copilot
+    lifecycle_stage: management_reporting
+    personas: [manager, cfo, accountant, consultant]
+    problem: Managers see dashboard metrics but still need accounting/BI help to understand formula, source, variants, and changes.
+    input_sources: [report_template, kqpt_ptnv, user_guide, operational_data]
+    output_artifacts:
+      - metric definition
+      - source lineage
+      - period/entity clarification
+      - deterministic number citation
+      - variance explanation
+    guardrails:
+      - do not fabricate numbers or trends
+      - clarify gross/net/VAT/period variants
+      - cite formula separately from operational value
+    success_metrics:
+      - management self-service rate
+      - reduced BI/accounting questions
+      - metric ambiguity reduction
+    erp_dependency: read_only
+    readiness: later
+
+  - id: uc_governance_audit
+    name: Governance and audit copilot
+    mode: governance_audit
+    usp: governance_audit_copilot
+    priority: P3
+    stage: erp_aware_copilot
+    lifecycle_stage: governance
+    personas: [admin, chief_accountant, internal_control, implementation_engineer]
+    problem: Permission, audit log, data lock, approval, and layout/report changes are hard to review manually.
+    input_sources: [technical_manual, basic_rule, operational_data, support_ticket]
+    output_artifacts:
+      - control point summary
+      - actor/scope checklist
+      - evidence checklist
+      - risk classification
+      - investigation step
+    guardrails:
+      - do not expose sensitive data cross-scope
+      - do not override data locks or approval workflow
+      - absence of log is not proof of no issue
+    success_metrics:
+      - audit preparation time reduced
+      - permission errors reduced
+      - traceability improved
+    erp_dependency: read_only
+    readiness: later

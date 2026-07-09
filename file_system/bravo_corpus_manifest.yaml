@@ -1,0 +1,624 @@
+# BRAVO Demo A corpus manifest.
+# This file is read by scripts/ingest_userguide.py and copied into Chunk.extra.
+# Keep Source.knowledge_type as a friendly citation label; use source_type/module/lifecycle
+# for BRAVO-aware routing and eval.
+
+version: 1
+system_version: B10R1
+
+defaults:
+  confidentiality: public_internal
+  department_scope: global
+  evidence_level: primary
+
+sources:
+  # --- User guide chapters -------------------------------------------------------
+  - id: userguide_overview
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter01_Overview.pdf
+    knowledge_type: "Chuong 01 - Overview"
+    source_type: user_guide
+    module: overview
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  - id: userguide_general_rules
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter02_GeneralRules.pdf
+    knowledge_type: "Chuong 02 - GeneralRules"
+    source_type: user_guide
+    module: general_rules
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, implementation_engineer]
+
+  - id: userguide_masters
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter03_Masters.pdf
+    knowledge_type: "Chuong 03 - Masters"
+    source_type: user_guide
+    module: masters
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, implementation_engineer]
+
+  - id: userguide_documents
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter04_Documents.pdf
+    knowledge_type: "Chuong 04 - Documents"
+    source_type: user_guide
+    module: documents
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  - id: userguide_managements
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter05_Managements.pdf
+    knowledge_type: "Chuong 05 - Managements"
+    source_type: user_guide
+    module: managements
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, manager]
+
+  - id: userguide_system
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter06_System.pdf
+    knowledge_type: "Chuong 06 - System"
+    source_type: user_guide
+    module: system
+    lifecycle_stage: implementation
+    audience: [admin, support, implementation_engineer, consultant]
+
+  - id: userguide_task
+    path: UserGuide_B10_TV_PDF/NB_Userguide_B10_Chapter07_Task.pdf
+    knowledge_type: "Chuong 07 - Task"
+    source_type: user_guide
+    module: task
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  - id: userguide_purchases
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter08_Purchases.pdf
+    knowledge_type: "Chuong 08 - Purchases"
+    source_type: user_guide
+    module: purchase
+    business_area: procure_to_pay
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, ba]
+
+  - id: userguide_crm
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter09_CRM.pdf
+    knowledge_type: "Chuong 09 - CRM"
+    source_type: user_guide
+    module: crm
+    business_area: lead_to_order
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, sales]
+
+  - id: userguide_sale
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter10_Sale.pdf
+    knowledge_type: "Chuong 10 - Sale"
+    source_type: user_guide
+    module: sale
+    business_area: order_to_cash
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, ba]
+
+  - id: userguide_sales_retail
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter11_SalesRetail.pdf
+    knowledge_type: "Chuong 11 - SalesRetail"
+    source_type: user_guide
+    module: sales_retail
+    business_area: retail_to_cash
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  - id: userguide_inventory
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter12_Inventory.pdf
+    knowledge_type: "Chuong 12 - Inventory"
+    source_type: user_guide
+    module: inventory
+    business_area: inventory_management
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, warehouse]
+
+  - id: userguide_qc
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter13_QC.pdf
+    knowledge_type: "Chuong 13 - QC"
+    source_type: user_guide
+    module: qc
+    business_area: quality_control
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, qa]
+
+  - id: userguide_machine_management
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter14_MachineManagement.pdf
+    knowledge_type: "Chuong 14 - MachineManagement"
+    source_type: user_guide
+    module: machine_management
+    business_area: asset_maintenance
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  - id: userguide_production
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter15_ProductionManagement.pdf
+    knowledge_type: "Chuong 15 - ProductionManagement"
+    source_type: user_guide
+    module: production
+    business_area: plan_to_produce
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, ba]
+
+  - id: userguide_hrm
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter16_HRM.pdf
+    knowledge_type: "Chuong 16 - HRM"
+    source_type: user_guide
+    module: hrm
+    business_area: hire_to_retire
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, hr]
+
+  - id: userguide_accounting
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter17_Accounting.pdf
+    knowledge_type: "Chuong 17 - Accounting"
+    source_type: user_guide
+    module: accounting
+    business_area: record_to_report
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, accountant]
+
+  - id: userguide_mobile
+    path: UserGuide_B10_TV_PDF/NB_UserGuide_B10_Chapter18_Mobile.pdf
+    knowledge_type: "Chuong 18 - Mobile"
+    source_type: user_guide
+    module: mobile
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, implementation_engineer]
+
+  - id: userguide_conclusion
+    path: UserGuide_B10_TV_PDF/NB_Userguide_B10_Chapter19_Conclusion.pdf
+    knowledge_type: "Chuong 19 - Conclusion"
+    source_type: user_guide
+    module: overview
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant]
+
+  # --- Mindmaps copied from UserGuide_B10_TV_PDF/Mindmap_*.md --------------------
+  - id: mindmap_accounting
+    path: Mindmaps/Mindmap_Accounting.md
+    knowledge_type: "Mindmap - Accounting"
+    source_type: mindmap
+    module: accounting
+    business_area: record_to_report
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_conclusion
+    path: Mindmaps/Mindmap_Conclusion.md
+    knowledge_type: "Mindmap - Conclusion"
+    source_type: mindmap
+    module: overview
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant]
+
+  - id: mindmap_crm
+    path: Mindmaps/Mindmap_CRM.md
+    knowledge_type: "Mindmap - CRM"
+    source_type: mindmap
+    module: crm
+    business_area: lead_to_order
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_documents
+    path: Mindmaps/Mindmap_Documents.md
+    knowledge_type: "Mindmap - Documents"
+    source_type: mindmap
+    module: documents
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_general_rules
+    path: Mindmaps/Mindmap_GeneralRules.md
+    knowledge_type: "Mindmap - GeneralRules"
+    source_type: mindmap
+    module: general_rules
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, implementation_engineer]
+
+  - id: mindmap_hrm
+    path: Mindmaps/Mindmap_HRM.md
+    knowledge_type: "Mindmap - HRM"
+    source_type: mindmap
+    module: hrm
+    business_area: hire_to_retire
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_inventory
+    path: Mindmaps/Mindmap_Inventory.md
+    knowledge_type: "Mindmap - Inventory"
+    source_type: mindmap
+    module: inventory
+    business_area: inventory_management
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_machine_management
+    path: Mindmaps/Mindmap_MachineManagement.md
+    knowledge_type: "Mindmap - MachineManagement"
+    source_type: mindmap
+    module: machine_management
+    business_area: asset_maintenance
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_managements
+    path: Mindmaps/Mindmap_Managements.md
+    knowledge_type: "Mindmap - Managements"
+    source_type: mindmap
+    module: managements
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_masters
+    path: Mindmaps/Mindmap_Masters.md
+    knowledge_type: "Mindmap - Masters"
+    source_type: mindmap
+    module: masters
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, implementation_engineer, developer]
+
+  - id: mindmap_mobile
+    path: Mindmaps/Mindmap_Mobile.md
+    knowledge_type: "Mindmap - Mobile"
+    source_type: mindmap
+    module: mobile
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, implementation_engineer, qa]
+
+  - id: mindmap_overview
+    path: Mindmaps/Mindmap_Overview.md
+    knowledge_type: "Mindmap - Overview"
+    source_type: mindmap
+    module: overview
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant]
+
+  - id: mindmap_production
+    path: Mindmaps/Mindmap_ProductionManagement.md
+    knowledge_type: "Mindmap - ProductionManagement"
+    source_type: mindmap
+    module: production
+    business_area: plan_to_produce
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_purchase
+    path: Mindmaps/Mindmap_Purchase.md
+    knowledge_type: "Mindmap - Purchase"
+    source_type: mindmap
+    module: purchase
+    business_area: procure_to_pay
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_qc
+    path: Mindmaps/Mindmap_QC.md
+    knowledge_type: "Mindmap - QC"
+    source_type: mindmap
+    module: qc
+    business_area: quality_control
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_sale
+    path: Mindmaps/Mindmap_Sale.md
+    knowledge_type: "Mindmap - Sale"
+    source_type: mindmap
+    module: sale
+    business_area: order_to_cash
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_sales_retail
+    path: Mindmaps/Mindmap_SalesRetail.md
+    knowledge_type: "Mindmap - SalesRetail"
+    source_type: mindmap
+    module: sales_retail
+    business_area: retail_to_cash
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  - id: mindmap_system
+    path: Mindmaps/Mindmap_System.md
+    knowledge_type: "Mindmap - System"
+    source_type: mindmap
+    module: system
+    lifecycle_stage: implementation
+    audience: [support, consultant, implementation_engineer, admin, developer]
+
+  - id: mindmap_task
+    path: Mindmaps/Mindmap_Task.md
+    knowledge_type: "Mindmap - Task"
+    source_type: mindmap
+    module: task
+    lifecycle_stage: ba_analysis
+    audience: [ba, support, consultant, qa, developer]
+
+  # --- KQPT/PTNV analysis documents ---------------------------------------------
+  - id: kqpt_vendor_evaluation
+    path: KQPT_PTNV/01_NB_MB2023_009_KQPT_Win_DanhGia_NCC.pdf
+    knowledge_type: "KQPT/PTNV - DanhGia NCC"
+    source_type: kqpt_ptnv
+    module: purchase
+    business_area: procure_to_pay
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_task_management
+    path: KQPT_PTNV/02_NB_MB2023_011_KQPT_QLCV_B8R4_v1_1.pdf
+    knowledge_type: "KQPT/PTNV - QLCV"
+    source_type: kqpt_ptnv
+    module: task
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_2fa
+    path: KQPT_PTNV/03_NB_MB2023_017_KQPT_2FactorAuthentication.pdf
+    knowledge_type: "KQPT/PTNV - 2FactorAuthentication"
+    source_type: kqpt_ptnv
+    module: system
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support, admin]
+
+  - id: kqpt_file_viewer
+    path: KQPT_PTNV/04_NB_MB2023_018_KQPT_FileViewer.pdf
+    knowledge_type: "KQPT/PTNV - FileViewer"
+    source_type: kqpt_ptnv
+    module: platform
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support]
+
+  - id: kqpt_notification
+    path: KQPT_PTNV/05_NB_MB2023_023_KQPT_WinWeb_Notification.pdf
+    knowledge_type: "KQPT/PTNV - Notification"
+    source_type: kqpt_ptnv
+    module: system
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support]
+
+  - id: kqpt_qttu_tt
+    path: KQPT_PTNV/06_NB_MB2023_024_KQPT_QTTU_TT.pdf
+    knowledge_type: "KQPT/PTNV - QTTU TT"
+    source_type: kqpt_ptnv
+    module: accounting
+    business_area: record_to_report
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, accountant]
+
+  - id: kqpt_stocktake
+    path: KQPT_PTNV/07_NB_MB2023_025_KQPT_KiemKe.pdf
+    knowledge_type: "KQPT/PTNV - KiemKe"
+    source_type: kqpt_ptnv
+    module: inventory
+    business_area: inventory_management
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, warehouse]
+
+  - id: kqpt_mobile_offline_stocktake
+    path: KQPT_PTNV/08_NB_MB2024_007_KQPT_Mobile_Offline_Kiem_ke.pdf
+    knowledge_type: "KQPT/PTNV - Mobile Offline KiemKe"
+    source_type: kqpt_ptnv
+    module: mobile
+    business_area: inventory_management
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, warehouse]
+
+  - id: kqpt_print_template
+    path: KQPT_PTNV/09_NB_MB2024_008_KQPT_MauIn.pdf
+    knowledge_type: "KQPT/PTNV - MauIn"
+    source_type: kqpt_ptnv
+    module: report
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support]
+
+  - id: kqpt_print_template_by_module
+    path: KQPT_PTNV/10_NB_MB2024_009_KQPT_MauIn_Theo_phan_he.pdf
+    knowledge_type: "KQPT/PTNV - MauIn Theo PhanHe"
+    source_type: kqpt_ptnv
+    module: report
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support]
+
+  - id: kqpt_forgot_password
+    path: KQPT_PTNV/11_NB_MB2024_010_KQPT_ForgotPassword.pdf
+    knowledge_type: "KQPT/PTNV - ForgotPassword"
+    source_type: kqpt_ptnv
+    module: system
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support, admin]
+
+  - id: kqpt_dashboard_b10
+    path: KQPT_PTNV/12_NB_MB2024_014_KQPT_Dashboard_B10.pdf
+    knowledge_type: "KQPT/PTNV - Dashboard B10"
+    source_type: kqpt_ptnv
+    module: dashboard
+    lifecycle_stage: management_reporting
+    audience: [ba, developer, qa, implementation_engineer, support, manager]
+
+  - id: kqpt_purchase
+    path: KQPT_PTNV/13_NB_MB2024_014_KQPT_MuaHang.pdf
+    knowledge_type: "KQPT/PTNV - MuaHang"
+    source_type: kqpt_ptnv
+    module: purchase
+    business_area: procure_to_pay
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_file_attached
+    path: KQPT_PTNV/14_NB_MB2024_014_KQPT_B8R4_FileAttached.pdf
+    knowledge_type: "KQPT/PTNV - FileAttached"
+    source_type: kqpt_ptnv
+    module: platform
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support]
+
+  - id: kqpt_production
+    path: KQPT_PTNV/15_NB_MB2024_015_KQPT_QLSX_B10.pdf
+    knowledge_type: "KQPT/PTNV - QLSX B10"
+    source_type: kqpt_ptnv
+    module: production
+    business_area: plan_to_produce
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_captcha
+    path: KQPT_PTNV/16_NB_MB2024_015_KQPT_Captcha.pdf
+    knowledge_type: "KQPT/PTNV - Captcha"
+    source_type: kqpt_ptnv
+    module: system
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, support, admin]
+
+  - id: kqpt_hrm
+    path: KQPT_PTNV/17_NB_MB2024_018_KQPT_HRM.pdf
+    knowledge_type: "KQPT/PTNV - HRM"
+    source_type: kqpt_ptnv
+    module: hrm
+    business_area: hire_to_retire
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_inventory
+    path: KQPT_PTNV/18_NB_MB2024_019_KQPT_KHO.pdf
+    knowledge_type: "KQPT/PTNV - KHO"
+    source_type: kqpt_ptnv
+    module: inventory
+    business_area: inventory_management
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, warehouse]
+
+  - id: kqpt_sale
+    path: KQPT_PTNV/19_NB_MB2024_027_KQPT_BanHang_B10.pdf
+    knowledge_type: "KQPT/PTNV - BanHang B10"
+    source_type: kqpt_ptnv
+    module: sale
+    business_area: order_to_cash
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, support]
+
+  - id: kqpt_ifrs
+    path: KQPT_PTNV/20_NB_MB2024_028_KQPT_IFRS.pdf
+    knowledge_type: "KQPT/PTNV - IFRS"
+    source_type: kqpt_ptnv
+    module: accounting
+    business_area: record_to_report
+    lifecycle_stage: ba_analysis
+    audience: [ba, developer, qa, implementation_engineer, consultant, accountant]
+
+  # --- Cross-cutting guides -------------------------------------------------------
+  - id: basic_rules
+    path: UserGuide_B10_Basic_rules.pdf
+    knowledge_type: "BRAVO 10 - Basic rules"
+    source_type: basic_rule
+    module: general_rules
+    lifecycle_stage: end_user_guidance
+    audience: [end_user, key_user, support, consultant, implementation_engineer]
+
+  - id: bi_guidelines
+    path: BRAVO_BI_Guidelines_Full.pdf
+    knowledge_type: "BRAVO BI Guidelines"
+    source_type: report_template
+    module: dashboard
+    lifecycle_stage: management_reporting
+    audience: [manager, consultant, developer, support]
+
+  - id: technical_manual_core
+    path: TaiLieuBravo10_KhoiKyThuat.docx
+    knowledge_type: "Technical Manual - BRAVO 10 core"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer, qa, ba, support]
+
+  # --- Technical DLL manuals ------------------------------------------------------
+  - id: technical_attach_file
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_AttachFile.pdf
+    knowledge_type: "Technical DLL - AttachFile"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_dashboard
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Dashboard.pdf
+    knowledge_type: "Technical DLL - Dashboard"
+    source_type: technical_manual
+    module: dashboard
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer, support, manager]
+
+  - id: technical_datasource
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Datasource.pdf
+    knowledge_type: "Technical DLL - Datasource"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer]
+
+  - id: technical_diagram
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Diagram.pdf
+    knowledge_type: "Technical DLL - Diagram"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer]
+
+  - id: technical_editor
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Editor.pdf
+    knowledge_type: "Technical DLL - Editor"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: customization
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_explorer
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Explorer.pdf
+    knowledge_type: "Technical DLL - Explorer"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: customization
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_expression
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Expression.pdf
+    knowledge_type: "Technical DLL - Expression"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: customization
+    audience: [developer, implementation_engineer]
+
+  - id: technical_project
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Project.pdf
+    knowledge_type: "Technical DLL - Project"
+    source_type: technical_manual
+    module: task
+    lifecycle_stage: customization
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_reporter
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_Reporter.pdf
+    knowledge_type: "Technical DLL - Reporter"
+    source_type: technical_manual
+    module: report
+    lifecycle_stage: customization
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_taskman
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_TaskMan.pdf
+    knowledge_type: "Technical DLL - TaskMan"
+    source_type: technical_manual
+    module: task
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer, support]
+
+  - id: technical_uspcaller_wizard_main
+    path: TaiLieuKyThuat_Dll/TaiLieuKyThuatBravo10_USPCaller_Wizard_Main.pdf
+    knowledge_type: "Technical DLL - USPCaller Wizard Main"
+    source_type: technical_manual
+    module: platform
+    lifecycle_stage: technical_design
+    audience: [developer, implementation_engineer]

@@ -1,0 +1,267 @@
+# BRAVO AI lifecycle playbooks.
+# These are short, auditable output contracts for lifecycle-specific copilot modes.
+# They complement bravo_corpus_manifest.yaml: manifest says where knowledge comes from;
+# playbooks say what the agent should produce for each software/business stage.
+
+version: 1
+
+playbooks:
+  - mode: end_user_guidance
+    usp: user_guide_helpdesk_copilot
+    lifecycle_stage: end_user_guidance
+    users: [end_user, key_user, consultant, support]
+    preferred_source_types: [user_guide, mindmap, basic_rule]
+    triggers:
+      - thao tac
+      - huong dan
+      - menu
+      - phieu
+      - lam the nao
+      - khong thay chuc nang
+    required_outputs:
+      - exact function/menu or document name when available
+      - step-by-step guidance
+      - prerequisite master data or permissions
+      - citation for each instruction group
+      - escalation note when source is insufficient
+    guardrails:
+      - do not invent UI steps if user guide is missing
+      - do not treat missing menu as a bug before checking permissions/config
+      - do not expose cross-department data
+    value_metrics:
+      - self-service ticket rate
+      - first-response time
+      - repeated-question reduction
+
+  - mode: implementation_support
+    usp: implementation_copilot
+    lifecycle_stage: implementation
+    users: [implementation_engineer, consultant, support, admin]
+    preferred_source_types: [technical_manual, basic_rule, kqpt_ptnv, mindmap]
+    triggers:
+      - trien khai
+      - go-live
+      - don vi co so
+      - so du dau ky
+      - phan quyen
+      - tham so
+      - license
+    required_outputs:
+      - checklist of configuration/data prerequisites
+      - risk warnings for branch/base-unit/warehouse/opening balances
+      - reconciliation checks before go-live
+      - owner or role responsible for each check
+      - citation for each control point
+    guardrails:
+      - do not recommend direct production data edits
+      - warn when branch/base-unit model is not confirmed
+      - respect data-lock and permission boundaries
+    value_metrics:
+      - go-live defects reduced
+      - implementation hours reduced
+      - handover checklist completion
+
+  - mode: ba_support
+    usp: ba_ptnv_copilot
+    lifecycle_stage: ba_analysis
+    users: [ba, product_owner, consultant, qa, developer]
+    preferred_source_types: [kqpt_ptnv, mindmap, user_guide, legal_standard]
+    triggers:
+      - kqpt
+      - ptnv
+      - pham vi
+      - muc tieu
+      - yeu cau
+      - cau hoi khao sat
+      - acceptance
+    required_outputs:
+      - similar BRAVO cases or modules
+      - business goal and system goal
+      - in-scope and out-of-scope boundary
+      - survey questions
+      - acceptance criteria
+      - exception scenarios
+    guardrails:
+      - do not add requirements beyond cited scope
+      - separate standard BRAVO behavior from customer-specific customization
+      - mark assumptions explicitly
+    value_metrics:
+      - KQPT drafting time reduced
+      - reuse rate of prior analysis
+      - fewer BA-dev-QA clarification rounds
+
+  - mode: technical_impact
+    usp: customization_impact_copilot
+    lifecycle_stage: customization
+    users: [developer, technical_lead, implementation_engineer, qa]
+    preferred_source_types: [technical_manual, kqpt_ptnv, report_template, basic_rule]
+    triggers:
+      - bang
+      - b30
+      - b20
+      - b10
+      - b00
+      - view
+      - procedure
+      - usp_
+      - ufn_
+      - layout
+      - report
+      - sua theo yeu cau
+    required_outputs:
+      - classify change as config/layout/report/procedure/code/data
+      - affected tables/views/procedures/reports
+      - upstream and downstream modules
+      - regression test areas
+      - naming or DB convention reminders
+    guardrails:
+      - do not generate free-form SQL/update commands
+      - do not assert schema impact without technical source
+      - include rollback or review checkpoint for risky changes
+    value_metrics:
+      - impact analysis time reduced
+      - regression defects reduced
+      - release-note quality improved
+
+  - mode: qa_testcase
+    usp: testcase_copilot
+    lifecycle_stage: qa_testing
+    users: [qa, ba, developer, consultant]
+    preferred_source_types: [kqpt_ptnv, user_guide, technical_manual, mindmap]
+    triggers:
+      - testcase
+      - test case
+      - kiem thu
+      - happy path
+      - exception
+      - rls
+      - khoa du lieu
+      - duyet
+    required_outputs:
+      - happy-path cases
+      - exception and negative cases
+      - role/permission cases
+      - data-lock and approval cases
+      - report/reconciliation cases
+      - sample data requirements
+    guardrails:
+      - include permission and data-lock tests for ERP workflows
+      - do not claim coverage is complete without source scope
+      - mark ERP API/data dependencies separately
+    value_metrics:
+      - testcase writing time reduced
+      - defect escape rate reduced
+      - permission/RLS issue detection
+
+  - mode: support_helpdesk
+    usp: user_guide_helpdesk_copilot
+    lifecycle_stage: support
+    users: [support, consultant, implementation_engineer]
+    preferred_source_types: [user_guide, basic_rule, technical_manual, kqpt_ptnv, support_ticket]
+    triggers:
+      - loi
+      - khong thay
+      - khong vao duoc
+      - ho tro
+      - ticket
+      - xu ly
+      - nguyen nhan
+    required_outputs:
+      - likely cause categories
+      - quick checks user can do safely
+      - technical checks for support
+      - escalation packet with logs/screenshots/data needed
+      - citation and confidence boundary
+    guardrails:
+      - do not diagnose production data corruption without evidence
+      - do not request sensitive data unless necessary and scoped
+      - distinguish standard guidance from case-specific workaround
+    value_metrics:
+      - ticket resolution time
+      - escalation quality
+      - repeated-ticket reduction
+
+  - mode: voucher_assistant
+    usp: bravo_voucher_assistant
+    lifecycle_stage: end_user_productivity
+    users: [accountant, buyer, warehouse, consultant]
+    preferred_source_types: [user_guide, technical_manual, mindmap, operational_data]
+    triggers:
+      - hoa don dau vao
+      - xml
+      - phieu nhap mua
+      - nhap khau
+      - chi phi mua hang
+      - xuat tra nha cung cap
+      - de nghi thanh toan
+      - cong no phai tra
+    required_outputs:
+      - identify BRAVO voucher type before accounting entry
+      - list required lineage sources such as PO/receipt command/QC/original receipt
+      - compare quantity/price/tax/vendor/warehouse when data exists
+      - create draft or needs_review recommendation only
+      - journal preview as explanation, not primary artifact
+    guardrails:
+      - voucher first, accounting after
+      - no direct ERP write or approval
+      - mark needs_review if PO/receipt/QC lineage is missing
+      - numbers must come from deterministic parser/ERP data
+    value_metrics:
+      - voucher throughput
+      - draft approval-without-edit rate
+      - input error reduction
+
+  - mode: dashboard_explainer
+    usp: management_dashboard_explainer
+    lifecycle_stage: management_reporting
+    users: [manager, cfo, accountant, consultant]
+    preferred_source_types: [report_template, kqpt_ptnv, user_guide, operational_data]
+    triggers:
+      - dashboard
+      - chi tieu
+      - kpi
+      - bao cao quan tri
+      - bien dong
+      - so sanh ky
+    required_outputs:
+      - metric definition or formula if available
+      - source report/data lineage
+      - period/entity/variant clarification when ambiguous
+      - deterministic number citation when data engine exists
+      - abstain from numeric answer when no data engine/source
+    guardrails:
+      - do not fabricate numbers or trends
+      - clarify gross/net/VAT/period variants
+      - cite formula separately from operational value
+    value_metrics:
+      - management self-service rate
+      - reduced ad-hoc BI/accounting questions
+      - metric ambiguity reduction
+
+  - mode: governance_audit
+    usp: governance_audit_copilot
+    lifecycle_stage: governance
+    users: [admin, chief_accountant, internal_control, implementation_engineer]
+    preferred_source_types: [technical_manual, basic_rule, operational_data, support_ticket]
+    triggers:
+      - audit
+      - log
+      - phan quyen
+      - khoa du lieu
+      - duyet
+      - bat thuong
+      - thay doi layout
+    required_outputs:
+      - control point involved
+      - actor/role/scope to verify
+      - audit log or document evidence needed
+      - risk classification
+      - human approval or investigation step
+    guardrails:
+      - do not expose sensitive payroll/accounting data cross-scope
+      - do not override data locks or approval workflow
+      - do not treat absence of log as proof of no issue
+    value_metrics:
+      - audit preparation time reduced
+      - permission errors reduced
+      - traceability improved
