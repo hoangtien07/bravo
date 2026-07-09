@@ -13,9 +13,9 @@
 - id: bravo-p2p-02
   question: "Chi co XML hoa don dau vao, co nen tao but toan cong no luon khong?"
   actor_email: "ketoan@bravo.vn"
-  expected_source_types: ["user_guide", "mindmap", "technical_manual"]
+  expected_source_types: ["user_guide", "mindmap", "kqpt_ptnv", "technical_manual"]
   expected_modules: ["purchase", "accounting", "platform"]
-  expected_labels: ["Purchase", "Purchases", "Technical Manual"]
+  expected_labels: ["Purchase", "Purchases", "KQPT", "Technical Manual"]
   expected_behavior: "answer"
 
 - id: bravo-p2p-03
@@ -29,17 +29,17 @@
 - id: bravo-tech-01
   question: "Bang B30BizDoc dung luu loai tai lieu nao?"
   actor_email: "ketoan@bravo.vn"
-  expected_source_types: ["technical_manual"]
+  expected_source_types: ["technical_manual", "kqpt_ptnv"]
   expected_modules: ["platform"]
-  expected_labels: ["Technical Manual"]
+  expected_labels: ["Technical Manual", "Technical DLL", "KQPT"]
   expected_behavior: "answer"
 
 - id: bravo-tech-02
   question: "Chung tu NM trong mua hang luu o nhom bang nao?"
   actor_email: "ketoan@bravo.vn"
-  expected_source_types: ["technical_manual"]
-  expected_modules: ["platform"]
-  expected_labels: ["Technical Manual"]
+  expected_source_types: ["technical_manual", "kqpt_ptnv"]
+  expected_modules: ["platform", "purchase"]
+  expected_labels: ["Technical Manual", "Technical DLL", "KQPT"]
   expected_behavior: "answer"
 
 - id: bravo-tech-03
@@ -47,7 +47,7 @@
   actor_email: "ketoan@bravo.vn"
   expected_source_types: ["technical_manual"]
   expected_modules: ["platform"]
-  expected_labels: ["Technical Manual"]
+  expected_labels: ["Technical Manual", "Technical DLL"]
   expected_behavior: "answer"
 
 - id: bravo-ba-01
@@ -59,11 +59,13 @@
   expected_behavior: "answer"
 
 - id: bravo-impl-01
+  # implementation_note = source-type tương lai (chưa có trong corpus). Tài liệu KQPT/PTNV
+  # (phân tích-thiết kế) hiện là nguồn hợp lệ trả lời câu hỏi khảo sát mô hình đơn vị cơ sở.
   question: "Vi sao phai khao sat mo hinh don vi co so truoc khi nhap du lieu?"
   actor_email: "ketoan@bravo.vn"
-  expected_source_types: ["technical_manual", "implementation_note"]
-  expected_modules: ["platform", "system"]
-  expected_labels: ["Technical Manual"]
+  expected_source_types: ["technical_manual", "kqpt_ptnv"]
+  expected_modules: ["platform", "system", "inventory"]
+  expected_labels: ["Technical Manual", "Technical DLL", "KQPT"]
   expected_behavior: "answer"
 
 - id: bravo-qa-01
@@ -79,5 +81,5 @@
   actor_email: "ketoan@bravo.vn"
   expected_source_types: ["technical_manual", "basic_rule"]
   expected_modules: ["platform", "system", "general_rules"]
-  expected_labels: ["Technical Manual", "Basic rules"]
+  expected_labels: ["Technical Manual", "Technical DLL", "Basic rules"]
   expected_behavior: "abstain"
