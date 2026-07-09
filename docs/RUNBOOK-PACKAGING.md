@@ -21,6 +21,16 @@ File có trong overlay → dùng bản overlay; thiếu → fallback in-package 
 `approved_for_prod != true`. Ngưỡng LUẬT (TSCĐ 30tr/TT45, VAT 20tr/TT219, thuế suất) chọn theo
 **ngày lập chứng từ** — sửa `effective_from`/thêm `periods` khi văn bản pháp luật đổi.
 
+### 1b. KB version-awareness (chống trả lời SAI phiên bản)
+
+Manifest gắn version metadata (`defaults` hoặc per-source) → chảy vào `Chunk.extra`:
+`doc_version`, `owner`, `approved_status` (`approved`|`draft`|`superseded`|`deprecated`),
+tuỳ chọn `superseded_by`/`effective_date`. Khi có bản mới, chủ nội dung set bản cũ
+`approved_status: superseded` (+ `superseded_by: <id>`). Truy hồi ([kb_lifecycle.py](../app/rag/kb_lifecycle.py))
+**hạ bậc** (không xoá) chunk superseded/deprecated/draft → bản hiện hành thắng khi cả hai cùng
+được kéo (giảm lỗi "đúng nguồn nhưng sai phiên bản" — VersionRAG, Findings O #5). Metadata mới
+chỉ có hiệu lực sau khi **ingest lại** nguồn đó.
+
 ## 2. Manifest deploy — `deploy/site.yaml`
 
 ```bash

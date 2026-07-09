@@ -7,7 +7,7 @@ guides, and operation questions should not be answered from DLL manuals.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import re
 import unicodedata
 
@@ -83,6 +83,16 @@ def infer_query_intent(query: str) -> BravoQueryIntent:
     if _has_any(q, (
         "thao tac", "cach ", "huong dan", "menu", "man hinh", "phieu ", "lam the nao",
         "dung the nao", "quy trinh", "luong ", "buoc ",
+    )):
+        source_types.extend(["user_guide", "mindmap"])
+        lifecycle_stage = lifecycle_stage or "end_user_guidance"
+
+    # Overview/definition/scope queries ("... là gì", "quản lý ... gồm những chức năng gì",
+    # "tổng quan ...") mô tả CHỨC NĂNG phân hệ -> ưu tiên user guide/mindmap thay vì tài liệu
+    # phân tích-thiết kế (kqpt_ptnv) hay DLL. Không đặt lifecycle kỹ thuật -> tránh kéo về schema.
+    if _has_any(q, (
+        "quan ly", "chuc nang", "tong quan", "gom nhung gi", "bao gom", "gioi thieu",
+        " la gi", "nhung gi", "chuc nang gi",
     )):
         source_types.extend(["user_guide", "mindmap"])
         lifecycle_stage = lifecycle_stage or "end_user_guidance"
