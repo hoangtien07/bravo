@@ -26,7 +26,7 @@ def rerank(query: str, passages: list[str]) -> list[float]:
     return [float(s) for s in scores]
 
 
-async def llm_rerank(query: str, passages: list[str], top_n: int) -> list[int]:
+async def llm_rerank(query: str, passages: list[str], top_n: int, *, sensitive: bool) -> list[int]:
     """Listwise rerank via the cloud chat model (demo). Returns ranked passage indices.
 
     Cheap and provider-agnostic (uses the chat model already configured). Used when no
@@ -44,8 +44,12 @@ async def llm_rerank(query: str, passages: list[str], top_n: int) -> list[int]:
         f"Ví dụ: 3,0,7"
     )
     try:
-        ans, _ = await llm.chat([{"role": "user", "content": prompt}],
-                                sensitive=False, allow_cloud_task=True, temperature=0)
+        ans, _ = await llm.chat(
+            [{"role": "user", "content": prompt}],
+            sensitive=sensitive,
+            allow_cloud_task=not sensitive,
+            temperature=0,
+        )
         seen, order = set(), []
         for x in re.findall(r"\d+", ans):
             i = int(x)

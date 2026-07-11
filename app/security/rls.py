@@ -39,6 +39,56 @@ class Identity:
         return None
 
 
+def source_create_scope_level(identity: Identity) -> str | None:
+    """Return the explicit source-publication scope held by ``identity``.
+
+    Source creation is intentionally stricter than generic route authorization:
+    publishing shared/global content (or targeting a foreign department) requires the
+    explicit ``doc:create:all`` capability.  ``is_admin`` alone is not a publication
+    capability; administrators receive it through the normal assignable vocabulary.
+    """
+    if "doc:create:all" in identity.permissions:
+        return "all"
+    if "doc:create:own_dept" in identity.permissions:
+        return "own_dept"
+    return None
+
+
+def resolve_source_write_scope(
+    identity: Identity,
+    requested_department_ids: list[uuid.UUID],
+    *,
+    shared: bool,
+) -> list[uuid.UUID]:
+    """Resolve a requested source scope against server-authoritative identity data.
+
+    ``[]`` is the legacy stored representation of shared/global source scope.  It is
+    returned only for an explicit ``shared=True`` request by a ``doc:create:all``
+    publisher.  A single-department ``own_dept`` creator may omit the request scope
+    for backwards compatibility; the server resolves it to that one department.
+    """
+    level = source_create_scope_level(identity)
+    requested = list(dict.fromkeys(requested_department_ids))
+
+    if shared:
+        if requested:
+            raise ValueError("shared scope cannot include departments")
+        if level != "all":
+            raise PermissionError("shared publication requires explicit capability")
+        return []
+
+    if not requested:
+        if level == "own_dept" and len(identity.department_ids) == 1:
+            return list(identity.department_ids)
+        raise ValueError("department scope is required")
+
+    if level == "all":
+        return requested
+    if level != "own_dept" or not set(requested).issubset(identity.department_ids):
+        raise PermissionError("requested department is outside the creator scope")
+    return requested
+
+
 def chunk_scope_filter(identity: Identity, action: str = "read") -> "ColumnElement[bool]":
     """SQL predicate restricting Chunk rows to what `identity` may access.
 

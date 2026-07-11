@@ -22,8 +22,13 @@ async def ingest_source(
     source_id: uuid.UUID,
     path: str,
     source_extra: dict | None = None,
+    trusted_knowledge_type: str | None = None,
 ) -> int:
-    """Ingest one source file. Returns number of chunks stored."""
+    """Ingest one source file. Returns number of chunks stored.
+
+    ``Source.knowledge_type`` can be caller display metadata. Only a trusted corpus
+    caller may provide ``trusted_knowledge_type`` for cloud-eligible classification.
+    """
     source = await db.get(Source, source_id)
     if source is None:
         raise ValueError(f"Source {source_id} not found")
@@ -58,13 +63,14 @@ async def ingest_source(
         )).scalar() or 0
         touches_sensitive_dept = n_sensitive > 0
     is_sensitive = ingest_sensitive(
-        source.knowledge_type, has_departments=bool(dept_ids),
+        trusted_knowledge_type, has_departments=bool(dept_ids),
         touches_sensitive_dept=touches_sensitive_dept)
     vectors = embed([b.text for b in blocks], sensitive=is_sensitive)
 
     for b, vec in zip(blocks, vectors, strict=True):
         extra = dict(source_extra or {})
         extra.update(b.extra or {})
+        extra["is_sensitive"] = is_sensitive
         db.add(Chunk(
             source_id=source.id, content=b.text, embedding=vec,
             page_number=b.page_number, sheet_name=b.sheet_name, cell_range=b.cell_range,

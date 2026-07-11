@@ -26,6 +26,11 @@ def test_ingest_global_unlabeled_failclosed_local():
     assert ingest_sensitive(None, has_departments=False, touches_sensitive_dept=False) is True
 
 
+def test_ingest_department_scoped_unlabeled_fails_closed_local():
+    """A caller cannot make a private upload cloud-eligible by omitting its label."""
+    assert ingest_sensitive(None, has_departments=True, touches_sensitive_dept=False) is True
+
+
 def test_ingest_public_guide_allows_cloud():
     # Tài liệu công khai có knowledge_type hợp lệ -> KHÔNG nhạy -> cloud OK (demo không đổi).
     assert ingest_sensitive("guide", has_departments=False,

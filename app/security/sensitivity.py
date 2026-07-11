@@ -38,11 +38,13 @@ def ingest_sensitive(knowledge_type: str | None, *, has_departments: bool,
          `knowledge_type` (vd 'guide') nên KHÔNG bị chặn -> demo không đổi.
     """
     kt = (knowledge_type or "").strip().lower()
+    # Runtime uploads do not supply trusted classification metadata.  Unknown
+    # classification is sensitive regardless of department scope.
+    if not kt:
+        return True
     if kt in DEFAULT_SENSITIVE_KNOWLEDGE_TYPES:
         return True
     if has_departments and touches_sensitive_dept:
-        return True
-    if not has_departments and not kt:
         return True
     return False
 

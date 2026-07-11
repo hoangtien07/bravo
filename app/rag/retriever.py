@@ -34,6 +34,8 @@ class Retrieved:
     cell_range: str | None
     score: float
     extra: dict = field(default_factory=dict)
+    # Missing legacy metadata is sensitive by default for provider egress.
+    is_sensitive: bool = True
 
     def citation(self) -> str:
         loc = []
@@ -65,6 +67,7 @@ async def vector_search(db: AsyncSession, identity: Identity, query: str,
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
             page_number=c.page_number, sheet_name=c.sheet_name, cell_range=c.cell_range,
             score=1.0 - float(dist), extra=c.extra or {},
+            is_sensitive=bool((c.extra or {}).get("is_sensitive", True)),
         )
         for c, dist in rows
     ]
@@ -107,6 +110,7 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
             page_number=c.page_number, sheet_name=c.sheet_name, cell_range=c.cell_range,
             score=float(rank), extra=c.extra or {},
+            is_sensitive=bool((c.extra or {}).get("is_sensitive", True)),
         )
         for c, rank in rows
     ]
@@ -143,7 +147,12 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     if provider == "llm":
         # Listwise rerank top candidates via the cloud chat model (demo).
         pool = fused[:40]   # pool rộng hơn -> tăng recall (chương đúng lọt vào diện rerank)
-        order = await _rerank.llm_rerank(query, [r.content for r in pool], top_n)
+        # Do not send mixed or unknown-sensitivity candidate sets to cloud rerank.
+        if any(r.is_sensitive for r in pool):
+            return pool[:top_n]
+        order = await _rerank.llm_rerank(
+            query, [r.content for r in pool], top_n, sensitive=False,
+        )
         return [pool[i] for i in order][:top_n]
 
     # Cross-encoder rerank (ViRanker, local) over the fused candidates.
