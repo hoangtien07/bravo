@@ -86,6 +86,10 @@ class JournalEntryPayload(BaseModel):
             raise ValueError(f"Bút toán KHÔNG cân: Σ Nợ {sum_d} ≠ Σ Có {sum_c} (ADR-0014)")
         if money.D(self.total_debit) != sum_d or money.D(self.total_credit) != sum_c:
             raise ValueError("total_debit/total_credit không khớp Σ dòng")
+        coa = load_coa()
+        for ln in self.lines:
+            if coa.lookup(ln.account) is None:
+                raise ValueError(f"Unknown chart-of-accounts code: {ln.account}")
         return self
 
 

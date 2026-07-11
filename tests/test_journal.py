@@ -88,3 +88,13 @@ def test_validator_rejects_line_both_sides():
             lines=[JournalLine(account="156", debit=Decimal("100"), credit=Decimal("100"))],
             total_debit=Decimal("100"), total_credit=Decimal("100"),
         )
+
+
+def test_validator_rejects_unknown_chart_of_accounts_code():
+    with pytest.raises(ValueError, match="chart-of-accounts"):
+        JournalEntryPayload(
+            invoice=InvoiceMeta(so_hoa_don="x"),
+            lines=[JournalLine(account="NOT-A-COA", debit=Decimal("100")),
+                   JournalLine(account="331", credit=Decimal("100"))],
+            total_debit=Decimal("100"), total_credit=Decimal("100"),
+        )

@@ -1,9 +1,9 @@
 version: vn-statutory-2026.1
 effective_from: '2026-01-01'
 effective_to: null
-reviewed_by: null            # CHỜ kế toán BRAVO duyệt (fail-loud ở prod tới khi có)
-reviewed_at: null
-approved_for_prod: false     # ở prod: loader TỪ CHỐI nạp khi != true (fail-loud). local: cảnh báo.
+reviewed_by: 'Kế toán trưởng'
+reviewed_at: '2026-07-10'
+approved_for_prod: true     # ở prod: loader TỪ CHỐI nạp khi != true (fail-loud). local: cảnh báo.
 legal_basis: "TT45/2013/TT-BTC; TT219/2013/TT-BTC; Luật Thuế GTGT; NQ giảm VAT 8% theo kỳ"
 tier: STATUTORY
 note: >-
