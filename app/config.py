@@ -23,6 +23,15 @@ class Settings(BaseSettings):
     # Manifest per-deploy (deploy/site.yaml): enabled_verticals + phòng ban + flags. Đọc 1 lần lúc
     # boot trong validate_boot() (fail-closed). Rỗng = bỏ qua (dev/demo không bắt buộc).
     site_config: str = Field("", validation_alias="SITE_CONFIG")
+    app_root: str = Field("", validation_alias="APP_ROOT")
+    data_root: str = Field("", validation_alias="DATA_ROOT")
+    corpus_root: str = Field("", validation_alias="CORPUS_ROOT")
+    upload_root: str = Field("", validation_alias="UPLOAD_ROOT")
+    private_data_root: str = Field("", validation_alias="PRIVATE_DATA_ROOT")
+    data_runtime_policy: str = Field(
+        "file_system/bravo_data_runtime_policy.yaml",
+        validation_alias="DATA_RUNTIME_POLICY",
+    )
 
     # Database
     database_url: str = "postgresql+asyncpg://bravo:bravo@localhost:5432/bravo"
@@ -120,6 +129,7 @@ class Settings(BaseSettings):
         if self.site_config:
             from app.site_config import load_site_config
             load_site_config(self.site_config)
+        self.validate_data_runtime_policy()
         if self.env not in {"staging", "production", "prod"}:
             return
         weak = {"change-me", "change-me-in-production", "change-me-256-bit-random"}
@@ -130,6 +140,52 @@ class Settings(BaseSettings):
                     f"[boot-guard] {name} còn giá trị mặc định/quá ngắn ở env={self.env}. "
                     "Đặt secret ngẫu nhiên ≥16 ký tự trước khi chạy production (fail-closed)."
                 )
+
+    def data_policy_variables(self) -> dict[str, str]:
+        from pathlib import Path
+
+        app_root = Path(self.app_root or Path.cwd()).resolve()
+        data_root = Path(self.data_root or app_root / "data").resolve()
+        corpus_root = Path(self.corpus_root or app_root / "file_system").resolve()
+        return {
+            "APP_ROOT": str(app_root),
+            "DATA_ROOT": str(data_root),
+            "CORPUS_ROOT": str(corpus_root),
+            "UPLOAD_ROOT": str(Path(self.upload_root or data_root / "uploads").resolve()),
+            "PRIVATE_DATA_ROOT": str(
+                Path(self.private_data_root or data_root / "private").resolve()
+            ),
+        }
+
+    def validate_data_runtime_policy(self) -> None:
+        from pathlib import Path
+
+        from app.eval.bravo_data_audit import audit_data_layout
+        from app.eval.bravo_data_policy import (
+            ensure_runtime_policy_paths,
+            load_data_runtime_policy,
+        )
+
+        policy_path = Path(self.data_runtime_policy)
+        if not policy_path.is_absolute():
+            policy_path = Path(self.data_policy_variables()["APP_ROOT"]) / policy_path
+        policy = load_data_runtime_policy(policy_path, variables=self.data_policy_variables())
+        ensure_runtime_policy_paths(policy)
+        audit = audit_data_layout(policy_path=policy_path, policy=policy)
+        errors: list[str] = []
+        errors.extend(f"policy: {issue}" for issue in audit.policy_errors)
+        errors.extend(f"required path missing: {path}" for path in audit.required_path_missing)
+        errors.extend(f"manifest missing file: {path}" for path in audit.missing_manifest_files)
+        errors.extend(
+            f"active duplicate sha256 {group.hash}: {', '.join(group.paths)}"
+            for group in audit.active_duplicate_hash_groups
+        )
+        errors.extend(
+            f"unmanifested ingestible violates policy: {path}"
+            for path in audit.unmanifested_ingestible_errors
+        )
+        if errors:
+            raise RuntimeError("[boot-guard] data runtime policy invalid: " + "; ".join(errors[:10]))
         if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
             raise RuntimeError(
                 "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."

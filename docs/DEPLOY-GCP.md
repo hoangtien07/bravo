@@ -80,6 +80,25 @@ bravo có **ba loại dữ liệu file**, xử lý KHÁC nhau. Hiểu đúng ch�
 | **Tài liệu upload** | `data/uploads/` (trong container `/app/data/uploads`) | Mutable, người dùng upload runtime | ❌ | **Named volume `uploads`** | ✅ BẮT BUỘC |
 | **CSDL** | Postgres volume `pgdata` | Nháp/audit/hội thoại/chunk/vector | — | Named volume `pgdata` | ✅ BẮT BUỘC |
 
+### 3.0 Runtime data policy vs VM mounts
+
+`file_system/bravo_data_runtime_policy.yaml` is a runtime classification policy, not a VM provisioner.
+It validates resolved paths and may create only mutable runtime dirs marked `ensure_exists`.
+The actual VM/container paths must still be provided by env vars and Docker volumes:
+
+```text
+APP_ROOT=/app
+DATA_ROOT=/app/data
+CORPUS_ROOT=/app/file_system
+UPLOAD_ROOT=/app/data/uploads
+PRIVATE_DATA_ROOT=/app/data/private
+DATA_RUNTIME_POLICY=/app/file_system/bravo_data_runtime_policy.yaml
+```
+
+`docker-compose.yml` and `docker-compose.prod.yml` mount `file_system` read-only and persist both
+`uploads` and `private_data` named volumes.
+
+
 ### 3.1 Corpus `file_system/` — bind-mount read-only
 
 Corpus **đã được version trong git** (bỏ gitignore) nên `git clone`/`git pull` trên VM là **có

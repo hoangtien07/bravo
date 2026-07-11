@@ -30,6 +30,16 @@ export SITE_CONFIG=/etc/bravo/site.yaml             # xem deploy/site.yaml.examp
 `site`, `enabled_verticals` rỗng, vertical lạ). Khai: `site`, `enabled_verticals`
 (`ap|anomaly|tax|graph`), `departments` (nhãn onboarding — RLS thực thi ở DB).
 
+## 2.5 Runtime data policy
+
+Data runtime classification is configured in `file_system/bravo_data_runtime_policy.yaml`. The policy uses deployment variables:
+`APP_ROOT`, `DATA_ROOT`, `CORPUS_ROOT`, `UPLOAD_ROOT`, `PRIVATE_DATA_ROOT`, `DATA_RUNTIME_POLICY`.
+It is validated during `Settings.validate_boot()`.
+
+Docker compose sets these to `/app/...` inside containers. Boot creates only runtime dirs marked
+`ensure_exists` (`uploads`, `private`). It does not create or populate corpus files; `file_system`
+must be mounted/readable.
+
 ## 3. Nạp corpus theo phòng ban (RLS scope)
 
 ```bash

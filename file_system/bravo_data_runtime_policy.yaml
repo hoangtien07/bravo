@@ -1,0 +1,112 @@
+version: 1
+policy_name: bravo_ai_runtime_data_classification
+default_class: private_operational_data
+
+classes:
+  shared_knowledge:
+    description: Versioned BRAVO knowledge sources used for RAG citations.
+    shared_rag_allowed: true
+    versioned: true
+    runtime_scope: global
+    ingestion_mode: manifest_only
+
+  domain_rules:
+    description: Governed rule artifacts loaded by deterministic accounting/runtime engines.
+    shared_rag_allowed: false
+    versioned: true
+    runtime_scope: engine
+    ingestion_mode: never
+
+  eval_fixtures:
+    description: Test and eval fixtures used by CI/local validation.
+    shared_rag_allowed: false
+    versioned: true
+    runtime_scope: test
+    ingestion_mode: never
+
+  private_operational_data:
+    description: Local, customer, demo, or operational samples that must not enter GLOBAL RAG.
+    shared_rag_allowed: false
+    versioned: false
+    runtime_scope: private
+    ingestion_mode: scoped_only
+
+  runtime_uploads:
+    description: User/session uploads processed under RLS and never treated as shared corpus.
+    shared_rag_allowed: false
+    versioned: false
+    runtime_scope: user_session
+    ingestion_mode: scoped_only
+
+  derived_summary:
+    description: Curated summaries or mindmaps that may support routing but must not replace primary evidence.
+    shared_rag_allowed: true
+    versioned: true
+    runtime_scope: global
+    ingestion_mode: manifest_only
+
+path_rules:
+  - path: ${CORPUS_ROOT}
+    data_class: shared_knowledge
+    required: true
+    manifest: ${CORPUS_ROOT}/bravo_corpus_manifest.yaml
+    unmanifested_ingestible_policy: warn
+    duplicate_policy: active_fail
+    notes: Shared BRAVO KB. Only manifest-declared files are ingested.
+
+  - path: ${CORPUS_ROOT}/Data
+    data_class: private_operational_data
+    required: false
+    unmanifested_ingestible_policy: warn
+    duplicate_policy: warn
+    notes: Local/demo operational samples; keep available but block from shared RAG.
+
+  - path: ${APP_ROOT}/app/accounting/data
+    data_class: domain_rules
+    required: true
+    unmanifested_ingestible_policy: ignore
+    duplicate_policy: warn
+    notes: Governed accounting rules and mappings used by deterministic code.
+
+  - path: ${APP_ROOT}/tests/fixtures
+    data_class: eval_fixtures
+    required: false
+    unmanifested_ingestible_policy: ignore
+    duplicate_policy: warn
+    notes: Test fixtures; never ingest as shared knowledge.
+
+  - path: ${PRIVATE_DATA_ROOT}
+    data_class: private_operational_data
+    required: false
+    ensure_exists: true
+    unmanifested_ingestible_policy: ignore
+    duplicate_policy: warn
+    notes: Preferred location for private/customer/local data outside active corpus.
+
+  - path: ${UPLOAD_ROOT}
+    data_class: runtime_uploads
+    required: false
+    ensure_exists: true
+    unmanifested_ingestible_policy: ignore
+    duplicate_policy: warn
+    notes: Runtime user uploads, governed by RLS/session scope.
+
+source_type_classes:
+  user_guide: shared_knowledge
+  kqpt_ptnv: shared_knowledge
+  technical_manual: shared_knowledge
+  basic_rule: shared_knowledge
+  report_template: shared_knowledge
+  implementation_note: shared_knowledge
+  legal_standard: shared_knowledge
+  support_ticket: private_operational_data
+  operational_data: private_operational_data
+  mindmap: derived_summary
+
+required_classes:
+  - shared_knowledge
+  - domain_rules
+  - eval_fixtures
+  - private_operational_data
+  - runtime_uploads
+  - derived_summary

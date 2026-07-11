@@ -23,7 +23,10 @@ dist/
 .next/
 out/
 
-# Data / models (never commit corpora or local LLM weights)
+# Data / models (never commit runtime/private data or local LLM weights)
+# See file_system/bravo_data_runtime_policy.yaml for runtime data classification.
+# data/private/  = customer/local/demo operational data
+# data/uploads/  = user/session uploads governed by RLS
 data/
 models/
 *.gguf

@@ -12,6 +12,12 @@ services:
     ports: []          # reached only by Caddy via the compose network (api:8000)
     environment:
       ENV: production
+      APP_ROOT: /app
+      DATA_ROOT: /app/data
+      CORPUS_ROOT: /app/file_system
+      UPLOAD_ROOT: /app/data/uploads
+      PRIVATE_DATA_ROOT: /app/data/private
+      DATA_RUNTIME_POLICY: /app/file_system/bravo_data_runtime_policy.yaml
     # File system (xử lý dữ liệu file):
     #  - file_system/ = CORPUS gốc (read-only). gitignore + không nằm trong image -> BẮT BUỘC
     #    bind-mount để container đọc được lúc ingest và mở file gốc (routes_sources).
@@ -20,11 +26,20 @@ services:
     volumes:
       - ./file_system:/app/file_system:ro
       - uploads:/app/data/uploads
+      - private_data:/app/data/private
     restart: unless-stopped
   worker:
+    environment:
+      APP_ROOT: /app
+      DATA_ROOT: /app/data
+      CORPUS_ROOT: /app/file_system
+      UPLOAD_ROOT: /app/data/uploads
+      PRIVATE_DATA_ROOT: /app/data/private
+      DATA_RUNTIME_POLICY: /app/file_system/bravo_data_runtime_policy.yaml
     volumes:
       - ./file_system:/app/file_system:ro
       - uploads:/app/data/uploads
+      - private_data:/app/data/private
     restart: unless-stopped
 
   caddy:
@@ -41,3 +56,4 @@ volumes:
   caddy_data:
   caddy_config:
   uploads:          # tài liệu upload lúc chạy (bền qua tạo-lại container; được backup)
+  private_data:

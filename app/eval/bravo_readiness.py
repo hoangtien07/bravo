@@ -11,6 +11,8 @@ from pathlib import Path
 
 from app.agent.bravo_playbooks import load_playbooks
 from app.agent.bravo_use_cases import load_use_cases, summarize_use_cases, validate_use_cases
+from app.eval.bravo_data_audit import audit_data_layout
+from app.eval.bravo_data_policy import DEFAULT_POLICY_PATH
 from app.eval.bravo_lifecycle import load_items
 from app.ingestion.manifest import load_manifest, manifest_index
 
@@ -18,6 +20,7 @@ CORPUS_ROOT = Path("file_system")
 MANIFEST_PATH = CORPUS_ROOT / "bravo_corpus_manifest.yaml"
 PLAYBOOK_PATH = CORPUS_ROOT / "bravo_lifecycle_playbooks.yaml"
 USE_CASE_PATH = CORPUS_ROOT / "bravo_ai_use_cases.yaml"
+DATA_POLICY_PATH = DEFAULT_POLICY_PATH
 GOLDEN_PATH = Path("app/eval/golden_set_bravo_lifecycle.example.yaml")
 
 REQUIRED_SOURCE_TYPES = {
@@ -86,6 +89,7 @@ def audit_readiness(
     manifest_path: Path = MANIFEST_PATH,
     playbook_path: Path = PLAYBOOK_PATH,
     use_case_path: Path = USE_CASE_PATH,
+    data_policy_path: Path = DATA_POLICY_PATH,
     golden_path: Path = GOLDEN_PATH,
 ) -> ReadinessReport:
     report = ReadinessReport()
@@ -107,6 +111,36 @@ def audit_readiness(
         report.errors.append(f"manifest missing required source_type(s): {missing_types}")
     report.metrics["manifest_sources"] = len(idx)
     report.metrics["source_types"] = sorted(stypes)
+
+    try:
+        data_audit = audit_data_layout(
+            corpus_root=corpus_root,
+            manifest_path=manifest_path,
+            policy_path=data_policy_path,
+        )
+        report.metrics["data_layout"] = data_audit.metrics
+        for error in data_audit.policy_errors:
+            report.errors.append(f"data_policy: {error}")
+        for rel in data_audit.required_path_missing:
+            report.errors.append(f"data_policy required path missing: {rel}")
+        for rel in data_audit.unmanifested_ingestible_files[:20]:
+            report.warnings.append(f"unmanifested ingestible file ignored by manifest-only ingest: {rel}")
+        if len(data_audit.unmanifested_ingestible_files) > 20:
+            report.warnings.append(
+                "unmanifested ingestible file ignored by manifest-only ingest: "
+                f"... {len(data_audit.unmanifested_ingestible_files) - 20} more"
+            )
+        for warning in data_audit.derived_summary_warnings:
+            report.warnings.append(f"data_layout: {warning}")
+        for group in data_audit.active_duplicate_hash_groups:
+            report.errors.append(
+                "active corpus duplicate sha256 "
+                f"{group.hash}: {', '.join(group.paths)}"
+            )
+        for rel in data_audit.unmanifested_ingestible_errors:
+            report.errors.append(f"unmanifested ingestible file violates policy: {rel}")
+    except Exception as exc:
+        report.errors.append(f"data_layout: {exc}")
 
     try:
         playbooks = load_playbooks(str(playbook_path))
