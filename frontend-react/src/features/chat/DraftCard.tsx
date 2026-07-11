@@ -7,13 +7,14 @@ import type { JournalPayload } from "@/api/types";
 interface Props {
   payload: JournalPayload;
   draftId?: string;
+  status?: string;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   readOnly?: boolean;
 }
 
 // Bút toán nháp — port từ frontend/app.js renderJournal (nguồn render journal duy nhất).
-export function DraftCard({ payload, draftId, onApprove, onReject, readOnly }: Props) {
+export function DraftCard({ payload, draftId, status, onApprove, onReject, readOnly }: Props) {
   if (!payload?.lines) return null;
   const balanced = payload.total_debit === payload.total_credit;
   const inv = (payload.invoice || {}) as Record<string, string>;
@@ -60,24 +61,30 @@ export function DraftCard({ payload, draftId, onApprove, onReject, readOnly }: P
           <Badge key={i} tone="warn">⚠ {f}</Badge>
         ))}
       </div>
-      {!readOnly && draftId && (
+      {draftId && (!readOnly || status === "approved") && (
         <div className="flex gap-2 mt-3 flex-wrap">
+          {!readOnly && (
+            <>
           <Button size="sm" onClick={() => onApprove?.(draftId)}>
             <Check className="h-4 w-4" /> Duyệt
           </Button>
           <Button size="sm" variant="destructive" onClick={() => onReject?.(draftId)}>
             <X className="h-4 w-4" /> Từ chối
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
+            </>
+          )}
+          {status === "approved" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
               downloadFile(`/api/drafts/${draftId}/export?fmt=csv`, `buttoan_${draftId.slice(0, 8)}.csv`)
                 .catch((e) => alert(e instanceof Error ? e.message : "Lỗi xuất file"))
-            }
-          >
+              }
+            >
             <Download className="h-4 w-4" /> Xuất CSV
-          </Button>
+            </Button>
+          )}
         </div>
       )}
     </Card>

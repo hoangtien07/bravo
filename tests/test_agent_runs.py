@@ -66,9 +66,21 @@ def test_run_persist_pause_and_complete_on_approval():
                                       checkpoint_state={"created_draft": True})
 
                 # 3) draft của run, người KHÁC duyệt -> complete_on_approval -> run 'done'
+                maker_department = uuid.uuid4()
                 draft = await draft_queue.create_draft(
-                    db, Identity(employee_id=maker, department_ids=[], permissions=frozenset()),
-                    kind="journal_entry", payload={"x": 1}, agent_run_id=run_id)
+                    db, Identity(employee_id=maker, department_ids=[maker_department],
+                                 permissions=frozenset({"draft:create:own_dept"})),
+                    kind="journal_entry",
+                    payload={
+                        "invoice": {},
+                        "lines": [
+                            {"account": "156", "debit": "1"},
+                            {"account": "331", "credit": "1"},
+                        ],
+                        "total_debit": "1", "total_credit": "1",
+                    },
+                    agent_run_id=run_id,
+                )
                 approved = await draft_queue.approve_draft(
                     db, Identity(employee_id=approver, department_ids=[],
                                  permissions=frozenset({"draft:approve:all"}), is_admin=True),

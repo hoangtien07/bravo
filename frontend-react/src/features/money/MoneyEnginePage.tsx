@@ -67,7 +67,9 @@ export function MoneyEnginePage() {
     setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const exportBatch = async () => {
-    const ids = [...sel];
+    const ids = [...sel].filter((id) => drafts.some(
+      (draft) => draft.id === id && draft.status === "approved" && draft.kind === "journal_entry",
+    ));
     if (!ids.length) { alert("Chọn ít nhất 1 bút toán để xuất lô."); return; }
     const r = await fetch("/api/drafts/export", {
       method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -123,9 +125,10 @@ export function MoneyEnginePage() {
         {drafts.map((d) => (
           <div key={d.id} className="flex gap-2">
             <input type="checkbox" checked={sel.has(d.id)} onChange={() => toggle(d.id)}
+                   disabled={d.status !== "approved"}
                    className="mt-4 accent-primary" aria-label="chọn để xuất lô" />
             <div className="flex-1 min-w-0">
-              <DraftCard payload={d.payload as JournalPayload} draftId={d.id}
+              <DraftCard payload={d.payload as JournalPayload} draftId={d.id} status={d.status}
                          onApprove={approve} onReject={reject} readOnly={d.status !== "pending"} />
               <div className="flex items-center gap-2 mt-1 ml-1">
                 <Badge tone={STATUS_TONE[d.status] || "muted"}>{d.status}</Badge>

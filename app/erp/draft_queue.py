@@ -50,12 +50,48 @@ def resolve_draft_department(identity: Identity, payload: dict | None = None) ->
         raw = payload.get("department_id")
         if raw:
             try:
-                return raw if isinstance(raw, uuid.UUID) else uuid.UUID(str(raw))
+                requested = raw if isinstance(raw, uuid.UUID) else uuid.UUID(str(raw))
+                level = identity.scope_level("draft", "create")
+                if level == "all" or requested in identity.department_ids:
+                    return requested
             except (ValueError, AttributeError, TypeError):
-                pass
+                return None
+            return None
     if len(identity.department_ids) == 1:
         return identity.department_ids[0]
     return None
+
+
+def canonical_draft_kind(kind: str) -> str:
+    """Map the agent tool name for a journal proposal to the persisted draft kind."""
+    return "journal_entry" if kind == "create_journal_entry" else kind
+
+
+def validate_draft_payload(kind: str, payload: dict) -> dict:
+    """Validate a financial draft at every persistence/export transition."""
+    if canonical_draft_kind(kind) != "journal_entry":
+        return payload
+    from app.accounting.journal import JournalEntryPayload
+
+    try:
+        return JournalEntryPayload.model_validate(payload).model_dump(mode="json")
+    except Exception as exc:
+        raise ValueError("Journal payload is invalid") from exc
+
+
+def _required_draft_department(
+    identity: Identity,
+    payload: dict,
+    department_id: uuid.UUID | None,
+) -> uuid.UUID:
+    """Resolve the authoritative owner; NULL must never create a shared draft."""
+    if department_id is not None:
+        resolved = resolve_draft_department(identity, {"department_id": str(department_id)})
+    else:
+        resolved = resolve_draft_department(identity, payload)
+    if resolved is None:
+        raise ValueError("A permitted department owner is required for draft creation")
+    return resolved
 
 
 def draft_scope_filter(identity: Identity, action: str = "approve") -> "ColumnElement[bool]":
@@ -76,6 +112,9 @@ async def create_draft(db: AsyncSession, identity: Identity, kind: str, payload:
                        agent_run_id: uuid.UUID | None = None,
                        department_id: uuid.UUID | None = None) -> Draft:
     """Propose a draft (status=pending, hash pinned). IDEMPOTENT per (agent_run_id, payload_hash)."""
+    kind = canonical_draft_kind(kind)
+    department_id = _required_draft_department(identity, payload, department_id)
+    payload = validate_draft_payload(kind, payload)
     h = payload_hash(payload)
     if agent_run_id is not None:  # resume-safe: trả draft đã có thay vì tạo trùng
         existing = (await db.execute(select(Draft).where(
@@ -122,7 +161,9 @@ async def approve_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUI
     """Approve — advisory-lock serialized; anti-self-approval; hash unchanged (anti-drift)."""
     # Serialize concurrent approvals of the SAME draft (chống double-posting).
     await db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": str(draft_id)})
-    draft = await db.get(Draft, draft_id)
+    draft = (await db.execute(select(Draft).where(
+        Draft.id == draft_id, draft_scope_filter(identity)
+    ))).scalar_one_or_none()
     if draft is None or draft.status != "pending":
         raise ValueError("Draft không tồn tại hoặc không ở trạng thái chờ duyệt")
     ok, reason = maker_checker_ok(identity.employee_id, draft.created_by,
@@ -131,6 +172,7 @@ async def approve_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUI
         raise PermissionError(reason)
     if payload_hash(draft.payload) != draft.payload_hash:
         raise ValueError("Payload đã thay đổi sau khi đề xuất — từ chối duyệt (anti-drift)")
+    validate_draft_payload(draft.kind, draft.payload)
     draft.status = "approved"
     db.add(AuditLog(actor_id=identity.employee_id, action="draft.approve",
                     detail={"draft_id": str(draft_id)}))
@@ -148,7 +190,9 @@ async def approve_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUI
 
 
 async def reject_draft(db: AsyncSession, identity: Identity, draft_id: uuid.UUID, reason: str) -> Draft:
-    draft = await db.get(Draft, draft_id)
+    draft = (await db.execute(select(Draft).where(
+        Draft.id == draft_id, draft_scope_filter(identity)
+    ))).scalar_one_or_none()
     if draft is None or draft.status != "pending":
         raise ValueError("Draft không tồn tại hoặc không ở trạng thái chờ duyệt")
     draft.status = "rejected"

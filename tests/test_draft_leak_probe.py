@@ -52,9 +52,14 @@ def test_resolve_single_department():
     assert resolve_draft_department(_actor([_DEPT_A])) == _DEPT_A
 
 
-def test_resolve_payload_explicit_wins():
+def test_resolve_payload_foreign_department_is_rejected():
     got = resolve_draft_department(_actor([_DEPT_A]), {"department_id": str(_DEPT_B)})
-    assert got == _DEPT_B
+    assert got is None
+
+
+def test_resolve_payload_own_department_is_allowed():
+    got = resolve_draft_department(_actor([_DEPT_A]), {"department_id": str(_DEPT_A)})
+    assert got == _DEPT_A
 
 
 def test_resolve_none_when_ambiguous():

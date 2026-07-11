@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel
@@ -23,7 +24,7 @@ router = APIRouter()
 
 
 class DraftIn(BaseModel):
-    kind: str
+    kind: Literal["journal_entry"]
     payload: dict
 
 
@@ -49,7 +50,11 @@ def _out(d) -> DraftOut:
 @router.post("/drafts", response_model=DraftOut, status_code=status.HTTP_201_CREATED)
 async def propose(body: DraftIn, identity: Identity = Depends(require_permission("draft:create")),
                   db: AsyncSession = Depends(get_db)) -> DraftOut:
-    return _out(await draft_queue.create_draft(db, identity, body.kind, body.payload))
+    try:
+        return _out(await draft_queue.create_draft(db, identity, body.kind, body.payload))
+    except ValueError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "Draft scope or journal payload is invalid") from None
 
 
 @router.get("/drafts", response_model=list[DraftOut])
@@ -76,7 +81,15 @@ async def export_batch(body: BatchExportIn,
     """Xuất GỘP nhiều bút toán vào 1 CSV (nhập tay theo lô) — RLS-scoped."""
     rows = (await db.execute(select(Draft).where(
         Draft.id.in_(body.draft_ids), draft_queue.draft_scope_filter(identity)))).scalars().all()
-    payloads = [d.payload for d in rows if d.kind == "journal_entry"]
+    journal_rows = [d for d in rows if d.kind == "journal_entry" and d.status == "approved"]
+    if len(journal_rows) != len(body.draft_ids):
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "Only approved journal drafts can be exported")
+    try:
+        payloads = [draft_queue.validate_draft_payload(d.kind, d.payload) for d in journal_rows]
+    except ValueError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "Journal payload is invalid") from None
     if not payloads:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Không có bút toán hợp lệ để xuất")
     return Response(journal_export.batch_to_csv(payloads), media_type="text/csv; charset=utf-8",
@@ -106,16 +119,24 @@ async def export_draft(draft_id: uuid.UUID, fmt: str = Query("csv", pattern="^(c
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Draft không tồn tại hoặc ngoài phạm vi")
     if d.kind != "journal_entry":
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Chỉ xuất được bút toán (journal_entry)")
+    if d.status != "approved":
+        raise HTTPException(status.HTTP_409_CONFLICT,
+                            "Only approved journal drafts can be exported")
+    try:
+        payload = draft_queue.validate_draft_payload(d.kind, d.payload)
+    except ValueError:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "Journal payload is invalid") from None
     name = f"buttoan_{str(draft_id)[:8]}"
     if fmt == "xlsx":
         try:
-            data = journal_export.to_xlsx(d.payload)
+            data = journal_export.to_xlsx(payload)
         except ImportError:
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
                                 "XLSX cần openpyxl — dùng fmt=csv") from None
         return Response(data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         headers={"Content-Disposition": f'attachment; filename="{name}.xlsx"'})
-    return Response(journal_export.to_csv(d.payload), media_type="text/csv; charset=utf-8",
+    return Response(journal_export.to_csv(payload), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{name}.csv"'})
 
 

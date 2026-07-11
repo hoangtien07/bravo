@@ -51,9 +51,11 @@ export function DraftsQueuePage() {
   const toggle = (id: string) =>
     setSel((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  const journalIds = drafts.filter((d) => d.kind === "journal_entry").map((d) => d.id);
+  const approvedJournalIds = drafts
+    .filter((d) => d.kind === "journal_entry" && d.status === "approved")
+    .map((d) => d.id);
   const exportBatch = async () => {
-    const ids = [...sel].filter((id) => journalIds.includes(id));
+    const ids = [...sel].filter((id) => approvedJournalIds.includes(id));
     if (!ids.length) { alert("Chọn ít nhất 1 bút toán (journal_entry) để xuất lô."); return; }
     const r = await fetch("/api/drafts/export", {
       method: "POST", headers: { ...authHeaders(), "Content-Type": "application/json" },
@@ -114,10 +116,11 @@ export function DraftsQueuePage() {
         {drafts.map((d) => (
           <div key={d.id} className="flex gap-2">
             <input type="checkbox" checked={sel.has(d.id)} onChange={() => toggle(d.id)}
+                   disabled={d.kind !== "journal_entry" || d.status !== "approved"}
                    className="mt-4 accent-primary" aria-label="chọn để xuất lô" />
             <div className="flex-1 min-w-0">
               {d.kind === "journal_entry" ? (
-                <DraftCard payload={d.payload as JournalPayload} draftId={d.id}
+                <DraftCard payload={d.payload as JournalPayload} draftId={d.id} status={d.status}
                            onApprove={approve} onReject={reject} readOnly={d.status !== "pending"} />
               ) : (
                 <Card className="p-3">
@@ -135,7 +138,7 @@ export function DraftsQueuePage() {
               )}
               <div className="flex items-center gap-2 mt-1 ml-1">
                 <Badge tone={STATUS_TONE[d.status] || "muted"}>{d.status}</Badge>
-                {d.kind === "journal_entry" && (
+                {d.kind === "journal_entry" && d.status === "approved" && (
                   <>
                     <button onClick={() => downloadFile(`/api/drafts/${d.id}/export?fmt=csv`, `buttoan_${d.id.slice(0, 8)}.csv`)}
                             className="text-xs text-primary hover:underline">CSV</button>
