@@ -15,7 +15,8 @@ def test_readiness_passes_minimal_valid_artifacts(tmp_path):
     for rel in (
         "ug.pdf", "mm.md", "kqpt.pdf", "tech.docx", "basic.pdf", "report.pdf",
     ):
-        _write(root / rel, "x")
+        # Nội dung KHÁC nhau mỗi file -> sha256 khác nhau (audit corpus chặn trùng hash).
+        _write(root / rel, f"noi dung mau cua {rel}")
     manifest = root / "manifest.yaml"
     _write(manifest, """
 version: 1

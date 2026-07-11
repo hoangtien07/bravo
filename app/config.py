@@ -140,6 +140,28 @@ class Settings(BaseSettings):
                     f"[boot-guard] {name} còn giá trị mặc định/quá ngắn ở env={self.env}. "
                     "Đặt secret ngẫu nhiên ≥16 ký tự trước khi chạy production (fail-closed)."
                 )
+        if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
+            raise RuntimeError(
+                "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
+            )
+        # W2.6: tự-duyệt là lỗ hổng maker-checker ở prod -> cấm.
+        if self.allow_self_approval:
+            raise RuntimeError(
+                "[boot-guard] allow_self_approval=true KHÔNG được phép ở prod (maker-checker)."
+            )
+        # OIDC bật -> phải đủ cấu hình + session_secret mạnh (không mặc định).
+        if self.oidc_enabled:
+            if self.session_secret in weak or self.session_secret == "change-me-session" \
+                    or len(self.session_secret) < 16:
+                raise RuntimeError(
+                    "[boot-guard] oidc_enabled=true nhưng session_secret còn mặc định/quá ngắn."
+                )
+            if not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret
+                    and self.oidc_redirect_uri):
+                raise RuntimeError(
+                    "[boot-guard] oidc_enabled=true nhưng thiếu oidc_issuer/client_id/"
+                    "client_secret/redirect_uri."
+                )
 
     def data_policy_variables(self) -> dict[str, str]:
         from pathlib import Path
@@ -186,28 +208,6 @@ class Settings(BaseSettings):
         )
         if errors:
             raise RuntimeError("[boot-guard] data runtime policy invalid: " + "; ".join(errors[:10]))
-        if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
-            raise RuntimeError(
-                "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
-            )
-        # W2.6: tự-duyệt là lỗ hổng maker-checker ở prod -> cấm.
-        if self.allow_self_approval:
-            raise RuntimeError(
-                "[boot-guard] allow_self_approval=true KHÔNG được phép ở prod (maker-checker)."
-            )
-        # OIDC bật -> phải đủ cấu hình + session_secret mạnh (không mặc định).
-        if self.oidc_enabled:
-            if self.session_secret in weak or self.session_secret == "change-me-session" \
-                    or len(self.session_secret) < 16:
-                raise RuntimeError(
-                    "[boot-guard] oidc_enabled=true nhưng session_secret còn mặc định/quá ngắn."
-                )
-            if not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret
-                    and self.oidc_redirect_uri):
-                raise RuntimeError(
-                    "[boot-guard] oidc_enabled=true nhưng thiếu oidc_issuer/client_id/"
-                    "client_secret/redirect_uri."
-                )
 
 
 @lru_cache

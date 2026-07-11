@@ -73,23 +73,27 @@ def test_approve_and_reject_do_not_bypass_department_scope():
                 pending = await draft_queue.create_draft(
                     db, maker_identity, "journal_entry", _journal_payload(), department_id=dept_a,
                 )
-                created_ids.append(pending.id)
+                # Giữ id vào biến trước khi rollback: rollback expire ORM object, truy cập
+                # pending.id sau đó sẽ kích hoạt lazy-load đồng bộ -> MissingGreenlet.
+                pending_id = pending.id
+                created_ids.append(pending_id)
                 with pytest.raises(ValueError):
-                    await draft_queue.approve_draft(db, foreign_reviewer, pending.id)
+                    await draft_queue.approve_draft(db, foreign_reviewer, pending_id)
                 await db.rollback()
 
-                approved = await draft_queue.approve_draft(db, own_reviewer, pending.id)
+                approved = await draft_queue.approve_draft(db, own_reviewer, pending_id)
                 assert approved.status == "approved"
 
                 pending_reject = await draft_queue.create_draft(
                     db, maker_identity, "journal_entry", _journal_payload(), department_id=dept_a,
                 )
-                created_ids.append(pending_reject.id)
+                pending_reject_id = pending_reject.id
+                created_ids.append(pending_reject_id)
                 with pytest.raises(ValueError):
-                    await draft_queue.reject_draft(db, foreign_reviewer, pending_reject.id, "no")
+                    await draft_queue.reject_draft(db, foreign_reviewer, pending_reject_id, "no")
                 await db.rollback()
 
-                rejected = await draft_queue.reject_draft(db, own_reviewer, pending_reject.id, "no")
+                rejected = await draft_queue.reject_draft(db, own_reviewer, pending_reject_id, "no")
                 assert rejected.status == "rejected"
         finally:
             async with factory() as db:
