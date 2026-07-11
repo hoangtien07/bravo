@@ -1,0 +1,11 @@
+# Review progress
+
+| Task | Status | Artifact | Findings | Sol candidates | Tests run | Blockers |
+|---|---|---|---|---|---|---|
+| T2 | Complete | `02-data-memory.md` | 5 (4 High, 1 Medium); includes continued `BRV-API-002` | `BRV-DATA-001`, `BRV-API-002`, `BRV-DATA-002`, `BRV-DATA-003` | None; Python/pytest unavailable | Deployed DB roles/grants/policies and runtime permission records are `NEED FILE/CONTEXT` |
+| T6 | Complete | `06-platform-egress.md` | 12 (1 High conditional, 8 Medium, 3 Low); includes BRV-API-003–006 | `BRV-PLAT-001` | None; Python/pytest unavailable | Deployed `.env`, firewall/DNS, DB grants, container runtime, and backup/restore execution are `NEED FILE/CONTEXT` |
+| T3 | Complete | `03-rag-ingestion.md` | 6 (4 High/conditional, 2 Medium); includes continued `BRV-API-002` and `BRV-PLAT-001` | `BRV-API-002`, `BRV-RAG-001`, `BRV-RAG-002`, `BRV-PLAT-001` | None; Python/pytest unavailable | Installed Docling behavior and production source-classification/provisioning are `NEED FILE/CONTEXT` |
+| T4 | Complete | `04-agent-runtime.md` | 4 (2 High, 2 Medium); includes continued `BRV-DATA-002` and `BRV-DATA-003` | `BRV-DATA-002`, `BRV-DATA-003` | None; Python/pytest unavailable | Valid-token MCP handshake/scoped retrieval, a reproducible cross-user agent-session request, and production audit failure behavior are `NEED FILE/CONTEXT` |
+| T5 | Complete | `05-business-workflows.md` | 6 (3 High, 3 Medium) | `BRV-BIZ-001`, `BRV-BIZ-002`, `BRV-BIZ-003`, `BRV-BIZ-004` | None; Python/pytest unavailable | Upstream PO/receipt/QC/payment/support workflow, approval-override policy, and production invoice/import evidence are `NEED FILE/CONTEXT` |
+| T7 | Complete | `07-evaluation.md` | 7 (3 High, 4 Medium) | None | None; Python/pytest unavailable | Live seeded DB/corpus/model evaluation, current repository readiness result, and local faithfulness judge/threshold are `NEED FILE/CONTEXT` |
+| T8 | Complete | `08-frontend-contracts.md` | 7 (3 High, 4 Medium); includes continued `BRV-API-002`, `BRV-RAG-001`, `BRV-API-006`, `BRV-RAG-004` | `BRV-API-002`, `BRV-RAG-001`, `BRV-FE-001` | None; Node/package manager unavailable | Browser integration result, real frontend build/typecheck, and production auth/session behavior are `NEED FILE/CONTEXT` |
