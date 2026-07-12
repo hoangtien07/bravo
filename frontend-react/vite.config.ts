@@ -17,6 +17,7 @@ export default defineConfig(({ command }) => ({
           react: ["react", "react-dom", "react-router-dom"],
           markdown: ["react-markdown", "remark-gfm", "remark-math", "rehype-katex", "rehype-highlight"],
           katex: ["katex"],
+          "assistant-ui": ["@assistant-ui/react"],   // P2: keep it in its own chunk (offline bundle lean)
         },
       },
     },

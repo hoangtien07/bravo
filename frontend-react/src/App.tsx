@@ -4,6 +4,7 @@ import { setUnauthorizedHandler } from "@/api/client";
 import { useAuth } from "@/store/auth";
 import { AppShell } from "@/features/chat/AppShell";
 import { ChatView } from "@/features/chat/ChatView";
+import { AuiChatView } from "@/features/chat/AuiChatView";
 import { MoneyEnginePage } from "@/features/money/MoneyEnginePage";
 import { GraphView } from "@/features/graph/GraphView";
 import { AnomalyPage } from "@/features/anomaly/AnomalyPage";
@@ -20,9 +21,22 @@ function Protected({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// P2: assistant-ui surface behind a flag — `?ui=beta` (sticky), or VITE_ASSISTANT_UI=1 at build.
+// Legacy ChatView stays the default until parity is confirmed.
+function useChatSurface() {
+  if (typeof window !== "undefined") {
+    const q = new URLSearchParams(window.location.search).get("ui");
+    if (q === "beta") localStorage.setItem("bravo_ui", "beta");
+    if (q === "classic") localStorage.removeItem("bravo_ui");
+    if (localStorage.getItem("bravo_ui") === "beta") return AuiChatView;
+  }
+  return import.meta.env.VITE_ASSISTANT_UI === "1" ? AuiChatView : ChatView;
+}
+
 export default function App() {
   const { identity, loadMe } = useAuth();
   const nav = useNavigate();
+  const Chat = useChatSurface();
 
   useEffect(() => {
     setUnauthorizedHandler(() => nav("/login"));
@@ -34,8 +48,8 @@ export default function App() {
       <Route path="/login" element={identity ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/shared/:token" element={<SharedPage />} />
       <Route element={<Protected><AppShell /></Protected>}>
-        <Route path="/" element={<ChatView />} />
-        <Route path="/c/:id" element={<ChatView />} />
+        <Route path="/" element={<Chat />} />
+        <Route path="/c/:id" element={<Chat />} />
         <Route path="/money-engine" element={<MoneyEnginePage />} />
         <Route path="/drafts" element={<DraftsQueuePage />} />
         <Route path="/documents" element={<DocumentsPage />} />
