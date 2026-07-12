@@ -426,3 +426,14 @@ async def test_long_exercise_query_is_condensed_before_retrieve(monkeypatch):
     sess = AgentSession(_FakeDB(), _identity(admin=True))
     await sess.step(long_q)
     assert seen["query"] == "cách nhập phiếu nhập mua công nợ nhà cung cấp"  # đã cô đọng
+
+
+def test_partial_answer_with_midtext_abstain_not_clipped():
+    """Council 2026-07-12 #3: câu trả lời MỘT-PHẦN hợp lệ (abstain nhắc GIỮA chừng) KHÔNG
+    bị guard nuốt — chỉ clip khi cả câu trả lời MỞ ĐẦU bằng abstain."""
+    from app.agent.loop import _clip_abstain, _is_abstain
+
+    partial = ("Các bước tạo phiếu nhập mua: 1. Vào menu... [1] 2. Nhập thông tin... [2]. "
+               "Riêng phần hạn mức phê duyệt, tôi không tìm thấy thông tin trong tài liệu nội bộ.")
+    assert _is_abstain(partial) is False
+    assert _clip_abstain(partial) == partial          # giữ nguyên 80% giá trị đã grounded

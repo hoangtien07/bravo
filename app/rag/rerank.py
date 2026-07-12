@@ -36,7 +36,13 @@ async def llm_rerank(query: str, passages: list[str], top_n: int, *, sensitive: 
 
     from app.llm import router as llm
 
-    listing = "\n".join(f"[{i}] {p[:280]}" for i, p in enumerate(passages))
+    # Snippet head+tail ~700 ký tự (council 2026-07-12 #1): chunk dài tới ~2.700 ký tự,
+    # cắt 280 làm reranker chỉ thấy heading + 1-2 câu đầu — phần thân (các bước thao tác)
+    # vô hình với người chấm.
+    def _snippet(p: str) -> str:
+        return p if len(p) <= 700 else p[:500] + " … " + p[-180:]
+
+    listing = "\n".join(f"[{i}] {_snippet(p)}" for i, p in enumerate(passages))
     prompt = (
         f"Câu hỏi: {query}\n\nCác đoạn trích:\n{listing}\n\n"
         f"Chọn tối đa {top_n} đoạn LIÊN QUAN NHẤT để trả lời câu hỏi. "

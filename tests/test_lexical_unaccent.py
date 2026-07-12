@@ -79,3 +79,48 @@ def test_lexical_matches_unaccented_query_against_accented_content():
             await engine.dispose()
 
     asyncio.run(run())
+
+
+def test_lexical_or_fallback_survives_long_natural_query():
+    """Council 2026-07-12 #2: plainto = AND-toàn-từ -> câu tự nhiên dài chứa từ thừa
+    ('trong phần mềm', 'khi', 'đến kỳ'...) trả 0 dòng. OR-fallback phải cứu lại."""
+    async def run() -> None:
+        from sqlalchemy import delete
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+        from sqlalchemy.pool import NullPool
+
+        from app.config import get_settings
+        from app.database.models import Chunk, Source
+        from app.rag.retriever import lexical_search
+
+        engine = create_async_engine(get_settings().database_url, poolclass=NullPool)
+        factory = async_sessionmaker(engine, expire_on_commit=False)
+        ident = Identity(employee_id=uuid.uuid4(), department_ids=[],
+                         permissions=frozenset({"doc:read:all"}))
+        src_id = None
+        mark = "ORFALLBACKREGRESSION"
+        try:
+            async with factory() as db:
+                src = Source(filename=f"{mark}.md", knowledge_type="test", status="ready")
+                db.add(src)
+                await db.flush()
+                src_id = src.id
+                db.add(Chunk(source_id=src.id,
+                             content=f"Hướng dẫn lập bảng cân đối phát sinh {mark}",
+                             embedding=[0.0] * 1536, department_ids=[], extra={}))
+                await db.commit()
+
+                # câu dài: 'theo','quý','gần','nhất' KHÔNG có trong chunk -> AND fail;
+                # OR-fallback phải trả về chunk đúng (mark đặt ĐẦU câu: nằm trong cap 12 từ).
+                q = f"{mark} lập bảng cân đối phát sinh theo quý gần nhất"
+                hits = await lexical_search(db, ident, q)
+                assert any(mark in h.content for h in hits), "OR fallback must rescue long query"
+        finally:
+            async with factory() as db:
+                if src_id is not None:
+                    await db.execute(delete(Chunk).where(Chunk.source_id == src_id))
+                    await db.execute(delete(Source).where(Source.id == src_id))
+                    await db.commit()
+            await engine.dispose()
+
+    asyncio.run(run())

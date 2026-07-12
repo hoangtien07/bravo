@@ -8,6 +8,8 @@ Every returned chunk carries provenance for citation (page/sheet/cell).
 """
 from __future__ import annotations
 
+import logging
+import re
 from dataclasses import dataclass, field
 
 from sqlalchemy import func, select
@@ -23,6 +25,8 @@ from app.security.rls import Identity, chunk_scope_filter
 # Postgres FTS config — 'simple' tokenizes on whitespace (works for Vietnamese syllables
 # and, crucially, exact doc codes/numbers that dense embeddings dilute — findings/J).
 _FTS = "simple"
+
+_log = logging.getLogger("bravo.rag")
 
 
 @dataclass
@@ -109,7 +113,35 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
         .order_by(func.ts_rank(tsv, tsq).desc())
         .limit(k)
     )
-    rows = (await db.execute(stmt)).all()
+    rows = list((await db.execute(stmt)).all())
+
+    # OR-fallback (council 2026-07-12 #2): plainto = AND-toàn-bộ-từ + 'simple' không có
+    # stopword tiếng Việt -> câu hỏi tự nhiên dài ("cách nhập phiếu nhập mua công nợ kèm
+    # hóa đơn và hạn thanh toán") gần như chắc chắn 0 dòng -> hybrid thoái hoá dense-only.
+    # Fallback theo CẶP ÂM TIẾT liền kề ("cân <-> đối") + ts_rank_cd: tiếng Việt từ = cụm
+    # âm tiết, OR âm tiết rời quá nhiễu (đo: chunk đúng rớt khỏi top-150; bigram -> #19).
+    # Kết quả AND đứng trước, OR bổ sung phía sau (RRF dùng thứ tự).
+    if len(rows) < 3:
+        words = [w for w in dict.fromkeys(
+            w.lower() for w in re.findall(r"\w+", query, re.UNICODE))
+            if len(w) >= 2][:12]
+        terms = ([f"({a} <-> {b})" for a, b in zip(words, words[1:], strict=False)]
+                 if len(words) >= 2 else words)
+        if terms:
+            tsq_or = func.to_tsquery(_FTS, func.unaccent(" | ".join(terms)))
+            rank_or = func.ts_rank_cd(tsv, tsq_or)
+            stmt_or = (
+                select(Chunk, rank_or.label("rank"))
+                .where(chunk_scope_filter(identity, "read"))  # <-- RLS
+                .where(tsv.op("@@")(tsq_or))
+                .order_by(rank_or.desc())
+                .limit(k)
+            )
+            seen = {c.id for c, _ in rows}
+            rows.extend((c, r) for c, r in (await db.execute(stmt_or)).all()
+                        if c.id not in seen)
+            rows = rows[:k]
+
     return [
         Retrieved(
             chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
@@ -137,6 +169,11 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     if min_score is None:
         min_score = _s.retrieval_min_score
 
+    # Viết tắt nghiệp vụ VN ("khai báo CCDC") -> chèn cụm đầy đủ trước khi retrieve
+    # (tất định — council 2026-07-12 #6).
+    from app.rag.vn_terms import expand_abbreviations
+    query = expand_abbreviations(query)
+
     dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score)
     lexical = await lexical_search(db, identity, query, k=candidate_k)
     # intent boost -> version policy (current version wins over superseded/deprecated).
@@ -155,6 +192,10 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
         pool = fused[:40]   # pool rộng hơn -> tăng recall (chương đúng lọt vào diện rerank)
         # Do not send mixed or unknown-sensitivity candidate sets to cloud rerank.
         if any(r.is_sensitive for r in pool):
+            # Skip ÂM THẦM là bẫy vận hành (council #1): 1 chunk legacy thiếu flag làm mất
+            # rerank cho cả câu hỏi mà không ai biết -> log để lộ ra ở /metrics-log.
+            _log.warning("llm_rerank skipped: %d/%d candidates sensitive/unknown",
+                         sum(1 for r in pool if r.is_sensitive), len(pool))
             return pool[:top_n]
         order = await _rerank.llm_rerank(
             query, [r.content for r in pool], top_n, sensitive=False,

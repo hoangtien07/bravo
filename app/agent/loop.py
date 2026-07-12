@@ -184,14 +184,18 @@ _ABSTAIN_CANON = ("Không tìm thấy thông tin trong tài liệu nội bộ. B
 
 
 def _is_abstain(text: str) -> bool:
-    return _ABSTAIN_PREFIX in (text or "").lower()
+    # PREFIX-match (không phải substring): câu trả lời MỘT-PHẦN hợp lệ được phép nhắc
+    # "không tìm thấy thông tin ... về phần X" giữa chừng (prompt dạy vậy) — chỉ khi cả
+    # câu trả lời MỞ ĐẦU bằng abstain mới coi là lượt abstain (council 2026-07-12 #3).
+    return (text or "").strip().lower().startswith(_ABSTAIN_PREFIX)
 
 
 def _clip_abstain(answer: str) -> str:
     """Chặn 'abstain rồi bịa tiếp' (zero-hallucination, deterministic): model có lúc mở đầu
     'Không tìm thấy...' rồi VẪN tự sinh các bước hướng dẫn từ kiến thức ngoài (không citation,
-    sai phần mềm thật). Đã abstain -> câu trả lời CHỈ còn abstain chuẩn + mời làm rõ; mọi
-    phần đuôi bị cắt bỏ (không thể phân biệt đuôi hợp lệ với đuôi bịa -> fail-closed)."""
+    sai phần mềm thật). MỞ ĐẦU bằng abstain -> câu trả lời CHỈ còn abstain chuẩn + mời làm rõ;
+    mọi phần đuôi bị cắt (không phân biệt được đuôi hợp lệ với đuôi bịa -> fail-closed).
+    Câu trả lời một-phần (abstain nhắc GIỮA chừng) KHÔNG bị đụng."""
     return _ABSTAIN_CANON if _is_abstain(answer) else answer
 
 
