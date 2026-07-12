@@ -6,6 +6,7 @@ Streaming dùng POST + fetch ReadableStream (KHÔNG EventSource — vì bearer a
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import secrets
@@ -30,6 +31,22 @@ _log = logging.getLogger(__name__)
 
 _DISPLAY_ROLES = ("user", "assistant")
 
+# P1: per-conversation lock — two concurrent turns on the SAME conversation would interleave
+# history/summary writes (audit S5). In-process only; multi-worker prod needs pg_advisory_xact_lock
+# (documented in ADR-0024). F-12: prune unlocked entries so the map can't grow unbounded.
+_conv_locks: dict[str, asyncio.Lock] = {}
+
+
+def _conv_lock(session_id: uuid.UUID) -> asyncio.Lock:
+    if len(_conv_locks) > 4096:
+        for k in [k for k, v in _conv_locks.items() if not v.locked()]:
+            _conv_locks.pop(k, None)
+    key = str(session_id)
+    lk = _conv_locks.get(key)
+    if lk is None:
+        lk = _conv_locks[key] = asyncio.Lock()
+    return lk
+
 
 class ChatIn(BaseModel):
     question: str
@@ -40,16 +57,19 @@ async def _load_attachment_payloads(
     db: AsyncSession, identity: Identity, conversation_id: uuid.UUID,
     attachment_ids: list[uuid.UUID],
 ) -> list[dict]:
-    """Load this turn's attachments (owner-scoped, ready) + prior TEXT attachments of the
-    conversation, and shape them for the agent loop. Foreign/unknown ids are silently dropped
-    (RLS-in-SQL: no existence leak). Images are only sent for the CURRENT turn (cost); prior
-    text attachments are re-injected so the assistant keeps the document across turns.
+    """Load this turn's attachments (owner-scoped, ready) + prior attachments of the conversation,
+    and shape them for the agent loop. Foreign/unknown ids are silently dropped (RLS-in-SQL: no
+    existence leak). Prior TEXT attachments are re-injected so the assistant keeps the document;
+    images are re-sent for RECENT turns but capped at `attach_image_max` total (P1 / F-2 data
+    minimization — each re-send is a fresh cloud egress of the same image).
     """
     import base64
     from pathlib import Path
 
+    from app.config import get_settings
     from app.database.models import Attachment
 
+    settings = get_settings()
     payloads: list[dict] = []
     current: list[Attachment] = []
     if attachment_ids:
@@ -60,12 +80,13 @@ async def _load_attachment_payloads(
                 Attachment.status == "ready",
             )
         )).scalars().all())
-        # Bind to the conversation so prior turns can re-inject text attachments.
+        # Bind to the conversation so prior turns can re-inject the attachment.
         for a in current:
             if a.conversation_id is None:
                 a.conversation_id = conversation_id
         await db.commit()
 
+    current_ids = [a.id for a in current]
     prior_text = list((await db.execute(
         select(Attachment).where(
             Attachment.conversation_id == conversation_id,
@@ -73,21 +94,42 @@ async def _load_attachment_payloads(
             Attachment.status == "ready",
             Attachment.kind == "text",
             Attachment.content.isnot(None),
-            Attachment.id.notin_([a.id for a in current]) if current else True,
+            Attachment.id.notin_(current_ids) if current_ids else True,
         )
     )).scalars().all())
+
+    # Recent prior images, filling whatever room remains under the per-prompt image cap.
+    room = max(0, settings.attach_image_max - sum(1 for a in current if a.kind == "image"))
+    prior_images: list[Attachment] = []
+    if room:
+        prior_images = list((await db.execute(
+            select(Attachment).where(
+                Attachment.conversation_id == conversation_id,
+                Attachment.owner_id == identity.employee_id,
+                Attachment.status == "ready",
+                Attachment.kind == "image",
+                Attachment.id.notin_(current_ids) if current_ids else True,
+            ).order_by(Attachment.created_at.desc()).limit(room)
+        )).scalars().all())
+
+    def _img_payload(a: Attachment) -> dict | None:
+        try:
+            data = Path(a.storage_path).read_bytes()
+        except OSError:
+            return None
+        b64 = base64.b64encode(data).decode()
+        return {"kind": "image", "filename": a.filename,
+                "data_url": f"data:{a.mime_type};base64,{b64}"}
 
     for a in current + prior_text:
         if a.kind == "text" and a.content:
             payloads.append({"kind": "text", "filename": a.filename, "content": a.content})
-        elif a.kind == "image" and a in current:   # images: current turn only
-            try:
-                data = Path(a.storage_path).read_bytes()
-            except OSError:
-                continue
-            b64 = base64.b64encode(data).decode()
-            payloads.append({"kind": "image", "filename": a.filename,
-                             "data_url": f"data:{a.mime_type};base64,{b64}"})
+        elif a.kind == "image" and a in current:
+            if (p := _img_payload(a)):
+                payloads.append(p)
+    for a in prior_images:
+        if (p := _img_payload(a)):
+            payloads.append(p)
     return payloads
 
 
@@ -95,8 +137,13 @@ class RenameIn(BaseModel):
     title: str
 
 
+_FEEDBACK_CATEGORIES = {"wrong_number", "wrong_source", "unhelpful", "bug", "other"}
+
+
 class FeedbackIn(BaseModel):
-    value: str | None  # like|dislike|null
+    value: str | None = None       # like|dislike|null
+    comment: str | None = None     # P1: free-text "report to IT" (may contain personal data)
+    category: str | None = None    # P1: one of _FEEDBACK_CATEGORIES
 
 
 def _msg_dict(m: ConversationMessage) -> dict:
@@ -140,34 +187,44 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
 
     session = AgentSession(db, identity, session_id=conversation_id)
 
+    lock = _conv_lock(conversation_id)
+
     async def gen():
         import time as _time
         from app.observability import record_first_token
-        started = _time.monotonic()
-        first_token_seen = False
-        try:
-            async for event in session.step_stream(body.question, attachments):
-                if not first_token_seen and event.get("type") == "answer":
-                    first_token_seen = True
-                    record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
-                yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
-        except Exception:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
-            # Sanitize: KHÔNG leak chi tiết nội bộ (SQL, key-adjacent, stacktrace) ra client (F-7).
-            _log.exception("chat_stream failed for conversation %s", conversation_id)
-            yield (
-                "data: "
-                + json.dumps(
-                    {"type": "error",
-                     "message": "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại."},
-                    ensure_ascii=False,
-                )
-                + "\n\n"
-            )
-        finally:
+        # P1: reject a second concurrent turn on the same conversation (no interleaved writes).
+        if lock.locked():
+            yield ("data: " + json.dumps(
+                {"type": "error", "code": "busy",
+                 "message": "Hội thoại đang xử lý một yêu cầu khác, vui lòng đợi."},
+                ensure_ascii=False) + "\n\n")
+            return
+        async with lock:
+            started = _time.monotonic()
+            first_token_seen = False
             try:
-                await conv_svc.touch(db, conversation_id)
-            except Exception:  # noqa: BLE001
-                pass
+                async for event in session.step_stream(body.question, attachments):
+                    if not first_token_seen and event.get("type") == "answer":
+                        first_token_seen = True
+                        record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
+                    yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
+            except Exception:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
+                # Sanitize: KHÔNG leak chi tiết nội bộ (SQL/key-adjacent/stacktrace) ra client (F-7).
+                _log.exception("chat_stream failed for conversation %s", conversation_id)
+                yield (
+                    "data: "
+                    + json.dumps(
+                        {"type": "error",
+                         "message": "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại."},
+                        ensure_ascii=False,
+                    )
+                    + "\n\n"
+                )
+            finally:
+                try:
+                    await conv_svc.touch(db, conversation_id)
+                except Exception:  # noqa: BLE001
+                    pass
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -211,6 +268,19 @@ async def delete_conversation(conversation_id: uuid.UUID,
                               identity: Identity = Depends(get_current_identity),
                               db: AsyncSession = Depends(get_db)) -> Response:
     conv = await _owned(db, conversation_id, identity)
+    # F-6 (PDPL erasure): also remove conversation-bound attachments + their files on disk.
+    from pathlib import Path
+
+    from app.database.models import Attachment
+    atts = list((await db.execute(select(Attachment).where(
+        Attachment.conversation_id == conversation_id))).scalars().all())
+    for a in atts:
+        if a.storage_path:
+            try:
+                Path(a.storage_path).unlink(missing_ok=True)
+            except OSError:
+                _log.warning("could not delete attachment file %s", a.storage_path)
+    await db.execute(delete(Attachment).where(Attachment.conversation_id == conversation_id))
     await db.execute(delete(ConversationMessage).where(
         ConversationMessage.session_id == conversation_id))
     await db.execute(delete(MemoryBlock).where(MemoryBlock.session_id == conversation_id))
@@ -230,8 +300,21 @@ async def share_conversation(conversation_id: uuid.UUID,
     return {"shared_token": conv.shared_token, "url": f"/shared/{conv.shared_token}"}
 
 
+@router.delete("/conversations/{conversation_id}/share", status_code=status.HTTP_204_NO_CONTENT)
+async def unshare_conversation(conversation_id: uuid.UUID,
+                               identity: Identity = Depends(get_current_identity),
+                               db: AsyncSession = Depends(get_db)) -> Response:
+    """P1 share governance: revoke the public link (rotate to None). Any held token stops working."""
+    conv = await _owned(db, conversation_id, identity)
+    conv.shared_token = None
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.get("/shared/{token}")
-async def shared_conversation(token: str, db: AsyncSession = Depends(get_db)) -> dict:
+@limiter.limit(chat_limit)   # P1: throttle the unauthenticated share endpoint
+async def shared_conversation(request: Request, token: str,
+                              db: AsyncSession = Depends(get_db)) -> dict:
     # Bypass RLS có kiểm soát: tra theo shared_token (256-bit), read-only, KHÔNG lộ employee_id.
     conv = (await db.execute(select(Conversation).where(
         Conversation.shared_token == token))).scalar_one_or_none()
@@ -252,5 +335,11 @@ async def set_feedback(conversation_id: uuid.UUID, message_id: uuid.UUID, body: 
     if msg is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Tin nhắn không tồn tại")
     msg.feedback = body.value if body.value in ("like", "dislike") else None
+    if body.comment is not None:                        # P1 report-to-IT (F-9: cap length)
+        msg.feedback_comment = (body.comment.strip()[:2000]) or None
+    if body.category is not None:
+        cat = body.category.strip().lower()
+        msg.feedback_category = cat if cat in _FEEDBACK_CATEGORIES else "other"
     await db.commit()
-    return {"ok": True, "feedback": msg.feedback}
+    return {"ok": True, "feedback": msg.feedback,
+            "comment": msg.feedback_comment, "category": msg.feedback_category}

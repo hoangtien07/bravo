@@ -96,18 +96,21 @@ class MemoryStore:
 
     # --- recall memory (conversation history) ---
     async def recall_add(self, role: str, content: str, *, trust_level: str = "trusted",
-                         source: str | None = None) -> None:
-        """Append a turn to recall memory.
+                         source: str | None = None) -> uuid.UUID:
+        """Append a turn to recall memory; returns the new row id (P1: so `done` can carry the
+        persisted message_id for feedback/edit without a re-fetch).
 
         `trust_level`: "trusted" for the agent's own user/assistant turns; pass
         "untrusted" when persisting tool/document/ERP-derived text (it gets DATA-framed
         on recall so embedded directives can't change behaviour — WP-G).
         """
-        self.db.add(ConversationMessage(
+        row = ConversationMessage(
             session_id=self.session_id, role=role, content=content,
             trust_level=trust_level, source=source,
-        ))
+        )
+        self.db.add(row)
         await self.db.commit()
+        return row.id
 
     async def recall_recent(self, limit: int = 20) -> list[ConversationMessage]:
         """Recent turns for THIS session only (RLS: session-scoped, no cross-session leak)."""

@@ -38,21 +38,26 @@ async def collect() -> list[dict]:
                 .order_by(ConversationMessage.created_at.desc()).limit(1)
             )).scalar_one_or_none()
             out.append({"question": q or "", "bad_answer": (m.content or "")[:500],
-                        "session_id": str(m.session_id)})
+                        "session_id": str(m.session_id),
+                        # P1: user's free-text report + category (may contain personal data).
+                        "report_comment": m.feedback_comment or "",
+                        "report_category": m.feedback_category or "",
+                        "label": ""})   # corpus-miss | retrieval-miss | synthesis-poor | wrong-task-type
         return out
 
 
 def _yaml_dump(records: list[dict]) -> str:
-    # Minimal YAML writer (no external dep) — keeps the air-gap posture.
-    lines = ["# Disliked answers -> golden-set / corpus-gap triage (Q10)", "candidates:"]
-    for r in records:
-        q = r["question"].replace('"', "'")
-        a = r["bad_answer"].replace('"', "'").replace("\n", " ")
-        lines.append(f'  - question: "{q}"')
-        lines.append(f'    bad_answer: "{a}"')
-        lines.append(f'    session_id: "{r["session_id"]}"')
-        lines.append('    label: ""   # corpus-miss | retrieval-miss | synthesis-poor | wrong-task-type')
-    return "\n".join(lines) + "\n"
+    # F-9: real YAML serializer (no hand-rolled escaping that a backslash could break out of).
+    header = ("# ⚠ CÓ THỂ CHỨA DỮ LIỆU CÁ NHÂN — xử lý theo PDPL; chỉ dùng nội bộ IT, đặt retention.\n"
+              "# Disliked answers -> golden-set / corpus-gap triage (Q10).\n")
+    try:
+        import yaml
+        body = yaml.safe_dump({"candidates": records}, allow_unicode=True, sort_keys=False)
+    except Exception:
+        # Fallback (no PyYAML): JSON is valid YAML and round-trips safely.
+        import json
+        body = json.dumps({"candidates": records}, ensure_ascii=False, indent=2)
+    return header + body
 
 
 def main() -> int:

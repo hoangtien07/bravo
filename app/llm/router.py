@@ -94,11 +94,15 @@ def decide(sensitive: bool | None, allow_cloud_task: bool = False) -> RoutingDec
     return RoutingDecision("cloud", _settings.cloud_model, "non-sensitive + cloud allowed")
 
 
-async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
+async def _audit_egress(db, d: RoutingDecision, messages: list[dict],
+                        *, actor_id=None, session_id=None) -> None:
     """Audit-then-egress (ADR-0011 / WP-C): ghi AuditLog TRƯỚC khi prompt rời mạng ra cloud.
 
     Nếu ghi audit lỗi -> raise (db.commit propagate) -> KHÔNG egress (fail-closed). db=None
     (vd unit-test) -> bỏ qua. prompt_hash để truy vết, không lưu nội dung thô.
+
+    F-1 (SECURITY-RLS §9.4): bản ghi PHẢI trả lời được "ẢNH của AI đã rời mạng, bao nhiêu lần" —
+    lưu `actor_id`, `session_id`, và sha256 của TỪNG ảnh (không chỉ gộp vào prompt_hash).
     """
     if db is None:
         return
@@ -109,6 +113,8 @@ async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
 
     # Replace multimodal image payloads with their own sha256 so we hash a compact digest,
     # not megabytes of base64 (Track 3). The audit still uniquely fingerprints the prompt.
+    image_shas: list[str] = []
+
     def _lean(messages: list[dict]) -> list[dict]:
         out = []
         for m in messages:
@@ -118,8 +124,9 @@ async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
                 for p in content:
                     if isinstance(p, dict) and p.get("type") == "image_url":
                         url = (p.get("image_url") or {}).get("url", "")
-                        parts.append({"type": "image_url",
-                                      "sha256": hashlib.sha256(url.encode()).hexdigest()})
+                        sha = hashlib.sha256(url.encode()).hexdigest()
+                        image_shas.append(sha)
+                        parts.append({"type": "image_url", "sha256": sha})
                     else:
                         parts.append(p)
                 out.append({**m, "content": parts})
@@ -129,8 +136,13 @@ async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
 
     prompt_hash = hashlib.sha256(
         _json.dumps(_lean(messages), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
-    db.add(AuditLog(action="llm.egress",
-                    detail={"provider": d.backend, "model": d.model, "prompt_hash": prompt_hash}))
+    detail = {"provider": d.backend, "model": d.model, "prompt_hash": prompt_hash}
+    if session_id is not None:
+        detail["session_id"] = str(session_id)
+    if image_shas:
+        detail["image_sha256"] = image_shas
+        detail["image_count"] = len(image_shas)
+    db.add(AuditLog(actor_id=actor_id, action="llm.egress", detail=detail))
     await db.commit()
 
 
@@ -165,7 +177,8 @@ def _structured_kwargs(d: RoutingDecision, schema: dict | None) -> dict:
 
 async def chat(messages: list[dict], *, context: list | None = None,
                sensitive: bool | None = None, allow_cloud_task: bool = False,
-               json_schema: dict | None = None, db=None, **kwargs) -> tuple[str, RoutingDecision]:
+               json_schema: dict | None = None, db=None, actor_id=None, session_id=None,
+               **kwargs) -> tuple[str, RoutingDecision]:
     """Route a chat completion. Returns (text, decision) — decision carries REAL token usage.
 
     `json_schema` bật structured output (json_object cloud / guided_json vLLM). Router tự phân
@@ -176,7 +189,7 @@ async def chat(messages: list[dict], *, context: list | None = None,
     _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
-        await _audit_egress(db, d, messages)  # fail-closed: audit trước, lỗi audit -> không egress
+        await _audit_egress(db, d, messages, actor_id=actor_id, session_id=session_id)
     kwargs.update(_structured_kwargs(d, json_schema))
     async with _llm_sema:
         resp = await client.chat.completions.create(model=d.model, messages=messages, **kwargs)
@@ -187,7 +200,8 @@ async def chat(messages: list[dict], *, context: list | None = None,
 
 async def chat_stream(messages: list[dict], *, context: list | None = None,
                       sensitive: bool | None = None, allow_cloud_task: bool = False,
-                      json_schema: dict | None = None, db=None, **kwargs) -> AsyncIterator[dict]:
+                      json_schema: dict | None = None, db=None, actor_id=None, session_id=None,
+                      **kwargs) -> AsyncIterator[dict]:
     """Token-streaming primitive (W1.1). Yields REAL deltas from the model:
 
         {"type": "delta", "text": "..."}          # nhiều event, token thật
@@ -203,7 +217,7 @@ async def chat_stream(messages: list[dict], *, context: list | None = None,
     _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
-        await _audit_egress(db, d, messages)
+        await _audit_egress(db, d, messages, actor_id=actor_id, session_id=session_id)
     kwargs.update(_structured_kwargs(d, json_schema))
     async with _llm_sema:
         stream = await client.chat.completions.create(

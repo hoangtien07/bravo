@@ -142,7 +142,33 @@ def test_rename_share_and_rls(monkeypatch):
         shared = (await c.get(f"/api/shared/{tok}")).json()
         assert shared["title"] == "Tiêu đề test"
         assert "employee_id" not in shared and "messages" in shared
+        # P1: revoke the share -> the token stops working (404).
+        assert (await c.delete(f"/api/conversations/{cid}/share")).status_code == 204
+        assert (await c.get(f"/api/shared/{tok}")).status_code == 404
         assert (await c.delete(f"/api/conversations/{cid}")).status_code == 204
         assert (await c.get(f"/api/conversations/{cid}")).status_code == 404
+
+    _run(monkeypatch, body)
+
+
+def test_done_carries_message_id_and_feedback_report(monkeypatch):
+    async def body(c):
+        cid = str(uuid.uuid4())
+        events = await _stream(c, cid, "Câu hỏi có phản hồi")
+        done = next(e for e in events if e["type"] == "done")
+        # P1: done carries the persisted assistant + user message ids.
+        assert done.get("message_id") and done.get("user_message_id")
+        mid = done["message_id"]
+        # P1: feedback with report-to-IT comment + category persists.
+        r = (await c.post(f"/api/conversations/{cid}/messages/{mid}/feedback",
+                          json={"value": "dislike", "comment": "số liệu sai",
+                                "category": "wrong_number"})).json()
+        assert r["feedback"] == "dislike"
+        assert r["comment"] == "số liệu sai"
+        assert r["category"] == "wrong_number"
+        # unknown category is coerced to "other"
+        r2 = (await c.post(f"/api/conversations/{cid}/messages/{mid}/feedback",
+                           json={"value": "like", "category": "zzz"})).json()
+        assert r2["category"] == "other"
 
     _run(monkeypatch, body)

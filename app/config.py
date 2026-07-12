@@ -116,6 +116,12 @@ class Settings(BaseSettings):
     stream_decide_answer: bool = True
     # M3: hard timeout (s) for a single retrieval call so a hung pgvector query can't stall a turn.
     retrieval_timeout_s: float = 20.0
+    # P1: multi-turn image handling. Re-send recent conversation images to the vision model so the
+    # assistant "remembers" them across turns — but each re-send is a fresh cloud egress of the same
+    # (often PII) image, so cap it hard (F-2 data-minimization). attach_image_turns documents intent;
+    # attach_image_max is the operative per-prompt cap on total images.
+    attach_image_turns: int = 3
+    attach_image_max: int = 4
     # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).

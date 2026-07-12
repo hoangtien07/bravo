@@ -15,9 +15,11 @@ from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    BigInteger,
     DateTime,
     ForeignKey,
     Integer,
+    Sequence,
     String,
     Text,
     UniqueConstraint,
@@ -30,6 +32,9 @@ from app.config import get_settings
 from app.database import Base
 
 _DIM = get_settings().embedding_dim
+
+# P1: sequence backing ConversationMessage.seq (created on fresh create_all AND in migration 0011).
+_conv_msg_seq = Sequence("conv_msg_seq")
 
 
 def _uuid() -> uuid.UUID:
@@ -200,6 +205,12 @@ class ConversationMessage(Base):
     trust_level: Mapped[str] = mapped_column(String(20), default="trusted")  # trusted|untrusted
     source: Mapped[str | None] = mapped_column(String(500), nullable=True)
     feedback: Mapped[str | None] = mapped_column(String(10), nullable=True)  # like|dislike (P-chat)
+    # P1: report-to-IT — optional free-text + category on a dislike (see routes feedback).
+    feedback_comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    feedback_category: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # P1: absolute per-table ordering (tie-free) for truncate/edit (P3) — sequence-backed.
+    seq: Mapped[int] = mapped_column(
+        BigInteger, _conv_msg_seq, server_default=_conv_msg_seq.next_value(), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -242,6 +253,10 @@ class Attachment(Base):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)   # extracted text (kind=text)
     token_count: Mapped[int] = mapped_column(Integer, default=0)
     source_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # P1: bound to the user ConversationMessage this attachment was sent with (last-N-turn image
+    # re-send + truncate/erasure). ON DELETE SET NULL so truncating a turn doesn't orphan-block.
+    message_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("conversation_messages.id", ondelete="SET NULL"), nullable=True, index=True)
     error: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

@@ -602,6 +602,7 @@ class AgentSession:
         """
         text, decision = await llm.chat(
             messages, context=context_objs, db=self.db, json_schema=_DECISION_SCHEMA,
+            actor_id=self.identity.employee_id, session_id=self.session_id,
             allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.1)
         if getattr(decision, "backend", "local") == "cloud":
             self._routed_cloud = True
@@ -619,6 +620,7 @@ class AgentSession:
             ]
             text2, d2 = await llm.chat(
                 retry_msgs, context=context_objs, db=self.db, json_schema=_DECISION_SCHEMA,
+                actor_id=self.identity.employee_id, session_id=self.session_id,
                 allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.0)
             if getattr(d2, "backend", "local") == "cloud":
                 self._routed_cloud = True
@@ -651,6 +653,7 @@ class AgentSession:
         streamed = False
         async for ev in llm.chat_stream(
                 messages, context=context_objs, db=self.db,
+                actor_id=self.identity.employee_id, session_id=self.session_id,
                 allow_cloud_task=_settings.demo_allow_cloud_answers,
                 json_schema=_DECISION_SCHEMA, temperature=0.1):
             etype = ev.get("type")
@@ -697,11 +700,11 @@ class AgentSession:
             yield {"type": "answer", "delta": tail}
         final = _label_ungrounded(streamer.full)
         cites, grounded = _prune_citations(final, citations)
-        await self._safe_recall_add("assistant", final)
+        mid = await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
         yield {"type": "done", "grounded": grounded, "unmatched": [], "citations": cites,
                "routed_cloud": getattr(self, "_routed_cloud", False),
-               "session_id": str(self.session_id)}
+               "session_id": str(self.session_id), **self._msg_ids(mid)}
 
     def _add_aux_tokens(self, decision) -> None:
         """M1: accumulate token usage from AUXILIARY LLM calls (rephrase/summarize) so they are
@@ -908,9 +911,12 @@ class AgentSession:
             last = await self.memory.recall_recent(1)
             dup = bool(last and last[0].role == "user" and last[0].content == recall_text)
         except Exception:
-            dup = False
+            last, dup = None, False
+        self._user_message_id = None
         if not dup:
-            await self._safe_recall_add("user", recall_text)
+            self._user_message_id = await self._safe_recall_add("user", recall_text)
+        elif last:
+            self._user_message_id = last[0].id
 
         queries = await self._plan_queries(recall, user_message)
         try:   # M3: a hung pgvector query must not stall the turn past its deadline
@@ -1085,17 +1091,19 @@ class AgentSession:
 
     async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
         if engine_values:
-            # (a) tài chính: buffered verify-gate, phát nguyên khối đã kiểm chứng.
+            # (a) tài chính: buffered verify-gate, phát nguyên khối đã kiểm chứng. Phát `status`
+            # để lượt KHÔNG token-stream này không trông như bị treo trên UI (P1).
+            yield {"type": "status", "text": "Đang kiểm tra số liệu..."}
             verdict = verify_numbers(answer, engine_values)
             safe = answer if verdict.grounded else verdict.safe_answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
             cites = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
-            await self._safe_recall_add("assistant", safe)
+            mid = await self._safe_recall_add("assistant", safe)
             await self._close_run(self._terminal_status())
             yield {"type": "answer", "delta": safe}
             yield {"type": "done", "grounded": grounded, "unmatched": unmatched,
                    "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
-                   "session_id": str(self.session_id)}
+                   "session_id": str(self.session_id), **self._msg_ids(mid)}
             return
 
         # (b) tri thức: token-stream THẬT (compose) nếu bật cờ; nếu không, phát answer đã quyết
@@ -1107,6 +1115,7 @@ class AgentSession:
             try:
                 async for ev in llm.chat_stream(
                         compose, context=engine_values, db=self.db,
+                        actor_id=self.identity.employee_id, session_id=self.session_id,
                         allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.2):
                     if ev["type"] == "delta":
                         parts.append(ev["text"])
@@ -1124,18 +1133,19 @@ class AgentSession:
             # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
             final = _label_ungrounded(final)
         cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
-        await self._safe_recall_add("assistant", final)
+        mid = await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
         yield {"type": "done", "grounded": grounded, "unmatched": [],
                "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
-               "session_id": str(self.session_id)}
+               "session_id": str(self.session_id), **self._msg_ids(mid)}
 
     async def _stream_clarify(self, question: str, citations: list):
-        await self._safe_recall_add("assistant", question)
+        mid = await self._safe_recall_add("assistant", question)
         await self._close_run(self._terminal_status())
         yield {"type": "answer", "delta": question}
         yield {"type": "done", "grounded": True, "clarify": True, "citations": citations,
-               "routed_cloud": getattr(self, "_routed_cloud", False), "session_id": str(self.session_id)}
+               "routed_cloud": getattr(self, "_routed_cloud", False),
+               "session_id": str(self.session_id), **self._msg_ids(mid)}
 
     async def step_stream(self, user_message: str, attachments: list[dict] | None = None):
         """STREAMING của step() — async generator yield event dict cho SSE. Tái dùng
@@ -1195,7 +1205,7 @@ class AgentSession:
                     yield {"type": "error", "message": emsg}
                     yield {"type": "done", "grounded": False, "citations": citations,
                            "routed_cloud": getattr(self, "_routed_cloud", False),
-                           "session_id": str(self.session_id)}
+                           "session_id": str(self.session_id), **self._msg_ids(None)}
                     return
                 tracker.tokens += used
                 self._tokens_used += used
@@ -1256,12 +1266,12 @@ class AgentSession:
                               {"dimension": be.dimension, "steps": tracker.steps})
             answer = ("Tôi đã dừng vì đạt giới hạn an toàn của phiên xử lý "
                       f"({be.dimension}). Vui lòng thu hẹp câu hỏi hoặc thử lại.")
-            await self._safe_recall_add("assistant", answer)
+            mid = await self._safe_recall_add("assistant", answer)
             await self._close_run("failed")
             yield {"type": "answer", "delta": answer}
             yield {"type": "done", "grounded": False, "stopped": "budget", "citations": citations,
                    "routed_cloud": getattr(self, "_routed_cloud", False),
-                   "session_id": str(self.session_id)}
+                   "session_id": str(self.session_id), **self._msg_ids(mid)}
         except Exception as e:  # noqa: BLE001 — any other failure: close the run (no orphan
             # 'running' AgentRow), sanitize (F-7), and end the stream cleanly.
             _log.exception("step_stream failed")
@@ -1273,7 +1283,7 @@ class AgentSession:
             yield {"type": "done", "grounded": False,
                    "citations": locals().get("citations", []),
                    "routed_cloud": getattr(self, "_routed_cloud", False),
-                   "session_id": str(self.session_id)}
+                   "session_id": str(self.session_id), **self._msg_ids(None)}
 
     # --- terminal helpers ---------------------------------------------------------
     async def _finish_answer(self, answer: str, engine_values: list[MetricResult],
@@ -1333,8 +1343,15 @@ class AgentSession:
             return result.get("message", "đã tạo nháp")
         return _trunc(json.dumps(result, ensure_ascii=False, default=str), 500)
 
-    async def _safe_recall_add(self, role: str, content: str) -> None:
+    async def _safe_recall_add(self, role: str, content: str):
         try:
-            await self.memory.recall_add(role, content)
+            return await self.memory.recall_add(role, content)
         except Exception:
-            pass  # memory persistence must not crash the turn (stub db in unit tests)
+            return None  # memory persistence must not crash the turn (stub db in unit tests)
+
+    def _msg_ids(self, assistant_id) -> dict:
+        """P1: message ids for the `done` event so the client can attach feedback / edit without
+        a re-fetch. Values are stringified UUIDs or None."""
+        uid = getattr(self, "_user_message_id", None)
+        return {"message_id": str(assistant_id) if assistant_id else None,
+                "user_message_id": str(uid) if uid else None}
