@@ -17,6 +17,20 @@ from app.rag.embedding import embed
 from app.security.sensitivity import ingest_sensitive
 
 
+def _embed_text(block) -> str:
+    """Text used for the EMBEDDING (not storage): prepend heading_path + sheet_name when they
+    aren't already in the body, so heading-blind Docling chunks match section-level queries."""
+    body = block.text or ""
+    prefix_parts: list[str] = []
+    hp = getattr(block, "heading_path", None)
+    if hp and hp not in body:
+        prefix_parts.append(hp)
+    sheet = getattr(block, "sheet_name", None)
+    if sheet and sheet not in body:
+        prefix_parts.append(f"sheet {sheet}")
+    return f"{' > '.join(prefix_parts)}\n{body}" if prefix_parts else body
+
+
 async def ingest_source(
     db: AsyncSession,
     source_id: uuid.UUID,
@@ -65,7 +79,10 @@ async def ingest_source(
     is_sensitive = ingest_sensitive(
         trusted_knowledge_type, has_departments=bool(dept_ids),
         touches_sensitive_dept=touches_sensitive_dept)
-    vectors = embed([b.text for b in blocks], sensitive=is_sensitive)
+    # Q5 heading-aware embedding: Docling paths (docx/xlsx/pdf_table) emit bare body chunks;
+    # prepend the heading/sheet context to the EMBEDDED text so retrieval matches section
+    # terms. Stored `content` stays the original body (citations/display unchanged).
+    vectors = embed([_embed_text(b) for b in blocks], sensitive=is_sensitive)
 
     for b, vec in zip(blocks, vectors, strict=True):
         extra = dict(source_extra or {})

@@ -139,8 +139,15 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
     session = AgentSession(db, identity, session_id=conversation_id)
 
     async def gen():
+        import time as _time
+        from app.observability import record_first_token
+        started = _time.monotonic()
+        first_token_seen = False
         try:
             async for event in session.step_stream(body.question, attachments):
+                if not first_token_seen and event.get("type") == "answer":
+                    first_token_seen = True
+                    record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
                 yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
         except Exception as exc:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"

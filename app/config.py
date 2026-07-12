@@ -77,6 +77,13 @@ class Settings(BaseSettings):
 
     # Demo: allow non-sensitive tasks (KB user-guide Q&A) to use the cloud LLM.
     demo_allow_cloud_answers: bool = False
+
+    # Q9 vision OCR for scanned PDFs (ADR-0019 lifts the ADR-0009 OCR descope under cloud-only).
+    # Needs pypdfium2 (optional dep) + a vision-capable cloud model. Numbers transcribed from a
+    # scan stay quote-level (evidence_level=derived_summary) — never fed to the number verify-gate.
+    vision_ocr_enabled: bool = False
+    vision_model: str = ""                 # falls back to cloud_model when empty
+    vision_max_pages: int = 20             # cap pages sent to the vision model per document
     # Rerank — biggest retrieval-quality lever (findings/J).
     #   provider "viranker" -> local cross-encoder (production)
     #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
@@ -100,6 +107,23 @@ class Settings(BaseSettings):
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).
     retrieval_min_score: float = 0.12
+    # Q6: after rerank, expand each finalist chunk with its sibling chunks from the same
+    # (source, heading section) so long procedures cut at ~900 tokens are answered whole.
+    retrieval_expand_sections: bool = True
+    retrieval_section_token_cap: int = 2000     # per expanded section
+    retrieval_expand_top: int = 6               # expand only the top-N finalists
+
+    def resolved_min_score(self) -> float:
+        """Cosine floor calibrated PER embedding model (Q11) — different models have different
+        score distributions, so a single hard-coded 0.12 is wrong when the model changes. Falls
+        back to `retrieval_min_score` for unknown models (no behavior change until calibrated)."""
+        by_model = {
+            "BAAI/bge-m3": 0.12,
+            "text-embedding-3-small": 0.12,
+            "text-embedding-3-large": 0.12,
+            "gemini-embedding-001": 0.12,
+        }
+        return by_model.get(self.embedding_model, self.retrieval_min_score)
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"

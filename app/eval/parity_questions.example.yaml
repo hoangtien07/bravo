@@ -1,0 +1,19 @@
+# Q4 parity benchmark question set (example). Copy to parity_questions.yaml and fill from
+# pilot logs + the council 2026-07-12 complaints, stratified across coverage groups.
+# Each question is asked of BOTH bravo and BravoGen; graded blind (win/tie/loss).
+questions:
+  - group: nhập chứng từ
+    actor_email: helpdesk@bravo.local
+    question: "Cách nhập phiếu nhập mua công nợ nhà cung cấp kèm hoá đơn GTGT?"
+  - group: định khoản
+    actor_email: helpdesk@bravo.local
+    question: "Giao dịch 2103 trong BRAVO là gì và định khoản mặc định thế nào?"
+  - group: báo cáo
+    actor_email: helpdesk@bravo.local
+    question: "Cách lên báo cáo cân đối phát sinh theo kỳ?"
+  - group: khoá sổ
+    actor_email: helpdesk@bravo.local
+    question: "Quy trình khoá sổ cuối kỳ gồm những bước nào?"
+  - group: lỗi thường gặp
+    actor_email: helpdesk@bravo.local
+    question: "Vì sao chứng từ đã duyệt vẫn không lên báo cáo?"

@@ -36,10 +36,13 @@ async def _identity_for(db: AsyncSession, email: str) -> Identity:
 
 
 async def run_golden(db: AsyncSession, items: list[GoldenItem]) -> list[ItemResult]:
+    # Q4: run with the SAME retrieval config as prod (rerank per settings, top_n=12 like the
+    # chat loop) so the gate certifies the shipped pipeline, not a divergent one (was
+    # use_rerank=False / top_n=8 while prod runs LLM rerank at top_n=12).
     results: list[ItemResult] = []
     for it in items:
         actor = await _identity_for(db, it.actor_email)
-        chunks = await retriever.retrieve(db, actor, it.question, top_n=8, use_rerank=False)
+        chunks = await retriever.retrieve(db, actor, it.question, top_n=12)
         results.append(ItemResult(
             item=it,
             refused=len(chunks) == 0,

@@ -25,6 +25,10 @@ try:
     LLM_TOKENS = Counter("bravo_llm_tokens_total", "Token LLM (usage thật)", ["backend", "kind"])
     TOOL_CALLS = Counter("bravo_tool_calls_total", "Số lần gọi tool", ["tool", "status"])
     AGENT_TURN_SECONDS = Histogram("bravo_agent_turn_seconds", "Thời lượng một lượt agent")
+    # Q7: thời gian tới TOKEN ĐẦU TIÊN (request -> event 'answer' đầu). Cổng chất lượng: p95 < 3s.
+    FIRST_TOKEN_SECONDS = Histogram(
+        "bravo_first_token_seconds", "Giây tới token trả lời đầu tiên",
+        buckets=(0.5, 1, 1.5, 2, 3, 5, 8, 13))
     _PROM = True
 except Exception:  # pragma: no cover - prometheus_client luôn có khi cài metrics
     _PROM = False
@@ -42,6 +46,15 @@ def record_llm(backend: str, prompt_tokens: int = 0, completion_tokens: int = 0)
 def record_tool(tool: str, status: str) -> None:
     if _PROM and _settings.metrics_enabled:
         TOOL_CALLS.labels(tool=tool, status=status).inc()
+
+
+def record_first_token(seconds: float) -> None:
+    """Q7: ghi độ trễ tới token trả lời đầu tiên (đo tại tầng SSE). Best-effort."""
+    if _PROM and _settings.metrics_enabled:
+        try:
+            FIRST_TOKEN_SECONDS.observe(max(0.0, seconds))
+        except Exception:
+            pass
 
 
 def setup(app) -> None:

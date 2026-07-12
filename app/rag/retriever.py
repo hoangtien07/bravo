@@ -153,6 +153,64 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
     ]
 
 
+async def expand_sections(db: AsyncSession, identity: Identity, hits: list[Retrieved],
+                          *, top: int = 6, token_cap: int = 2000) -> list[Retrieved]:
+    """Q6 parent-document expansion: replace each of the top finalist chunks with its FULL
+    section — the sibling chunks sharing the same (source_id, heading_path) — concatenated up
+    to `token_cap`. Long procedures cut at ~900 tokens are then answered whole. RLS is enforced
+    on the sibling query. Hits sharing a section are de-duplicated (expanded once)."""
+    import uuid as _uuid
+
+    from app.config import get_settings
+    seen_sections: set[tuple[str, str]] = set()
+    out: list[Retrieved] = []
+    _ = get_settings()
+    for i, h in enumerate(hits):
+        hp = getattr(h, "heading_path", None) or (h.extra or {}).get("heading_path")
+        if i >= top or not hp or not h.source_id:
+            out.append(h)
+            continue
+        key = (h.source_id, hp)
+        if key in seen_sections:
+            continue                      # section already emitted via an earlier finalist
+        seen_sections.add(key)
+        try:
+            rows = (await db.execute(
+                select(Chunk).where(
+                    chunk_scope_filter(identity, "read"),
+                    Chunk.source_id == _uuid.UUID(h.source_id),
+                    Chunk.heading_path == hp,
+                ).order_by(Chunk.page_number.nullslast(), Chunk.id)
+            )).scalars().all()
+        except Exception:
+            out.append(h)
+            continue
+        if len(rows) <= 1:
+            out.append(h)
+            continue
+        merged, budget = [], token_cap
+        for c in rows:
+            piece = c.content or ""
+            approx = len(piece) // 4          # cheap token estimate
+            if approx > budget and merged:
+                break
+            merged.append(piece)
+            budget -= approx
+        h.content = "\n".join(merged)
+        out.append(h)
+    return out
+
+
+async def _maybe_expand(db: AsyncSession, identity: Identity,
+                        hits: list[Retrieved]) -> list[Retrieved]:
+    from app.config import get_settings
+    s = get_settings()
+    if not s.retrieval_expand_sections or not hits:
+        return hits
+    return await expand_sections(db, identity, hits, top=s.retrieval_expand_top,
+                                 token_cap=s.retrieval_section_token_cap)
+
+
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
                    candidate_k: int = 150, use_rerank: bool | None = None,
                    min_score: float | None = None) -> list[Retrieved]:
@@ -167,7 +225,7 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     if use_rerank is None:
         use_rerank = _s.rerank_enabled
     if min_score is None:
-        min_score = _s.retrieval_min_score
+        min_score = _s.resolved_min_score()
 
     # Viết tắt nghiệp vụ VN ("khai báo CCDC") -> chèn cụm đầy đủ trước khi retrieve
     # (tất định — council 2026-07-12 #6).
@@ -179,10 +237,13 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     # intent boost -> version policy (current version wins over superseded/deprecated).
     fused = apply_version_policy(boost_for_bravo_intent(query, rrf_fuse(dense, lexical)))
     if not fused:
+        # Q10 corpus-ops: a zero-hit query is a corpus gap signal — log it so the weekly
+        # ritual (docs/CORPUS-OPS.md) can turn recurring gaps into acquisition work.
+        _log.info("retrieval.gap zero_hit query=%r", query[:160])
         return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
     if not use_rerank:
-        return fused[:top_n]
+        return await _maybe_expand(db, identity, fused[:top_n])
 
     from app.config import get_settings
     provider = get_settings().rerank_provider
@@ -196,18 +257,18 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
             # rerank cho cả câu hỏi mà không ai biết -> log để lộ ra ở /metrics-log.
             _log.warning("llm_rerank skipped: %d/%d candidates sensitive/unknown",
                          sum(1 for r in pool if r.is_sensitive), len(pool))
-            return pool[:top_n]
+            return await _maybe_expand(db, identity, pool[:top_n])
         order = await _rerank.llm_rerank(
             query, [r.content for r in pool], top_n, sensitive=False,
         )
-        return [pool[i] for i in order][:top_n]
+        return await _maybe_expand(db, identity, [pool[i] for i in order][:top_n])
 
     # Cross-encoder rerank (ViRanker, local) over the fused candidates.
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
     fused = apply_version_policy(boost_for_bravo_intent(query, fused))
-    return fused[:top_n]
+    return await _maybe_expand(db, identity, fused[:top_n])
 
 
 async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str],
@@ -232,7 +293,7 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
     if use_rerank is None:
         use_rerank = _s.rerank_enabled
     if min_score is None:
-        min_score = _s.retrieval_min_score
+        min_score = _s.resolved_min_score()
     primary = expand_abbreviations(qs[0])
 
     branches: list[list[Retrieved]] = []
@@ -242,9 +303,10 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
         branches.append(await lexical_search(db, identity, qx, k=candidate_k))
     fused = apply_version_policy(boost_for_bravo_intent(primary, rrf_fuse(*branches)))
     if not fused:
+        _log.info("retrieval.gap zero_hit (multi) primary=%r", primary[:160])
         return []
     if not use_rerank:
-        return fused[:top_n]
+        return await _maybe_expand(db, identity, fused[:top_n])
 
     provider = _s.rerank_provider
     if provider == "llm":
@@ -252,12 +314,12 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
         if any(r.is_sensitive for r in pool):
             _log.warning("llm_rerank skipped (multi): %d/%d sensitive",
                          sum(1 for r in pool if r.is_sensitive), len(pool))
-            return pool[:top_n]
+            return await _maybe_expand(db, identity, pool[:top_n])
         order = await _rerank.llm_rerank(primary, [r.content for r in pool], top_n, sensitive=False)
-        return [pool[i] for i in order][:top_n]
+        return await _maybe_expand(db, identity, [pool[i] for i in order][:top_n])
 
     scores = _rerank.rerank(primary, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
     fused = apply_version_policy(boost_for_bravo_intent(primary, fused))
-    return fused[:top_n]
+    return await _maybe_expand(db, identity, fused[:top_n])

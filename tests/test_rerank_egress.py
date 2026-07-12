@@ -52,6 +52,8 @@ async def test_retrieve_skips_llm_rerank_when_any_candidate_is_sensitive(monkeyp
     monkeypatch.setattr(retriever._rerank, "llm_rerank", fake_llm_rerank)
     monkeypatch.setattr("app.config.get_settings", lambda: type("S", (), {
         "rerank_enabled": True, "retrieval_min_score": 0.0, "rerank_provider": "llm",
+        "resolved_min_score": lambda self=None: 0.0,   # Q11
+        "retrieval_expand_sections": False,             # Q6 off in this unit test
     })())
 
     rows = await retriever.retrieve(

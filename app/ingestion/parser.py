@@ -57,6 +57,11 @@ def detect_kind(path: str | Path) -> Kind:
     if suffix in (".xlsx", ".xlsm"):
         return "xlsx"
     if suffix == ".pdf":
+        # Q9: a PDF with (almost) no extractable text layer is a SCAN -> vision OCR (if enabled).
+        if _pdf_is_scanned(path):
+            from app.config import get_settings
+            if get_settings().vision_ocr_enabled:
+                return "pdf_scan"
         return "pdf_table" if _pdf_has_tables(path) else "pdf_text"
     # Unknown extension: let Docling try (it sniffs the real format).
     return "pdf_text"
@@ -73,6 +78,22 @@ def _line_is_tabular(line: str) -> bool:
     if _GUTTER.findall(line).__len__() < 2:
         return False
     return len(_NUMCOL.findall(line)) >= 3
+
+
+def _pdf_is_scanned(path: str | Path, *, probe_pages: int = 5, min_chars: int = 40) -> bool:
+    """Heuristic: is this PDF a SCAN (image-only, no real text layer)? If the first pages yield
+    almost no extractable text, treat it as scanned. Pure read; never raises (fail to text)."""
+    try:
+        from pypdf import PdfReader
+
+        reader = PdfReader(str(path))
+        pages = reader.pages[:probe_pages]
+        if not pages:
+            return False
+        total = sum(len((p.extract_text() or "").strip()) for p in pages)
+        return total < min_chars * len(pages)
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _pdf_has_tables(path: str | Path, *, probe_pages: int = 8, min_rows: int = 4) -> bool:
@@ -161,6 +182,9 @@ def parse(path: str | Path) -> list[ParsedBlock]:
     kind = detect_kind(path)
     if kind == "markdown":
         return _parse_markdown(path)
+    if kind == "pdf_scan":
+        from app.ingestion.vision_parser import parse_pdf_vision
+        return parse_pdf_vision(path)
     if kind == "pdf_text":
         from app.ingestion.pdf_parser import parse_pdf
         return parse_pdf(path)
