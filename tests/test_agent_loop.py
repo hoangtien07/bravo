@@ -16,7 +16,6 @@ from decimal import Decimal
 import pytest
 
 from app.agent import loop as agent_loop
-from app.agent import tools as tools_mod
 from app.agent.loop import AgentSession, Budget, _BudgetTracker, BudgetExceeded
 from app.agent.tools import (
     REGISTRY,
@@ -199,8 +198,10 @@ async def test_call_tool_write_creates_draft_does_not_execute(monkeypatch):
 # --------------------------------------------------------------------------------------
 def test_budget_tracker_stops_on_max_steps():
     t = _BudgetTracker(Budget(max_steps=2))
-    t.check(); t.steps = 1
-    t.check(); t.steps = 2
+    t.check()
+    t.steps = 1
+    t.check()
+    t.steps = 2
     with pytest.raises(BudgetExceeded) as ei:
         t.check()
     assert ei.value.dimension == "max_steps"
@@ -336,3 +337,34 @@ async def test_metric_tool_hidden_without_permission(monkeypatch, patch_retrieve
     # defense-in-depth: even a forged call is blocked.
     res = await call_tool("metric_lookup", {"metric_id": "x"}, _identity())
     assert res["isError"] is True
+
+
+# --------------------------------------------------------------------------------------
+# B (port loop.py): citation-hygiene — abstain KHÔNG đính nguồn; answer [N] -> chỉ nguồn dùng.
+# --------------------------------------------------------------------------------------
+def test_prune_citations_and_is_abstain():
+    from app.agent.loop import _is_abstain, _prune_citations
+
+    cites = ["nguồn A", "nguồn B", "nguồn C"]
+    # abstain -> không nguồn, not grounded (dù prompt cho phép mời người dùng nêu thêm phía sau)
+    assert _is_abstain("Không tìm thấy thông tin trong tài liệu nội bộ. Hãy nêu tên chức năng.")
+    assert _prune_citations("Không tìm thấy thông tin trong tài liệu nội bộ.", cites) == ([], False)
+    # answer CÓ [N] -> chỉ nguồn thực trích
+    kept, grounded = _prune_citations("Theo [1] và [3] thì ...", cites)
+    assert kept == ["nguồn A", "nguồn C"] and grounded is True
+    # answer KHÔNG có [N] nhưng là câu trả lời -> giữ toàn bộ (grounded narrative, hành vi cũ)
+    kept, grounded = _prune_citations("Bạn cần nộp đơn nghỉ phép trước.", cites)
+    assert kept == cites and grounded is True
+
+
+@pytest.mark.asyncio
+async def test_abstain_answer_drops_citations(monkeypatch, patch_retrieve):
+    """Abstain -> grounded=False và KHÔNG đính nguồn (dù retrieve có trả chunk)."""
+    _mock_llm(monkeypatch, [
+        json.dumps({"action": "answer",
+                    "answer": "Không tìm thấy thông tin trong tài liệu nội bộ."}),
+    ])
+    sess = AgentSession(_FakeDB(), _identity(admin=True))
+    out = await sess.step("câu hỏi ngoài phạm vi tài liệu")
+    assert out["grounded"] is False
+    assert out["citations"] == []

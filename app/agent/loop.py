@@ -25,6 +25,7 @@ Cross-WP seams (CONTRACTS §3.1) wired here — ALL REAL now (integration done):
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
 from dataclasses import dataclass
@@ -156,9 +157,13 @@ _SYSTEM = (
     "thu hẹp phạm vi.\n"
     "QUY TẮC khi action=answer:\n"
     "- CHỈ dùng NGỮ CẢNH (các khối [1],[2],...) và LỊCH SỬ; KHÔNG dùng kiến thức ngoài, KHÔNG bịa.\n"
+    "- Khi CÓ căn cứ: trả lời CHI TIẾT, có CẤU TRÚC — chia các BƯỚC đánh số, mỗi bước nêu rõ thao "
+    "tác cụ thể (menu/màn hình/phím tắt/trường nhập nếu ngữ cảnh có); gạch đầu dòng cho lựa chọn con.\n"
     "- Gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh (đúng số khối nguồn).\n"
-    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer = 'Không tìm thấy thông "
-    "tin trong tài liệu nội bộ.'\n"
+    "- Nếu ngữ cảnh CHỈ có một phần: trả lời phần CÓ, nói rõ phần còn thiếu, rồi GỢI Ý người dùng nêu "
+    "tên chức năng/màn hình cụ thể để tra tiếp — KHÔNG dừng cụt.\n"
+    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer BẮT ĐẦU bằng đúng câu 'Không "
+    "tìm thấy thông tin trong tài liệu nội bộ.' (có thể mời người dùng nêu rõ chức năng cần tra).\n"
     "- Phân biệt CHÍNH XÁC: mua hàng ≠ bán hàng; đầu vào ≠ đầu ra; phải thu ≠ phải trả; nhập ≠ xuất.\n"
     "- Với nghiệp vụ BRAVO: CHỨNG TỪ TRƯỚC, HẠCH TOÁN SAU. Khi hỏi tự động hoá mua hàng/AP, "
     "phải xác định loại chứng từ BRAVO và nguồn kế thừa trước khi nói định khoản.\n"
@@ -170,6 +175,26 @@ _SYSTEM = (
     "để gọi tool — KHÔNG clarify khi đã có ngữ cảnh liên quan.\n"
     "TUYỆT ĐỐI chỉ xuất JSON."
 )
+
+# Câu abstain ổn định để PHÁT HIỆN (dù prompt cho phép mời người dùng nêu thêm phía sau).
+_ABSTAIN_PREFIX = "không tìm thấy thông tin trong tài liệu nội bộ"
+
+
+def _is_abstain(text: str) -> bool:
+    return _ABSTAIN_PREFIX in (text or "").lower()
+
+
+def _prune_citations(answer: str, citations: list[str]) -> tuple[list[str], bool]:
+    """Citation-hygiene: abstain -> KHÔNG nguồn + not grounded. Answer có [N] -> chỉ nguồn thực
+    trích. Answer KHÔNG có [N] nhưng là câu trả lời -> giữ toàn bộ citations (grounded narrative,
+    giữ nguyên hành vi cũ). Trả (citations_hiển_thị, grounded_theo_citation)."""
+    if _is_abstain(answer):
+        return [], False
+    nums = {int(n) for n in re.findall(r"\[(\d+)\]", answer or "")}
+    used = [citations[i - 1] for i in sorted(nums) if 1 <= i <= len(citations)]
+    kept = used or citations
+    return kept, bool(kept)
+
 
 # Persona BỀN của agent — core-memory block luôn PIN vào prompt (khác _SYSTEM: đây là "ai/luồng
 # nghiệp vụ", không phải giao thức JSON). Trước đây thiếu mắt xích này nên agent 'mất' system
@@ -494,7 +519,7 @@ class AgentSession:
         await self._safe_recall_add("user", user_message)
 
         search_query = await self._rephrase_query(recall, user_message)
-        chunks = await retriever.retrieve(self.db, self.identity, search_query, top_n=6)
+        chunks = await retriever.retrieve(self.db, self.identity, search_query, top_n=12)
 
         labels = await self._source_labels(chunks)
         blocks: list[str] = []
@@ -620,10 +645,12 @@ class AgentSession:
 
     _COMPOSE_SYSTEM = (
         "Bạn là BRAVO AI Copilot. Viết CÂU TRẢ LỜI CUỐI bằng TIẾNG VIỆT, văn xuôi (KHÔNG JSON, "
-        "KHÔNG markdown rào code). CHỈ dùng NGỮ CẢNH đã cho + LỊCH SỬ; gắn trích dẫn [N] vào mỗi "
-        "ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Với nghiệp vụ BRAVO phải giữ nguyên tắc "
-        "chứng từ trước, hạch toán sau; không đề xuất SQL/update trực tiếp vào ERP; thiếu căn cứ "
-        "thì nêu ngoại lệ hoặc yêu cầu người dùng bổ sung. Ngữ cảnh không chứa câu trả lời -> "
+        "KHÔNG markdown rào code). Khi CÓ căn cứ: trả lời CHI TIẾT, có CẤU TRÚC — chia BƯỚC đánh "
+        "số, nêu rõ menu/màn hình/trường nhập nếu ngữ cảnh có. CHỈ dùng NGỮ CẢNH đã cho + LỊCH SỬ; "
+        "gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Với nghiệp vụ "
+        "BRAVO phải giữ nguyên tắc chứng từ trước, hạch toán sau; không đề xuất SQL/update trực tiếp "
+        "vào ERP; ngữ cảnh CHỈ có một phần -> trả lời phần CÓ rồi GỢI Ý người dùng nêu tên chức "
+        "năng/màn hình để tra tiếp. Ngữ cảnh không chứa câu trả lời -> BẮT ĐẦU bằng đúng câu "
         "'Không tìm thấy thông tin trong tài liệu nội bộ.'")
 
     async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
@@ -632,11 +659,12 @@ class AgentSession:
             verdict = verify_numbers(answer, engine_values)
             safe = answer if verdict.grounded else verdict.safe_answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
+            cites = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
             await self._safe_recall_add("assistant", safe)
             await self._close_run(self._terminal_status())
             yield {"type": "answer", "delta": safe}
             yield {"type": "done", "grounded": grounded, "unmatched": unmatched,
-                   "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
+                   "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
                    "session_id": str(self.session_id)}
             return
 
@@ -662,10 +690,11 @@ class AgentSession:
         if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
             final = answer
             yield {"type": "answer", "delta": final}
+        cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
-        yield {"type": "done", "grounded": bool(citations), "unmatched": [],
-               "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
+        yield {"type": "done", "grounded": grounded, "unmatched": [],
+               "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
                "session_id": str(self.session_id)}
 
     async def _stream_clarify(self, question: str, citations: list):
@@ -773,8 +802,10 @@ class AgentSession:
             verdict = verify_numbers(answer, engine_values)
             safe = verdict.safe_answer if not verdict.grounded else answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
+            citations = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
         else:
-            safe, grounded, unmatched = answer, bool(citations), []
+            safe, unmatched = answer, []
+            citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", safe)
         await self._close_run(self._terminal_status())
         return {
