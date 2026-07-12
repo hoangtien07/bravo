@@ -25,6 +25,7 @@ Cross-WP seams (CONTRACTS §3.1) wired here — ALL REAL now (integration done):
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 import uuid
@@ -45,6 +46,7 @@ from app.rag import retriever
 from app.security.rls import Identity, frame_untrusted
 
 _settings = get_settings()
+_log = logging.getLogger(__name__)
 
 # Pydantic AI as a pure structured-output validator (no model ownership).
 
@@ -267,6 +269,80 @@ def _prune_citations(answer: str, citations: list[str]) -> tuple[list[str], bool
     used = [citations[i - 1] for i in sorted(nums) if 1 <= i <= len(citations)]
     kept = used or citations
     return kept, bool(kept)
+
+
+# --- P0b: single-generation answer streaming with F3 hold-back ------------------------
+class _AnswerStreamer:
+    """Streams the grounded portion of a decide-answer token-by-token while HOLDING BACK any
+    text that must pass a post-generation guard (F3):
+      - the world-knowledge block (numbers redacted only AFTER the `_WK_MARK` marker), and
+      - an abstain opener (fabricated tail clipped by `_clip_abstain`).
+    Deltas are emitted only for text guaranteed identical to the final `_label_ungrounded`
+    output, so no unguarded number/tail ever reaches the client mid-stream.
+    """
+    _HOLD = len(_WK_MARK)   # never emit a partial WK marker prefix
+
+    def __init__(self) -> None:
+        self.full = ""
+        self.emitted = ""
+        self._abstain_decided = False
+        self._wk_boundary: int | None = None
+
+    def update(self, full_answer: str) -> str:
+        """Feed the latest full answer-so-far; return the next SAFE delta (may be '')."""
+        self.full = full_answer or ""
+        # 1) Abstain opener: hold back ONLY while the text could still GROW into the abstain
+        #    phrase (it is a prefix of it). Once it diverges or completes, decide. An abstain
+        #    opener streams NOTHING (canonical text emitted at finalize, fabricated tail clipped).
+        if not self._abstain_decided:
+            probe = self.full.strip().lower()
+            if probe and len(probe) < len(_ABSTAIN_PREFIX) and _ABSTAIN_PREFIX.startswith(probe):
+                return ""
+            self._abstain_decided = True
+        if _is_abstain(self.full):
+            return ""
+        # 2) Stop streaming at the WK marker (the rest is buffered + guarded at finalize).
+        if self._wk_boundary is None:
+            idx = self.full.find(_WK_MARK)
+            if idx != -1:
+                self._wk_boundary = idx
+        limit = (self._wk_boundary if self._wk_boundary is not None
+                 else max(0, len(self.full) - self._HOLD))
+        if limit <= len(self.emitted):
+            return ""
+        delta = self.full[len(self.emitted):limit]
+        self.emitted += delta
+        return delta
+
+    def finalize(self) -> str:
+        """Remaining delta so the client shows exactly `_label_ungrounded(full)`."""
+        final = _label_ungrounded(self.full)
+        if final.startswith(self.emitted):
+            return final[len(self.emitted):]
+        # Divergence (typically only trailing whitespace already sent): resume at common prefix.
+        n = min(len(final), len(self.emitted))
+        i = 0
+        while i < n and final[i] == self.emitted[i]:
+            i += 1
+        return final[i:]
+
+
+# M2: distinguish a SERVICE error (retryable infra: rate-limit/timeout/5xx/context) from genuine
+# user ambiguity. Service errors must surface as a sanitized `error` event, NOT a "clarify" that
+# leaks the raw exception string to the end user.
+_SERVICE_ERR_NAMES = ("ratelimit", "timeout", "apierror", "apiconnection", "apistatus",
+                      "internalserver", "serviceunavailable", "badgateway")
+_SERVICE_ERR_MSGS = ("rate limit", "429", "timeout", "timed out", "503", "502", "500",
+                     "overloaded", "unavailable", "connection", "context length",
+                     "context_length", "maximum context", "too many requests")
+
+
+def _is_service_error(exc: BaseException) -> bool:
+    name = type(exc).__name__.lower()
+    if any(k in name for k in _SERVICE_ERR_NAMES):
+        return True
+    msg = str(exc).lower()
+    return any(k in msg for k in _SERVICE_ERR_MSGS)
 
 
 # Persona BỀN của agent — core-memory block luôn PIN vào prompt (khác _SYSTEM: đây là "ai/luồng
@@ -536,6 +612,78 @@ class AgentSession:
             # Vẫn hỏng -> coi text2 là câu trả lời prose (graceful), giữ hành vi cũ.
             return parsed2, tokens
         return parsed, tokens
+
+    async def _decide_streaming(self, messages: list[dict], context_objs: list, *,
+                                allow_stream: bool):
+        """P0b single-generation decide. Runs ONE streamed generation of the strict-JSON
+        decision. When action==answer AND allow_stream, the `answer` field is streamed
+        token-by-token (F3 hold-back via _AnswerStreamer) — NO second 'compose' generation
+        (C1 gone, ~½ cost, images not re-sent). tool/clarify decisions are buffered. Financial
+        turns pass allow_stream=False so the answer stays buffered for the verify-gate (#3).
+
+        Async-generator protocol: yields {"type":"answer","delta":...} for streamed tokens, then a
+        terminal {"type":"__decision__", "decision", "tokens", "streamer": _AnswerStreamer|None}.
+        """
+        from pydantic_core import from_json
+
+        streamer = _AnswerStreamer() if allow_stream else None
+        full_text = ""
+        action: str | None = None
+        tokens = 0
+        streamed = False
+        async for ev in llm.chat_stream(
+                messages, context=context_objs, db=self.db,
+                allow_cloud_task=_settings.demo_allow_cloud_answers,
+                json_schema=_DECISION_SCHEMA, temperature=0.1):
+            etype = ev.get("type")
+            if etype == "delta":
+                full_text += ev["text"]
+                if streamer is not None:
+                    try:
+                        parsed = from_json(full_text, allow_partial="trailing-strings")
+                    except Exception:
+                        parsed = None
+                    if isinstance(parsed, dict):
+                        a = parsed.get("action")
+                        if a in ("answer", "tool", "clarify"):
+                            action = a
+                        if action == "answer" and isinstance(parsed.get("answer"), str):
+                            delta = streamer.update(parsed["answer"])
+                            if delta:
+                                streamed = True
+                                yield {"type": "answer", "delta": delta}
+            elif etype == "done":
+                d = ev.get("decision")
+                if getattr(d, "backend", "local") == "cloud":
+                    self._routed_cloud = True
+                tokens = int(getattr(d, "total_tokens", 0) or 0)
+                if not full_text:
+                    full_text = ev.get("text", "")
+        if not tokens:
+            tokens = len(full_text) // 4 + sum(_message_char_len(m) for m in messages) // 4
+        if streamed and streamer is not None:
+            # Answer tokens already emitted -> committed to an answer turn (cannot un-send).
+            decision = AgentDecision(action="answer", answer=streamer.full)
+            yield {"type": "__decision__", "decision": decision, "tokens": tokens,
+                   "streamer": streamer}
+            return
+        decision, _ok = _parse_decision_strict(full_text)
+        yield {"type": "__decision__", "decision": decision, "tokens": tokens, "streamer": None}
+
+    async def _finalize_streamed_answer(self, streamer: _AnswerStreamer, citations: list[str]):
+        """Terminal for a STREAMED knowledge answer: flush the guarded tail (WK block / abstain
+        canonical), persist, close the run, emit `done`. Mirrors _stream_answer's non-financial
+        tail but WITHOUT re-emitting the whole answer (it was already streamed)."""
+        tail = streamer.finalize()
+        if tail:
+            yield {"type": "answer", "delta": tail}
+        final = _label_ungrounded(streamer.full)
+        cites, grounded = _prune_citations(final, citations)
+        await self._safe_recall_add("assistant", final)
+        await self._close_run(self._terminal_status())
+        yield {"type": "done", "grounded": grounded, "unmatched": [], "citations": cites,
+               "routed_cloud": getattr(self, "_routed_cloud", False),
+               "session_id": str(self.session_id)}
 
     @staticmethod
     def _usage_tokens(decision, text: str, messages: list[dict]) -> int:
@@ -934,18 +1082,48 @@ class AgentSession:
             observations: list[str] = []
             while True:
                 tracker.check()
+                # P0b: single-generation decide. Knowledge turns (no engine values yet) STREAM the
+                # answer field live; financial turns buffer for the verify-gate (invariant #3).
+                allow_stream = _settings.stream_decide_answer and not engine_values
+                decision = None
+                used = 0
+                streamer = None
+                started_answer = False
                 try:
-                    decision, used = await self._llm_decide(messages, chunks + engine_values)
-                except Exception as e:
-                    async for ev in self._stream_clarify(
-                            f"Tôi chưa hiểu rõ yêu cầu, bạn nói rõ hơn được không? ({e})", citations):
-                        yield ev
+                    async for ev in self._decide_streaming(
+                            messages, chunks + engine_values, allow_stream=allow_stream):
+                        if ev.get("type") == "__decision__":
+                            decision, used, streamer = ev["decision"], ev["tokens"], ev["streamer"]
+                        else:
+                            started_answer = True
+                            yield ev
+                except Exception as e:  # noqa: BLE001 — M2: sanitized error, never leak / clarify
+                    _log.exception("decide failed")
+                    await self._audit("agent.error", {"where": "decide", "type": type(e).__name__})
+                    await self._close_run("failed")
+                    if started_answer:      # C1: mid-stream break -> mark truncation, don't re-emit
+                        yield {"type": "answer", "delta": "\n\n[đã ngắt do lỗi dịch vụ]"}
+                    if isinstance(e, llm.VisionUnsupportedError):
+                        emsg = str(e)                       # RC-BE1: authored, user-safe message
+                    elif _is_service_error(e):
+                        emsg = "Dịch vụ mô hình tạm gián đoạn, vui lòng thử lại."
+                    else:
+                        emsg = "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại."
+                    yield {"type": "error", "message": emsg}
+                    yield {"type": "done", "grounded": False, "citations": citations,
+                           "routed_cloud": getattr(self, "_routed_cloud", False),
+                           "session_id": str(self.session_id)}
                     return
                 tracker.tokens += used
                 self._tokens_used += used
                 tracker.steps += 1
                 yield {"type": "step", "action": decision.action, "step_n": tracker.steps}
 
+                if streamer is not None and decision.action == "answer":
+                    # Answer was streamed live during decide (single generation) — finalize it.
+                    async for ev in self._finalize_streamed_answer(streamer, citations):
+                        yield ev
+                    return
                 if decision.action == "clarify":
                     async for ev in self._stream_clarify(
                             decision.question or "Bạn có thể nói rõ hơn không?", citations):

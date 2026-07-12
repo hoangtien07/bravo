@@ -48,12 +48,18 @@ class Settings(BaseSettings):
     llm_local_base_url: str = "http://localhost:8001/v1"
     llm_local_model: str = "Qwen2.5-32B-Instruct-AWQ"
     llm_local_api_key: str = "dummy"
+    # RC-BE1: does each slot's model accept image (multimodal) input? A chat turn carrying an
+    # image is routed to a vision-capable slot; if none, it FAILS LOUD instead of answering blind.
+    # Default: local Qwen text-only (False), cloud gpt-4o vision (True). On a cloud-only gpt-4o
+    # deployment both effectively resolve to the vision cloud slot.
+    llm_local_vision: bool = False
 
     # Cloud opt-in (default OFF; sensitive data never egresses — SECURITY-RLS.md §9)
     cloud_enabled: bool = False
     cloud_base_url: str = ""
     cloud_model: str = ""
     cloud_api_key: str = ""
+    cloud_vision: bool = True
 
     # Egress policy (ADR-0019/0022, v2 cloud-only). Governs router local-vs-cloud AND the
     # embedding/pipeline egress guards. Retires invariant #4 by CONFIG, not by deletion:
@@ -103,6 +109,11 @@ class Settings(BaseSettings):
     # test/eval ổn định); demo bật STREAM_COMPOSE_ANSWER=true để có streaming token thật. Khi
     # OFF: phát answer đã quyết ở bước decide dưới dạng một delta (đúng, không cắt giả).
     stream_compose_answer: bool = False
+    # P0b: single-generation streaming. Khi ON (mặc định), lượt tri thức STREAM thẳng field
+    # `answer` của bước DECIDE token-by-token (KHÔNG sinh lần 2 như compose — triệt tiêu C1 +
+    # giảm ~½ chi phí + không re-gửi ảnh). Hold-back khối kiến-thức-chung/abstain để guard chạy
+    # TRƯỚC khi phát (F3). Lượt tài chính LUÔN buffered (verify-gate, invariant #3) bất kể cờ này.
+    stream_decide_answer: bool = True
     # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).

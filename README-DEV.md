@@ -15,11 +15,16 @@ python -m scripts.seed_content   # 4 bút toán nháp mẫu (màn hình không r
 
 # Frontend React (Vite). Build 1 lần -> uvicorn serve dist ở /static + SPA-fallback:
 cd frontend-react && npm install && npm run build && cd ..
-uvicorn app.main:app --port 8000     # http://localhost:8000
+uvicorn app.main:app --port 8000 --reload   # http://localhost:8000  (--reload: code mới có hiệu lực ngay)
 
 # Hoặc dev hot-reload FE (2 cổng):
 cd frontend-react && npm run dev      # http://localhost:5173 (proxy /api -> :8000)
 ```
+> ⚠ **Đính kèm chat (attachments) & ingest bất đồng bộ:** upload docx/pdf được enqueue cho arq worker.
+> Ở dev một-tiến-trình, HOẶC đặt `INGEST_SYNC=true` trong `.env` (bóc tách inline, không cần worker),
+> HOẶC chạy worker: `docker compose up worker` (đã định nghĩa sẵn). Không có cả hai thì attachment
+> docx/pdf sẽ kẹt ở trạng thái `pending`. Ảnh & .txt/.md nhỏ luôn xử lý inline (không cần worker).
+> LUÔN chạy uvicorn với `--reload` khi dev để tránh backend phục vụ route cũ (thiếu `/api/attachments`).
 LLM cục bộ (Qwen2.5) chạy riêng qua vLLM/Ollama (OpenAI-compatible) ở `LLM_LOCAL_BASE_URL`. Demo dùng cloud OpenAI (preset trong `.env.example`). Health: `/livez` (process), `/readyz` (DB+catalog).
 
 ## Cấu trúc (modular monolith)

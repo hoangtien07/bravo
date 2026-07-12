@@ -7,6 +7,7 @@ Streaming dùng POST + fetch ReadableStream (KHÔNG EventSource — vì bearer a
 from __future__ import annotations
 
 import json
+import logging
 import secrets
 import uuid
 
@@ -25,6 +26,7 @@ from app.security.auth import get_current_identity, require_permission
 from app.security.rls import Identity, conversation_scope_filter
 
 router = APIRouter()
+_log = logging.getLogger(__name__)
 
 _DISPLAY_ROLES = ("user", "assistant")
 
@@ -149,8 +151,18 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                     first_token_seen = True
                     record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
                 yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
-        except Exception as exc:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
-            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+        except Exception:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
+            # Sanitize: KHÔNG leak chi tiết nội bộ (SQL, key-adjacent, stacktrace) ra client (F-7).
+            _log.exception("chat_stream failed for conversation %s", conversation_id)
+            yield (
+                "data: "
+                + json.dumps(
+                    {"type": "error",
+                     "message": "Đã xảy ra lỗi khi xử lý yêu cầu. Vui lòng thử lại."},
+                    ensure_ascii=False,
+                )
+                + "\n\n"
+            )
         finally:
             try:
                 await conv_svc.touch(db, conversation_id)

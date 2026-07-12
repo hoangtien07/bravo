@@ -56,3 +56,24 @@ jobs:
       # (RLS-leak / fabricated-number / wrong-unit / egress / injection). exit≠0 chặn merge.
       - name: Eval pass^k gate (deterministic)
         run: python -m app.eval.run --passk --mock --k=8
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend-react
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend-react/package-lock.json
+      - name: Install
+        run: npm ci
+      # HARD-GATE 3: FE typecheck + production build (catches broken imports / type drift).
+      - name: Build (tsc --noEmit + vite build)
+        run: npm run build
+      # HARD-GATE 4: FE unit tests (vitest) — store/attachment fail-loud logic, no services needed.
+      - name: Unit tests (vitest)
+        run: npm test

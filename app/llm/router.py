@@ -38,6 +38,34 @@ _cloud = (
 )
 
 
+class VisionUnsupportedError(RuntimeError):
+    """Raised when a turn carries an image but the routed model can't accept images (RC-BE1).
+    Its message is user-safe (no internal detail) and is surfaced verbatim by the SSE error path."""
+
+
+def _messages_have_image(messages: list[dict]) -> bool:
+    """True if any message content is a multimodal array containing an image_url part."""
+    for m in messages:
+        content = m.get("content")
+        if isinstance(content, list):
+            if any(isinstance(p, dict) and p.get("type") == "image_url" for p in content):
+                return True
+    return False
+
+
+def _slot_supports_vision(backend: str) -> bool:
+    return _settings.cloud_vision if backend == "cloud" else _settings.llm_local_vision
+
+
+def _guard_vision(d: RoutingDecision, messages: list[dict]) -> None:
+    """Fail LOUD if the turn has an image but the routed slot is text-only. Prevents the model
+    from silently 'answering blind' about an image it cannot see (the user's original bug class)."""
+    if _messages_have_image(messages) and not _slot_supports_vision(d.backend):
+        raise VisionUnsupportedError(
+            "Ảnh bạn gửi không xử lý được vì mô hình hiện tại không đọc ảnh. "
+            "Vui lòng bật mô hình hỗ trợ ảnh (vision) hoặc mô tả nội dung ảnh bằng chữ.")
+
+
 @dataclass
 class RoutingDecision:
     backend: str  # "local" | "cloud"
@@ -145,6 +173,7 @@ async def chat(messages: list[dict], *, context: list | None = None,
     """
     sensitive = _classify(sensitive, context)
     d = decide(sensitive, allow_cloud_task)
+    _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
         await _audit_egress(db, d, messages)  # fail-closed: audit trước, lỗi audit -> không egress
@@ -158,20 +187,24 @@ async def chat(messages: list[dict], *, context: list | None = None,
 
 async def chat_stream(messages: list[dict], *, context: list | None = None,
                       sensitive: bool | None = None, allow_cloud_task: bool = False,
-                      db=None, **kwargs) -> AsyncIterator[dict]:
+                      json_schema: dict | None = None, db=None, **kwargs) -> AsyncIterator[dict]:
     """Token-streaming primitive (W1.1). Yields REAL deltas from the model:
 
         {"type": "delta", "text": "..."}          # nhiều event, token thật
         {"type": "done", "decision": RoutingDecision, "text": "<full>"}   # 1 event cuối
 
     Giữ audit-then-egress: cloud egress audit TRƯỚC khi mở stream. include_usage=True để lấy
-    token usage THẬT ở chunk cuối (OpenAI-compatible + vLLM hỗ trợ).
+    token usage THẬT ở chunk cuối (OpenAI-compatible + vLLM hỗ trợ). `json_schema` bật
+    structured output (json_object cloud / guided_json vLLM) — dùng cho single-generation
+    decide-answer streaming (P0b): model stream một object JSON hợp lệ, caller parse tăng dần.
     """
     sensitive = _classify(sensitive, context)
     d = decide(sensitive, allow_cloud_task)
+    _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
     if d.backend == "cloud":
         await _audit_egress(db, d, messages)
+    kwargs.update(_structured_kwargs(d, json_schema))
     async with _llm_sema:
         stream = await client.chat.completions.create(
             model=d.model, messages=messages, stream=True,

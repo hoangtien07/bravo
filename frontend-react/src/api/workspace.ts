@@ -5,11 +5,18 @@ import type { Attachment, SourceItem } from "./types";
 async function multipart<T>(path: string, form: FormData): Promise<T> {
   const res = await fetch(path, { method: "POST", headers: authHeaders(), body: form });
   if (!res.ok) {
-    let detail = `Lỗi ${res.status}`;
+    let detail = "";
     try {
-      detail = (await res.json()).detail || detail;
+      detail = (await res.json()).detail || "";
     } catch {
-      /* ignore */
+      /* body not JSON (e.g. 404 HTML / plain text) */
+    }
+    if (!detail) {
+      // Fail LOUD: surface the HTTP status so a stale backend (route missing) is obvious.
+      detail =
+        res.status === 404
+          ? `Máy chủ không có endpoint ${path} (HTTP 404) — backend có thể đang chạy bản cũ, hãy khởi động lại.`
+          : `Tải lên thất bại (HTTP ${res.status})`;
     }
     throw new Error(detail);
   }

@@ -21,11 +21,15 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const anyUploading = staged.some((a) => a.status === "uploading");
+  // Fail LOUD: never let a turn be sent while an attachment is still processing or has failed —
+  // otherwise the file is silently dropped and the answer is wrong for lack of context (RC-FE1).
+  const anyProcessing = staged.some((a) => a.status === "uploading" || a.status === "pending");
+  const anyFailed = staged.some((a) => a.status === "failed");
+  const blockSend = anyProcessing || anyFailed;
 
   const submit = () => {
     const q = text.trim();
-    if (!q || sending || anyUploading) return;
+    if (!q || sending || blockSend) return;
     onSend(q);
     setText("");
   };
@@ -56,8 +60,8 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
                 <FileText className="h-4 w-4 text-muted-foreground" />
               )}
               <span className="max-w-[10rem] truncate" title={a.name}>{a.name}</span>
-              {a.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-              {a.status === "failed" && <span className="text-destructive" title={a.error}>lỗi</span>}
+              {(a.status === "uploading" || a.status === "pending") && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {a.status === "failed" && <span className="text-destructive" title={a.error}>lỗi: {a.error || "tải lên thất bại"}</span>}
               {a.status === "ready" && <span className="text-emerald-600">✓</span>}
               <button onClick={() => onRemoveAttach(a.localId)} aria-label={`bỏ ${a.name}`} className="ml-1 text-muted-foreground hover:text-foreground">
                 <X className="h-3.5 w-3.5" />
@@ -103,12 +107,17 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
             <Square className="h-4 w-4" />
           </Button>
         ) : (
-          <Button size="icon" onClick={submit} disabled={anyUploading} aria-label="gửi">
+          <Button size="icon" onClick={submit} disabled={blockSend} aria-label="gửi">
             <Send className="h-4 w-4" />
           </Button>
         )}
       </div>
-      {anyUploading && <div className="mx-auto max-w-3xl mt-1 text-xs text-muted-foreground">Đang tải tệp đính kèm…</div>}
+      {anyProcessing && <div className="mx-auto max-w-3xl mt-1 text-xs text-muted-foreground">Đang xử lý tệp đính kèm…</div>}
+      {anyFailed && (
+        <div className="mx-auto max-w-3xl mt-1 text-xs text-destructive">
+          Có tệp đính kèm bị lỗi — gỡ bỏ (nút ✕) rồi gửi lại để câu trả lời không bị thiếu thông tin.
+        </div>
+      )}
     </div>
   );
 }

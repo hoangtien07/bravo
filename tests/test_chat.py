@@ -36,9 +36,20 @@ class _FakeDecision:
     backend = "local"
 
 
+_SCRIPTED = '{"action":"answer","answer":"Xin chào từ BRAVO."}'
+
+
 async def _fake_chat(messages, **kw):
     _fake_chat.last_messages = messages
-    return ('{"action":"answer","answer":"Xin chào từ BRAVO."}', _FakeDecision())
+    return (_SCRIPTED, _FakeDecision())
+
+
+async def _fake_chat_stream(messages, **kw):
+    # P0b: step_stream now streams the decide-answer via chat_stream (single generation).
+    _fake_chat.last_messages = messages
+    for i in range(0, len(_SCRIPTED), 8):
+        yield {"type": "delta", "text": _SCRIPTED[i:i + 8]}
+    yield {"type": "done", "decision": _FakeDecision(), "text": _SCRIPTED}
 
 
 async def _fake_retrieve(*a, **kw):
@@ -65,6 +76,7 @@ async def _stream(c, cid, question):
 def _run(monkeypatch, body):
     """Chạy `body(client)` trong 1 loop với get_db override (NullPool engine của loop này)."""
     monkeypatch.setattr("app.llm.router.chat", _fake_chat)
+    monkeypatch.setattr("app.llm.router.chat_stream", _fake_chat_stream)
     monkeypatch.setattr("app.rag.retriever.retrieve", _fake_retrieve)
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
     from sqlalchemy.pool import NullPool

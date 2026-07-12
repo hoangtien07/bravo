@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { streamChat } from "@/api/sse";
-import { uploadAttachment, deleteAttachment } from "@/api/workspace";
+import { uploadAttachment, deleteAttachment, getAttachment } from "@/api/workspace";
 import type { ChatMessage, StagedAttachment } from "@/api/types";
 
 function uuid() {
@@ -72,12 +72,44 @@ export const useChat = create<ChatState>((set, get) => ({
           a.status = att.status;
           a.error = att.error || undefined;
         });
+        // RC-FE3: docx/pdf extract asynchronously (worker). Poll until ready/failed so the
+        // attachment is never silently stuck "pending". (Images/small text return "ready" inline.)
+        if (att.status === "pending") void pollUntilReady(att.id, localId);
       } catch (e) {
         patch(localId, (a) => {
           a.status = "failed";
           a.error = e instanceof Error ? e.message : "Tải lên thất bại";
         });
       }
+    }
+
+    async function pollUntilReady(id: string, lid: string) {
+      const deadline = Date.now() + 60_000;
+      let delay = 1500;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, delay));
+        delay = Math.min(delay + 1000, 5000);
+        const cur = get().staged.find((a) => a.localId === lid);
+        if (!cur || cur.status === "ready" || cur.status === "failed") return; // removed/resolved
+        try {
+          const att = await getAttachment(id);
+          if (att.status !== "pending") {
+            patch(lid, (a) => {
+              a.status = att.status;
+              a.error = att.error || undefined;
+            });
+            return;
+          }
+        } catch {
+          /* transient network error — keep polling until the deadline */
+        }
+      }
+      patch(lid, (a) => {
+        if (a.status === "pending") {
+          a.status = "failed";
+          a.error = "Xử lý tệp quá lâu (worker chưa chạy?)";
+        }
+      });
     }
   },
 
@@ -95,14 +127,18 @@ export const useChat = create<ChatState>((set, get) => ({
   },
 
   send: async (question, onDone) => {
+    // Snapshot staged attachments BEFORE newConversation() (which wipes staged:[]) — RC-FE2.
+    // Reading after the wipe silently dropped first-turn attachments.
+    const stagedNow = get().staged;
+    const ready = stagedNow.filter((a) => a.status === "ready" && a.id);
+    const attachmentIds = ready.map((a) => a.id!) as string[];
+    const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
+
     let cid = get().conversationId;
     if (!cid) cid = get().newConversation();
     const ac = new AbortController();
-    const ready = get().staged.filter((a) => a.status === "ready" && a.id);
-    const attachmentIds = ready.map((a) => a.id!) as string[];
-    const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
     // Release image preview URLs now that the turn is sent.
-    get().staged.forEach((a) => a.previewUrl && URL.revokeObjectURL(a.previewUrl));
+    stagedNow.forEach((a) => a.previewUrl && URL.revokeObjectURL(a.previewUrl));
     // optimistic: user message (with attachments) + assistant placeholder (streaming)
     set((s) => ({
       sending: true,

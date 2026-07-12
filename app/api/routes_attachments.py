@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy import delete as sa_delete
@@ -20,6 +20,7 @@ from app.database import get_db
 from app.database.models import Attachment
 from app.ingestion.attachments import IMAGE_EXTS, TEXT_EXTS, classify_kind, extract_attachment
 from app.queue import enqueue
+from app.ratelimit import chat_limit, limiter
 from app.security.auth import get_current_identity
 from app.security.rls import Identity
 from app.storage_paths import attachment_path
@@ -47,7 +48,9 @@ def _out(a: Attachment) -> AttachmentOut:
 
 
 @router.post("/attachments", response_model=AttachmentOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit(chat_limit)   # F2: image upload triggers inline vision extraction -> throttle abuse/cost
 async def upload_attachment(
+    request: Request,
     file: UploadFile,
     identity: Identity = Depends(get_current_identity),
     db: AsyncSession = Depends(get_db),
