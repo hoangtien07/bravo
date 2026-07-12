@@ -49,6 +49,17 @@ function linkifyCitations(text: string): string {
   return text.replace(/\[(\d{1,3})\](?!\()/g, "[$1](#cite-$1)");
 }
 
+// Q3: tách phần có nguồn khỏi khối "kiến thức chung" gắn nhãn (ADR-0021) để render riêng biệt.
+const WK_MARK = "--- Ngoài tài liệu BRAVO";
+function splitWorldKnowledge(text: string): { grounded: string; world: string | null } {
+  const idx = text.indexOf(WK_MARK);
+  if (idx === -1) return { grounded: text, world: null };
+  // Bỏ dòng nhãn khỏi phần world (đã hiển thị bằng badge), giữ nội dung sau nhãn.
+  const after = text.slice(idx);
+  const nl = after.indexOf("\n");
+  return { grounded: text.slice(0, idx).trim(), world: nl === -1 ? "" : after.slice(nl + 1).trim() };
+}
+
 // Bấm vào nguồn #source-N: mở panel dẫn chứng + cuộn + nháy (harvest pattern DocsGPT, MIT).
 function focusSource(n: number): void {
   setTimeout(() => {
@@ -109,13 +120,32 @@ export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, read
         {!isUser && m.steps && <Steps steps={m.steps} />}
         <div className={cn("prose-chat text-sm", isUser ? "text-primary-foreground" : "")}>
           {m.content ? (
-            <Markdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[rehypeKatex, rehypeHighlight]}
-              components={isUser ? undefined : mdComponents}
-            >
-              {isUser ? m.content : linkifyCitations(m.content)}
-            </Markdown>
+            isUser ? (
+              <Markdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>
+                {m.content}
+              </Markdown>
+            ) : (() => {
+              const { grounded, world } = splitWorldKnowledge(m.content);
+              return (
+                <>
+                  {grounded && (
+                    <Markdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]} components={mdComponents}>
+                      {linkifyCitations(grounded)}
+                    </Markdown>
+                  )}
+                  {world !== null && (
+                    <div className="mt-3 rounded-md border border-dashed border-amber-400/60 bg-amber-50/50 dark:bg-amber-950/20 p-2.5">
+                      <div className="mb-1 flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                        <Cloud className="h-3 w-3" /> Ngoài tài liệu BRAVO · kiến thức chung (chưa kiểm chứng)
+                      </div>
+                      <Markdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>
+                        {world}
+                      </Markdown>
+                    </div>
+                  )}
+                </>
+              );
+            })()
           ) : m.streaming ? <Spinner /> : null}
         </div>
         {!isUser && m.draft?.payload && (
