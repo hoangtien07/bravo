@@ -368,3 +368,61 @@ async def test_abstain_answer_drops_citations(monkeypatch, patch_retrieve):
     out = await sess.step("câu hỏi ngoài phạm vi tài liệu")
     assert out["grounded"] is False
     assert out["citations"] == []
+
+
+def test_clip_abstain_cuts_fabricated_tail():
+    """Abstain-rồi-bịa (zero-hallucination): mọi đuôi sau câu abstain bị cắt fail-closed."""
+    from app.agent.loop import _ABSTAIN_CANON, _clip_abstain
+
+    fabricated = ("Không tìm thấy thông tin trong tài liệu nội bộ. Để nhập chứng từ, bạn cần: "
+                  "1. Vào menu Mua hàng... 2. Nhập số phiếu...")
+    assert _clip_abstain(fabricated) == _ABSTAIN_CANON        # đuôi bịa bị cắt
+    assert "menu Mua hàng" not in _clip_abstain(fabricated)
+    ok = "Bạn tạo phiếu nhập mua theo các bước [1]..."
+    assert _clip_abstain(ok) == ok                            # câu trả lời thật giữ nguyên
+
+
+@pytest.mark.asyncio
+async def test_abstain_with_fabricated_steps_is_clipped_in_loop(monkeypatch, patch_retrieve):
+    _mock_llm(monkeypatch, [
+        json.dumps({"action": "answer", "answer":
+                    "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn hãy vào menu 'Mua hàng' "
+                    "và chọn 'Nhập chứng từ mua hàng', sau đó nhập số phiếu 0000096..."}),
+    ])
+    sess = AgentSession(_FakeDB(), _identity(admin=True))
+    out = await sess.step("huong dan nhap chung tu ...")
+    assert out["grounded"] is False
+    assert out["citations"] == []
+    assert "Mua hàng" not in out["answer"]      # bước bịa KHÔNG được ship
+    assert "0000096" not in out["answer"]
+
+
+@pytest.mark.asyncio
+async def test_long_exercise_query_is_condensed_before_retrieve(monkeypatch):
+    """Câu đề-bài dài (>180 ký tự / nhiều dòng) phải được cô đọng thành truy vấn nghiệp vụ
+    TRƯỚC khi retrieve — embedding câu thô bị số liệu/tên hàng kéo lệch chủ đề."""
+    seen = {}
+
+    async def fake_retrieve(db, identity, query, top_n=6, **kw):
+        seen["query"] = query
+        return []
+    monkeypatch.setattr(agent_loop.retriever, "retrieve", fake_retrieve)
+
+    calls = {"i": 0}
+
+    async def fake_chat(messages, **kw):
+        from app.llm.router import RoutingDecision
+        calls["i"] += 1
+        if calls["i"] == 1:      # lời gọi 1 = rephrase/cô đọng
+            return "cách nhập phiếu nhập mua công nợ nhà cung cấp", RoutingDecision("local", "q", "t")
+        return json.dumps({"action": "answer",
+                           "answer": "Không tìm thấy thông tin trong tài liệu nội bộ."}), \
+            RoutingDecision("local", "q", "t")
+    monkeypatch.setattr(agent_loop.llm, "chat", fake_chat)
+
+    long_q = ("huong dan nhap chung tu: \"7. Nhập mua NVL chưa thanh toán cho Công ty ABC theo "
+              "phiếu nhập số 0000096, seri AP/14L, ngày 03/01, hạn thanh toán 30 ngày.\n"
+              "20,000 nhựa trắng đơn giá 150\n40,000 nhựa xanh đơn giá 100\"")
+    sess = AgentSession(_FakeDB(), _identity(admin=True))
+    await sess.step(long_q)
+    assert seen["query"] == "cách nhập phiếu nhập mua công nợ nhà cung cấp"  # đã cô đọng

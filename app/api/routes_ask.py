@@ -85,6 +85,10 @@ async def ask(
         allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.1,
     )
 
+    # Chặn 'abstain rồi bịa tiếp' (fail-closed): đã có câu abstain -> cắt mọi phần đuôi
+    # (model có lúc mở đầu abstain rồi vẫn tự sinh các bước từ kiến thức ngoài, không nguồn).
+    if _ABSTAIN in answer:
+        answer = _ABSTAIN
     # Citation-hygiene: abstain -> KHÔNG đính nguồn; nếu answer có marker [N] -> CHỈ trả nguồn
     # thực sự được trích; không có marker -> giữ toàn bộ (câu trả lời grounded nhưng model không đánh số).
     grounded = _ABSTAIN not in answer

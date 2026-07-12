@@ -162,8 +162,9 @@ _SYSTEM = (
     "- Gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh (đúng số khối nguồn).\n"
     "- Nếu ngữ cảnh CHỈ có một phần: trả lời phần CÓ, nói rõ phần còn thiếu, rồi GỢI Ý người dùng nêu "
     "tên chức năng/màn hình cụ thể để tra tiếp — KHÔNG dừng cụt.\n"
-    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer BẮT ĐẦU bằng đúng câu 'Không "
-    "tìm thấy thông tin trong tài liệu nội bộ.' (có thể mời người dùng nêu rõ chức năng cần tra).\n"
+    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer CHỈ gồm đúng câu 'Không "
+    "tìm thấy thông tin trong tài liệu nội bộ.' + MỘT câu mời nêu rõ chức năng/màn hình. TUYỆT ĐỐI "
+    "không viết thêm bước hướng dẫn nào sau câu đó (bước không có nguồn = bịa).\n"
     "- Phân biệt CHÍNH XÁC: mua hàng ≠ bán hàng; đầu vào ≠ đầu ra; phải thu ≠ phải trả; nhập ≠ xuất.\n"
     "- Với nghiệp vụ BRAVO: CHỨNG TỪ TRƯỚC, HẠCH TOÁN SAU. Khi hỏi tự động hoá mua hàng/AP, "
     "phải xác định loại chứng từ BRAVO và nguồn kế thừa trước khi nói định khoản.\n"
@@ -178,10 +179,20 @@ _SYSTEM = (
 
 # Câu abstain ổn định để PHÁT HIỆN (dù prompt cho phép mời người dùng nêu thêm phía sau).
 _ABSTAIN_PREFIX = "không tìm thấy thông tin trong tài liệu nội bộ"
+_ABSTAIN_CANON = ("Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức "
+                  "năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.")
 
 
 def _is_abstain(text: str) -> bool:
     return _ABSTAIN_PREFIX in (text or "").lower()
+
+
+def _clip_abstain(answer: str) -> str:
+    """Chặn 'abstain rồi bịa tiếp' (zero-hallucination, deterministic): model có lúc mở đầu
+    'Không tìm thấy...' rồi VẪN tự sinh các bước hướng dẫn từ kiến thức ngoài (không citation,
+    sai phần mềm thật). Đã abstain -> câu trả lời CHỈ còn abstain chuẩn + mời làm rõ; mọi
+    phần đuôi bị cắt bỏ (không thể phân biệt đuôi hợp lệ với đuôi bịa -> fail-closed)."""
+    return _ABSTAIN_CANON if _is_abstain(answer) else answer
 
 
 def _prune_citations(answer: str, citations: list[str]) -> tuple[list[str], bool]:
@@ -526,18 +537,25 @@ class AgentSession:
             return await self._safe_recall_prompt(limit=20)
 
     async def _rephrase_query(self, recall: list[dict], question: str, max_turns: int = 6) -> str:
-        """Câu nối tiếp ngắn -> câu truy vấn ĐỘC LẬP dùng lịch sử (DocsGPT pattern). Lượt đầu
-        (không lịch sử) -> giữ nguyên. Lỗi -> fallback câu gốc. Đi qua router (egress-audited)."""
-        if not recall:
+        """Câu nối tiếp ngắn -> câu truy vấn ĐỘC LẬP dùng lịch sử (DocsGPT pattern). Câu DÀI /
+        dán đề bài (số liệu, tên hàng, seri...) -> CÔ ĐỌNG về nghiệp vụ cần tra — embedding câu
+        thô bị nhiễu kéo lệch chủ đề (vd đề bài 'nhập mua NVL...' kéo về giá thành thay vì
+        Phiếu nhập mua). Lượt đầu + câu ngắn -> giữ nguyên. Lỗi -> fallback câu gốc."""
+        long_query = len(question) > 180 or "\n" in question
+        if not recall and not long_query:
             return question
         hist = "\n".join(f"{m['role']}: {m['content'][:300]}" for m in recall[-max_turns:])
         prompt = [
             {"role": "system", "content": (
                 "Viết lại CÂU HỎI MỚI thành MỘT câu truy vấn tìm kiếm độc lập bằng tiếng Việt, "
                 "bổ sung ngữ cảnh cần thiết từ LỊCH SỬ (giữ thuật ngữ nghiệp vụ; phân biệt "
-                "mua/bán, đầu vào/đầu ra, phải thu/phải trả). CHỈ trả về câu truy vấn, không giải thích.")},
+                "mua/bán, đầu vào/đầu ra, phải thu/phải trả). Nếu câu hỏi chứa ĐỀ BÀI/số liệu "
+                "cụ thể (số lượng, đơn giá, tên hàng, số chứng từ) thì BỎ chi tiết số liệu, rút "
+                "về NGHIỆP VỤ + màn hình/chứng từ cần tra (vd: 'cách nhập phiếu nhập mua công "
+                "nợ nhà cung cấp kèm hóa đơn thuế GTGT và hạn thanh toán'). CHỈ trả về câu "
+                "truy vấn, không giải thích.")},
             {"role": "user",
-             "content": f"LỊCH SỬ:\n{hist}\n\nCÂU HỎI MỚI: {question}\n\nCÂU TRUY VẤN ĐỘC LẬP:"},
+             "content": f"LỊCH SỬ:\n{hist or '(trống)'}\n\nCÂU HỎI MỚI: {question}\n\nCÂU TRUY VẤN ĐỘC LẬP:"},
         ]
         try:
             text, _ = await llm.chat(prompt, db=self.db,
@@ -747,8 +765,11 @@ class AgentSession:
             except Exception:
                 final = ""
         if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
-            final = answer
+            final = _clip_abstain(answer)   # abstain -> cắt đuôi bịa TRƯỚC khi phát
             yield {"type": "answer", "delta": final}
+        else:
+            # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
+            final = _clip_abstain(final)
         cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
@@ -863,7 +884,7 @@ class AgentSession:
             grounded, unmatched = verdict.grounded, verdict.unmatched
             citations = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
         else:
-            safe, unmatched = answer, []
+            safe, unmatched = _clip_abstain(answer), []   # abstain -> cắt đuôi bịa (fail-closed)
             citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", safe)
         await self._close_run(self._terminal_status())
