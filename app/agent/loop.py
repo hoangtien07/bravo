@@ -34,7 +34,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.memory import MemoryStore
-from app.agent.bravo_playbooks import render_playbook_hint
+from app.agent.bravo_playbooks import load_playbooks, render_playbook_hint
 from app.agent.tools import REGISTRY, call_tool, filter_tools_by_permission, register
 from app.config import get_settings
 from app.data_layer.grounding import verify_numbers
@@ -170,6 +170,35 @@ _SYSTEM = (
     "để gọi tool — KHÔNG clarify khi đã có ngữ cảnh liên quan.\n"
     "TUYỆT ĐỐI chỉ xuất JSON."
 )
+
+# Persona BỀN của agent — core-memory block luôn PIN vào prompt (khác _SYSTEM: đây là "ai/luồng
+# nghiệp vụ", không phải giao thức JSON). Trước đây thiếu mắt xích này nên agent 'mất' system
+# context giữa các lượt (letta pin memory blocks vào context; bravo chỉ bê table, quên render).
+_PERSONA = (
+    "Bạn là BRAVO AI Copilot — trợ lý tri thức & nghiệp vụ cho hệ sinh thái BRAVO ERP "
+    "(kế toán, mua hàng/AP, kho, bán hàng). Phục vụ người dùng nội bộ theo phòng ban được "
+    "phân quyền. Nguyên tắc bất di: chứng từ TRƯỚC, hạch toán SAU; số liệu phải có nguồn "
+    "(không nguồn -> nói không tìm thấy); không ghi thẳng ERP, chỉ tạo nháp chờ người duyệt."
+)
+
+
+def _render_business_flows() -> str:
+    """Tóm tắt NGẮN các luồng nghiệp vụ BRAVO từ playbooks THẬT (không bịa) -> seed core-memory,
+    để agent luôn biết mình hỗ trợ vòng đời nào (không chỉ hint theo từng câu)."""
+    try:
+        pbs = load_playbooks()
+    except Exception:
+        return ""
+    if not pbs:
+        return ""
+    lines = ["Các luồng nghiệp vụ BRAVO bạn hỗ trợ:"]
+    lines += [f"- {pb.mode}: {pb.usp} (giai đoạn {pb.lifecycle_stage})" for pb in pbs]
+    return "\n".join(lines)
+
+
+def _default_core_blocks() -> dict[str, str]:
+    """Core-memory mặc định seed cho mỗi phiên (idempotent). Nguồn: persona tĩnh + playbooks thật."""
+    return {"persona": _PERSONA, "business_flows": _render_business_flows()}
 
 
 # --------------------------------------------------------------------------------------
@@ -453,6 +482,14 @@ class AgentSession:
     async def _prepare_turn(self, user_message: str):
         """Retrieve (query-rewrite theo lịch sử) + build messages có NGỮ CẢNH đánh số [N].
         Dùng chung step()/step_stream(). Trả (messages, chunks, citations) — citations[i] khớp [i+1]."""
+        # Core-memory (letta pattern): seed persona/luồng-nghiệp-vụ nếu phiên chưa có (idempotent),
+        # rồi PIN vào prompt mỗi lượt. Đây là fix cho bug 'thiếu context'.
+        try:
+            await self.memory.seed_core_defaults(_default_core_blocks())
+            core_text = await self.memory.render_core_blocks()
+        except Exception:
+            core_text = ""   # core-memory là bổ trợ, không được làm hỏng lượt chat
+
         recall = await self._safe_history()                 # lịch sử (CÓ NÉN) TRƯỚC câu hiện tại
         await self._safe_recall_add("user", user_message)
 
@@ -489,6 +526,7 @@ class AgentSession:
 
         messages = [
             {"role": "system", "content": _SYSTEM},
+            *([{"role": "system", "content": core_text}] if core_text else []),
             {"role": "system", "content": f"TOOL khả dụng:\n{tools_desc or '(không có)'}"},
             *([{"role": "system", "content": playbook_hint}] if playbook_hint else []),
             *recall,  # multi-turn: lịch sử (đã DATA-frame) NẰM TRƯỚC câu hỏi

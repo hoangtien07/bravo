@@ -20,6 +20,10 @@ from app.security.rls import Identity, frame_by_trust
 class MemoryStore:
     """Per-session memory operations. All archival reads are RLS-scoped."""
 
+    # Nhãn core-memory DÙNG NỘI BỘ cho nén history (không phải "system context" của agent) ->
+    # loại khỏi render_core_blocks() để không lẫn tóm tắt vào phần persona/nghiệp vụ.
+    _INTERNAL_LABELS = frozenset({"summary", "summary_n"})
+
     def __init__(self, db: AsyncSession, session_id: uuid.UUID, identity: Identity):
         self.db = db
         self.session_id = session_id
@@ -29,6 +33,35 @@ class MemoryStore:
     async def core_get(self, label: str) -> str:
         b = await self._block(label)
         return b.value if b else ""
+
+    async def core_blocks(self) -> list[MemoryBlock]:
+        """Các block core-memory 'thật' của phiên (loại nhãn nội bộ), thứ tự ổn định theo label."""
+        rows = (await self.db.execute(
+            select(MemoryBlock).where(MemoryBlock.session_id == self.session_id)
+            .order_by(MemoryBlock.label)
+        )).scalars().all()
+        return [b for b in rows if b.label not in self._INTERNAL_LABELS and (b.value or "").strip()]
+
+    async def render_core_blocks(self) -> str:
+        """Ghép core-memory thành 1 khối text để PIN vào prompt mỗi lượt (pattern letta:
+        memory blocks = in-context, persistent). Rỗng -> '' (caller bỏ qua). Đây là mắt xích
+        trước đây bị thiếu khiến agent 'mất' system context/luồng nghiệp vụ giữa các lượt."""
+        blocks = await self.core_blocks()
+        if not blocks:
+            return ""
+        parts = [f"<{b.label}>\n{b.value.strip()}\n</{b.label}>" for b in blocks]
+        return "BỘ NHỚ LÕI (luôn đúng, ưu tiên cao — KHÔNG phải tài liệu để trích dẫn):\n" + \
+            "\n".join(parts)
+
+    async def seed_core_defaults(self, blocks: dict[str, str]) -> None:
+        """Nạp core-memory mặc định (persona, luồng nghiệp vụ...) CHỈ khi CHƯA có — idempotent,
+        an toàn gọi mỗi lượt. Giá trị đến từ dữ liệu THẬT (playbooks), không bịa."""
+        for label, value in blocks.items():
+            if not (value or "").strip():
+                continue
+            if await self._block(label) is None:
+                self.db.add(MemoryBlock(session_id=self.session_id, label=label, value=value))
+        await self.db.commit()
 
     async def core_append(self, label: str, content: str) -> None:
         b = await self._block(label)
