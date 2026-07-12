@@ -21,10 +21,20 @@ from dataclasses import dataclass, field
 from app.security.rls import Identity
 
 
+def _record_tool(name: str, status: str) -> None:
+    """F5: emit the bravo_tool_calls_total metric (was defined but never called). Best-effort."""
+    try:
+        from app.observability import record_tool
+        record_tool(name, status)
+    except Exception:
+        pass
+
+
 @dataclass
 class Tool:
     name: str
     fn: Callable                       # async or sync
+    description: str = ""              # T7: mô tả ngôn ngữ tự nhiên cho decide prompt (chọn tool tốt hơn)
     json_schema: dict = field(default_factory=dict)  # JSON Schema cho input (structured-output)
     read_only: bool = True             # đọc = auto-run; ghi = False -> draft
     requires_approval: bool = False    # ghi -> True (HITL, ADR + VISION §2)
@@ -43,12 +53,13 @@ class Tool:
 REGISTRY: dict[str, Tool] = {}
 
 
-def register(name: str, *, json_schema: dict | None = None, read_only: bool = True,
-             requires_approval: bool = False, required_permission: str | None = None,
+def register(name: str, *, description: str = "", json_schema: dict | None = None,
+             read_only: bool = True, requires_approval: bool = False,
+             required_permission: str | None = None,
              payload_builder: Callable[[dict], dict] | None = None):
     def deco(fn: Callable) -> Callable:
         REGISTRY[name] = Tool(
-            name=name, fn=fn, json_schema=json_schema or {},
+            name=name, fn=fn, description=description, json_schema=json_schema or {},
             read_only=read_only, requires_approval=requires_approval,
             required_permission=required_permission, payload_builder=payload_builder,
         )
@@ -142,6 +153,7 @@ async def call_tool(name: str, args: dict, identity: Identity, *, db=None,
             draft = await draft_queue.create_draft(db, identity, kind=name, payload=args,
                                                    department_id=dept_id)
         await _audit_attempt(db, agent_run_id, identity, name, args, "drafted", f"draft {draft.id}")
+        _record_tool(name, "drafted")
         return {"status": "pending_approval", "draft_id": str(draft.id), "is_write": True,
                 "message": "Đã tạo bản nháp chờ người duyệt (KHÔNG tự thực thi)."}
 
@@ -160,9 +172,11 @@ async def call_tool(name: str, args: dict, identity: Identity, *, db=None,
         if inspect.isawaitable(result):
             result = await result
         await _audit_attempt(db, agent_run_id, identity, name, args, "executed")
+        _record_tool(name, "ok")
         return {"status": "ok", "result": result}
     except Exception as e:  # keep the loop alive — surface as isError, don't crash the turn
         await _audit_attempt(db, agent_run_id, identity, name, args, "failed", str(e))
+        _record_tool(name, "error")
         return {"isError": True, "error": f"Tool '{name}' lỗi: {e}"}
 
 

@@ -57,6 +57,15 @@ def record_first_token(seconds: float) -> None:
             pass
 
 
+def record_turn(seconds: float) -> None:
+    """F5: ghi thời lượng một lượt agent (histogram trước đây định nghĩa nhưng không ai gọi)."""
+    if _PROM and _settings.metrics_enabled:
+        try:
+            AGENT_TURN_SECONDS.observe(max(0.0, seconds))
+        except Exception:
+            pass
+
+
 def setup(app) -> None:
     """Gắn instrumentation vào FastAPI app (gọi một lần trong main). Fail-safe."""
     if _settings.metrics_enabled:

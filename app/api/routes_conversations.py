@@ -191,7 +191,7 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
 
     async def gen():
         import time as _time
-        from app.observability import record_first_token
+        from app.observability import record_first_token, record_turn
         # P1: reject a second concurrent turn on the same conversation (no interleaved writes).
         if lock.locked():
             yield ("data: " + json.dumps(
@@ -221,6 +221,7 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                     + "\n\n"
                 )
             finally:
+                record_turn(_time.monotonic() - started)   # F5: turn-latency histogram
                 try:
                     await conv_svc.touch(db, conversation_id)
                 except Exception:  # noqa: BLE001

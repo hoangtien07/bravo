@@ -400,6 +400,7 @@ def _register_builtin_tools() -> None:
     if "kb_search" not in REGISTRY:
         register(
             "kb_search",
+            description="Tra cứu THÊM tài liệu nội bộ khi ngữ cảnh ban đầu chưa đủ để trả lời.",
             json_schema={"type": "object",
                          "properties": {"q": {"type": "string",
                                               "description": "truy vấn tra cứu bổ sung khi ngữ "
@@ -411,6 +412,7 @@ def _register_builtin_tools() -> None:
     if "metric_lookup" not in REGISTRY:
         register(
             "metric_lookup",
+            description="Lấy một chỉ số tài chính/kế toán từ money-engine (số có kiểm chứng).",
             json_schema={"type": "object",
                          "properties": {"metric_id": {"type": "string"},
                                         "params": {"type": "object"}},
@@ -422,6 +424,7 @@ def _register_builtin_tools() -> None:
     if "create_journal_entry" not in REGISTRY:
         register(
             "create_journal_entry",
+            description="ĐỀ XUẤT bút toán kép (Nợ=Có) -> tạo NHÁP chờ người duyệt (không tự ghi ERP).",
             # Schema THẬT: bút toán kép nhiều dòng (mỗi dòng Nợ HOẶC Có). LLM chỉ ĐỀ XUẤT;
             # payload_builder VALIDATE cân Nợ=Có trước khi tạo nháp (ADR-0004/0014).
             json_schema={
@@ -454,6 +457,7 @@ def _register_builtin_tools() -> None:
     if "preview_journal_entry" not in REGISTRY:
         register(
             "preview_journal_entry",
+            description="Xem chi tiết các dòng bút toán của một NHÁP journal_entry (RLS theo phòng).",
             # READ-ONLY: lộ money-engine cho chat — xem bút toán của 1 draft journal_entry
             # (RLS-scoped). Số trả về là MetricResult -> verify-gate (invariant #3).
             json_schema={"type": "object",
@@ -951,7 +955,8 @@ class AgentSession:
 
         tools = filter_tools_by_permission(REGISTRY, self.identity)  # RLS layer #1
         tools_desc = "\n".join(
-            f"- {t.name}(schema={json.dumps(t.json_schema, ensure_ascii=False)})"
+            f"- {t.name}: {t.description or '(không mô tả)'} "
+            f"| schema={json.dumps(t.json_schema, ensure_ascii=False)}"
             f"{' [GHI->nháp]' if not t.read_only else ''}" for t in tools)
         playbook_hint = render_playbook_hint(user_message)
 
