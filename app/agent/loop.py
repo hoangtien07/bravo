@@ -167,6 +167,11 @@ async def _parse_decision(text: str) -> AgentDecision:
     return parsed
 
 
+# Q3 (ADR-0021): với cloud-only, model CÓ kiến thức chung. Cho phép trả lời kiến thức chung
+# NHƯNG chỉ trong một khối GẮN NHÃN tường minh, TUYỆT ĐỐI không có số tiền/số dư cụ thể.
+_WK_MARK = "--- Ngoài tài liệu BRAVO"
+_WK_LABEL = "--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---"
+
 _SYSTEM = (
     "Bạn là BRAVO AI Copilot — trợ lý ERP/kế toán, trả lời TIẾNG VIỆT.\n"
     "Ở MỖI bước bạn PHẢI xuất DUY NHẤT một object JSON (không kèm văn bản, KHÔNG dùng ```), "
@@ -177,16 +182,18 @@ _SYSTEM = (
     "ƯU TIÊN action=answer. Nếu NGỮ CẢNH có thông tin liên quan câu hỏi -> PHẢI trả lời "
     "(câu hỏi rộng -> trả lời TỔNG QUAN có cấu trúc rồi mời hỏi sâu); KHÔNG hỏi lại chỉ để "
     "thu hẹp phạm vi.\n"
-    "QUY TẮC khi action=answer:\n"
-    "- CHỈ dùng NGỮ CẢNH (các khối [1],[2],...) và LỊCH SỬ; KHÔNG dùng kiến thức ngoài, KHÔNG bịa.\n"
-    "- Khi CÓ căn cứ: trả lời CHI TIẾT, có CẤU TRÚC — chia các BƯỚC đánh số, mỗi bước nêu rõ thao "
-    "tác cụ thể (menu/màn hình/phím tắt/trường nhập nếu ngữ cảnh có); gạch đầu dòng cho lựa chọn con.\n"
-    "- Gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh (đúng số khối nguồn).\n"
-    "- Nếu ngữ cảnh CHỈ có một phần: trả lời phần CÓ, nói rõ phần còn thiếu, rồi GỢI Ý người dùng nêu "
-    "tên chức năng/màn hình cụ thể để tra tiếp — KHÔNG dừng cụt.\n"
-    "- Nếu NGỮ CẢNH KHÔNG liên quan / không chứa câu trả lời -> answer CHỈ gồm đúng câu 'Không "
-    "tìm thấy thông tin trong tài liệu nội bộ.' + MỘT câu mời nêu rõ chức năng/màn hình. TUYỆT ĐỐI "
-    "không viết thêm bước hướng dẫn nào sau câu đó (bước không có nguồn = bịa).\n"
+    "QUY TẮC khi action=answer — hợp đồng HAI TẦNG:\n"
+    "- Phần CÓ CĂN CỨ: chỉ dùng NGỮ CẢNH (các khối [1],[2],...) và LỊCH SỬ; gắn trích dẫn [N] vào "
+    "mỗi ý; trả lời CHI TIẾT, có CẤU TRÚC — chia BƯỚC đánh số, nêu rõ menu/màn hình/phím tắt/trường "
+    "nhập nếu ngữ cảnh có; gạch đầu dòng cho lựa chọn con.\n"
+    "- Nếu ngữ cảnh CHỈ có một phần: trả lời phần CÓ (có [N]), nói rõ phần còn thiếu.\n"
+    "- Nếu ngữ cảnh KHÔNG chứa câu trả lời: MỞ ĐẦU đúng câu 'Không tìm thấy thông tin trong tài "
+    "liệu nội bộ.' — KHÔNG viết bước hướng dẫn BRAVO cụ thể nào (bước không nguồn = bịa).\n"
+    "- Phần KIẾN THỨC CHUNG (tuỳ chọn): nếu câu hỏi mang tính tổng quát và bạn có kiến thức phổ "
+    "thông hữu ích, bạn ĐƯỢC bổ sung MỘT khối riêng, ĐẶT SAU phần có nguồn, mở đầu ĐÚNG dòng:\n"
+    "  " + _WK_LABEL + "\n"
+    "  Trong khối này: KHÔNG trích [N]; KHÔNG nêu số tiền/số dư/tỷ lệ CỤ THỂ (đó là số nghiệp vụ "
+    "phải có nguồn — invariant #3); nói rõ đây là kiến thức chung chưa kiểm chứng với BRAVO.\n"
     "- Phân biệt CHÍNH XÁC: mua hàng ≠ bán hàng; đầu vào ≠ đầu ra; phải thu ≠ phải trả; nhập ≠ xuất.\n"
     "- Với nghiệp vụ BRAVO: CHỨNG TỪ TRƯỚC, HẠCH TOÁN SAU. Khi hỏi tự động hoá mua hàng/AP, "
     "phải xác định loại chứng từ BRAVO và nguồn kế thừa trước khi nói định khoản.\n"
@@ -219,6 +226,35 @@ def _clip_abstain(answer: str) -> str:
     mọi phần đuôi bị cắt (không phân biệt được đuôi hợp lệ với đuôi bịa -> fail-closed).
     Câu trả lời một-phần (abstain nhắc GIỮA chừng) KHÔNG bị đụng."""
     return _ABSTAIN_CANON if _is_abstain(answer) else answer
+
+
+# --- Q3: labeled world-knowledge answer mode (ADR-0021) -------------------------------
+# Số tiền VND / số dư: <chữ số> + đơn vị tiền, hoặc số lớn có phân tách nghìn. Redact trong khối
+# kiến-thức-chung để một con số không-nguồn không bao giờ được trình bày như số nghiệp vụ thật.
+_WK_MONEY_RE = re.compile(
+    r"\b\d[\d.,]*\s*(?:%|(?:đ|đồng|vnd|vnđ|triệu|tỷ|tỉ|nghìn|ngàn)\b)", re.IGNORECASE)
+_WK_BIGNUM_RE = re.compile(r"\b\d{1,3}(?:[.,]\d{3})+\b")   # 1.000.000 kiểu phân tách nghìn
+
+
+def _guard_wk_numbers(section: str) -> str:
+    redacted = _WK_MONEY_RE.sub("[số cụ thể đã ẩn — kiến thức chung không nêu số]", section)
+    return _WK_BIGNUM_RE.sub("[số cụ thể đã ẩn]", redacted)
+
+
+def _label_ungrounded(answer: str) -> str:
+    """Thay _clip_abstain cho lượt tri thức (Q3). Nếu model đã thêm khối 'Ngoài tài liệu BRAVO'
+    -> GIỮ khối đó (sau khi ẩn mọi số cụ thể), kể cả khi phần đầu là abstain. Nếu KHÔNG có nhãn
+    -> hành vi cũ (_clip_abstain: abstain mở đầu -> cắt đuôi bịa fail-closed)."""
+    idx = answer.find(_WK_MARK)
+    if idx == -1:
+        return _clip_abstain(answer)
+    grounded_part = answer[:idx].rstrip()
+    wk = _guard_wk_numbers(answer[idx:])
+    if not grounded_part.strip() or _is_abstain(grounded_part):
+        head = _ABSTAIN_CANON
+    else:
+        head = grounded_part
+    return f"{head}\n\n{wk}"
 
 
 def _prune_citations(answer: str, citations: list[str]) -> tuple[list[str], bool]:
@@ -271,10 +307,12 @@ def _register_builtin_tools() -> None:
         register(
             "kb_search",
             json_schema={"type": "object",
-                         "properties": {"q": {"type": "string", "description": "truy vấn"}},
+                         "properties": {"q": {"type": "string",
+                                              "description": "truy vấn tra cứu bổ sung khi ngữ "
+                                              "cảnh ban đầu chưa đủ (RLS áp trong SQL)"}},
                          "required": ["q"]},
             read_only=True,
-        )(_noop_kb_search)  # real retrieval is injected per-session (needs db/identity)
+        )(_kb_search)  # REAL RAG (Q2); db/identity injected by call_tool
 
     if "metric_lookup" not in REGISTRY:
         register(
@@ -333,8 +371,21 @@ def _register_builtin_tools() -> None:
         )(_preview_journal_entry)
 
 
-def _noop_kb_search(**kwargs):  # placeholder fn; the loop performs retrieval directly
-    return {"note": "kb_search được loop thực thi trực tiếp với db+identity (RLS-in-SQL)."}
+async def _kb_search(q: str, *, identity: Identity, db) -> dict:
+    """REAL RAG tool (Q2): a SECOND retrieval the agent can invoke mid-loop when the initial
+    context is insufficient. RLS is enforced in-query (chunk_scope_filter). Snippets are
+    document-derived -> framed as DATA (WP-G) so an injected directive inside a chunk is inert.
+    """
+    if not q or not q.strip():
+        return {"kb_snippets": ""}
+    hits = await retriever.retrieve(db, identity, q.strip(), top_n=6)
+    if not hits:
+        return {"kb_snippets": ""}
+    lines = []
+    for i, h in enumerate(hits, start=1):
+        excerpt = (h.content or "")[:400]
+        lines.append(f"[{i}] {frame_untrusted(excerpt, source=h.source_id)} {h.citation()}")
+    return {"kb_snippets": "\n".join(lines)}
 
 
 def _metric_lookup(metric_id: str, params: dict | None = None, *, identity: Identity):
@@ -592,6 +643,27 @@ class AgentSession:
         except Exception:
             return question
 
+    # Connectors that separate distinct sub-intents in a Vietnamese question.
+    _QUERY_SPLIT = re.compile(r"\s+và\s+|\s+đồng thời\s+|\s+cũng như\s+|[;\n]|\s+kèm\s+", re.IGNORECASE)
+
+    async def _plan_queries(self, recall: list[dict], question: str) -> list[str]:
+        """Q2 multi-query: the rephrased PRIMARY query, plus — only when that clean primary
+        itself is multi-intent (contains a connector like 'và') — its sub-intent clauses. No
+        extra LLM call. Splitting the *rephrased* query (not the raw question) keeps noisy
+        exercise dumps condensed to one query; genuine two-part asks fan out for RRF coverage."""
+        primary = await self._rephrase_query(recall, question)
+        parts = self._QUERY_SPLIT.split(primary)
+        if len(parts) <= 1:
+            return [primary]
+        queries = [primary]
+        for clause in parts:
+            c = clause.strip(" ?.,:")
+            if len(c) >= 8 and all(c.lower() != q.lower() for q in queries):
+                queries.append(c)
+            if len(queries) >= 3:
+                break
+        return list(dict.fromkeys(queries))
+
     async def _source_labels(self, chunks: list) -> dict[str, str]:
         """Map source_id -> nhãn thân thiện (knowledge_type/filename) thay UUID trong trích dẫn."""
         ids = {getattr(c, "source_id", None) for c in chunks}
@@ -629,8 +701,8 @@ class AgentSession:
             f"\n[đính kèm: {', '.join(att_names)}]" if att_names else "")
         await self._safe_recall_add("user", recall_text)
 
-        search_query = await self._rephrase_query(recall, user_message)
-        chunks = await retriever.retrieve(self.db, self.identity, search_query, top_n=12)
+        queries = await self._plan_queries(recall, user_message)
+        chunks = await retriever.retrieve_multi(self.db, self.identity, queries, top_n=12)
 
         labels = await self._source_labels(chunks)
         blocks: list[str] = []
@@ -776,12 +848,13 @@ class AgentSession:
     _COMPOSE_SYSTEM = (
         "Bạn là BRAVO AI Copilot. Viết CÂU TRẢ LỜI CUỐI bằng TIẾNG VIỆT, văn xuôi (KHÔNG JSON, "
         "KHÔNG markdown rào code). Khi CÓ căn cứ: trả lời CHI TIẾT, có CẤU TRÚC — chia BƯỚC đánh "
-        "số, nêu rõ menu/màn hình/trường nhập nếu ngữ cảnh có. CHỈ dùng NGỮ CẢNH đã cho + LỊCH SỬ; "
-        "gắn trích dẫn [N] vào mỗi ý lấy từ ngữ cảnh; KHÔNG bịa; KHÔNG tự sinh số. Với nghiệp vụ "
-        "BRAVO phải giữ nguyên tắc chứng từ trước, hạch toán sau; không đề xuất SQL/update trực tiếp "
-        "vào ERP; ngữ cảnh CHỈ có một phần -> trả lời phần CÓ rồi GỢI Ý người dùng nêu tên chức "
-        "năng/màn hình để tra tiếp. Ngữ cảnh không chứa câu trả lời -> BẮT ĐẦU bằng đúng câu "
-        "'Không tìm thấy thông tin trong tài liệu nội bộ.'")
+        "số, nêu rõ menu/màn hình/trường nhập nếu ngữ cảnh có. Phần có căn cứ CHỈ dùng NGỮ CẢNH + "
+        "LỊCH SỬ; gắn trích dẫn [N] vào mỗi ý; KHÔNG bịa; KHÔNG tự sinh số. Với nghiệp vụ BRAVO "
+        "giữ nguyên tắc chứng từ trước, hạch toán sau; không đề xuất SQL/update trực tiếp vào ERP; "
+        "ngữ cảnh CHỈ có một phần -> trả lời phần CÓ rồi nói rõ phần thiếu. Ngữ cảnh không chứa câu "
+        "trả lời -> BẮT ĐẦU bằng đúng câu 'Không tìm thấy thông tin trong tài liệu nội bộ.' "
+        "Tuỳ chọn: sau phần có nguồn, có thể thêm khối kiến thức chung mở đầu đúng dòng "
+        "'" + _WK_LABEL + "' — trong khối này KHÔNG trích [N] và KHÔNG nêu số tiền/số dư/tỷ lệ cụ thể.")
 
     async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
         if engine_values:
@@ -818,11 +891,11 @@ class AgentSession:
             except Exception:
                 final = ""
         if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
-            final = _clip_abstain(answer)   # abstain -> cắt đuôi bịa TRƯỚC khi phát
+            final = _label_ungrounded(answer)   # abstain -> cắt đuôi bịa; giữ khối kiến-thức-chung có nhãn
             yield {"type": "answer", "delta": final}
         else:
             # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
-            final = _clip_abstain(final)
+            final = _label_ungrounded(final)
         cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
@@ -941,7 +1014,7 @@ class AgentSession:
             grounded, unmatched = verdict.grounded, verdict.unmatched
             citations = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
         else:
-            safe, unmatched = _clip_abstain(answer), []   # abstain -> cắt đuôi bịa (fail-closed)
+            safe, unmatched = _label_ungrounded(answer), []   # abstain -> cắt đuôi bịa; giữ khối kiến-thức-chung
             citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", safe)
         await self._close_run(self._terminal_status())
@@ -972,6 +1045,8 @@ class AgentSession:
             # nhiều số engine (vd bút toán nhiều dòng) -> render từng dòng đọc được cho LLM
             return "\n".join(f"{x.metric_id}={x.value} {x.scale or ''} ({x.provenance})"
                              for x in ev)[:1500]
+        if isinstance(ev, dict) and "kb_snippets" in ev:
+            return ev["kb_snippets"] or "(không tìm thấy đoạn liên quan)"
         if result.get("is_write"):
             return result.get("message", "đã tạo nháp")
         return json.dumps(result, ensure_ascii=False, default=str)[:500]

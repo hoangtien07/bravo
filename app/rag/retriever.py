@@ -208,3 +208,56 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
         r.score = s
     fused = apply_version_policy(boost_for_bravo_intent(query, fused))
     return fused[:top_n]
+
+
+async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str],
+                         top_n: int = 20, candidate_k: int = 150,
+                         use_rerank: bool | None = None,
+                         min_score: float | None = None) -> list[Retrieved]:
+    """Multi-query hybrid retrieval (Q2): run each query's dense+lexical branches, RRF-fuse
+    ALL branches together, then boost/version/rerank ONCE against the primary query.
+
+    A single query degrades to `retrieve()`. Multi-intent questions ("nhập phiếu mua VÀ kê
+    khai thuế") no longer get one embedding — each intent contributes candidates. RLS is
+    enforced in every branch (chunk_scope_filter), so scope is preserved across the union.
+    """
+    qs = [q for q in dict.fromkeys(q.strip() for q in queries) if q.strip()]
+    if len(qs) <= 1:
+        return await retrieve(db, identity, qs[0] if qs else "", top_n=top_n,
+                              candidate_k=candidate_k, use_rerank=use_rerank, min_score=min_score)
+
+    from app.config import get_settings
+    from app.rag.vn_terms import expand_abbreviations
+    _s = get_settings()
+    if use_rerank is None:
+        use_rerank = _s.rerank_enabled
+    if min_score is None:
+        min_score = _s.retrieval_min_score
+    primary = expand_abbreviations(qs[0])
+
+    branches: list[list[Retrieved]] = []
+    for q in qs:
+        qx = expand_abbreviations(q)
+        branches.append(await vector_search(db, identity, qx, k=candidate_k, min_score=min_score))
+        branches.append(await lexical_search(db, identity, qx, k=candidate_k))
+    fused = apply_version_policy(boost_for_bravo_intent(primary, rrf_fuse(*branches)))
+    if not fused:
+        return []
+    if not use_rerank:
+        return fused[:top_n]
+
+    provider = _s.rerank_provider
+    if provider == "llm":
+        pool = fused[:40]
+        if any(r.is_sensitive for r in pool):
+            _log.warning("llm_rerank skipped (multi): %d/%d sensitive",
+                         sum(1 for r in pool if r.is_sensitive), len(pool))
+            return pool[:top_n]
+        order = await _rerank.llm_rerank(primary, [r.content for r in pool], top_n, sensitive=False)
+        return [pool[i] for i in order][:top_n]
+
+    scores = _rerank.rerank(primary, [r.content for r in fused])
+    for r, s in zip(fused, scores, strict=True):
+        r.score = s
+    fused = apply_version_policy(boost_for_bravo_intent(primary, fused))
+    return fused[:top_n]
