@@ -163,6 +163,14 @@ def parse(path: str | Path) -> list[ParsedBlock]:
     if kind == "pdf_text":
         from app.ingestion.pdf_parser import parse_pdf
         return parse_pdf(path)
+    if kind == "docx":
+        # DOCX: parser nhẹ python-docx (offline, không cần docling nặng/model). Giữ heading +
+        # bảng; docx không có "trang" cố định -> page_number=None (như markdown). Nếu python-docx
+        # không có, fallback docling (giữ tương thích môi trường đã cài docling).
+        try:
+            return _parse_docx(path)
+        except ImportError:
+            return _parse_docling(path, kind)
     return _parse_docling(path, kind)
 
 
@@ -207,6 +215,75 @@ def _parse_markdown(path: str | Path) -> list[ParsedBlock]:
             heading_path=Path(path).stem,
             extra={"format": "markdown"},
         ))
+    return blocks
+
+
+def _parse_docx(path: str | Path) -> list[ParsedBlock]:
+    """Trích text từ .docx bằng python-docx (offline, nhẹ) — không cần docling.
+
+    Giữ đúng THỨ TỰ đoạn văn và bảng trong thân tài liệu; heading (style 'Heading N')
+    dựng heading_path (như markdown). Bảng -> 1 ParsedBlock is_table=True (chunker giữ
+    nguyên khối). Không có provenance trang (docx không phân trang cố định) -> None.
+    """
+    from docx import Document
+    from docx.oxml.table import CT_Tbl
+    from docx.oxml.text.paragraph import CT_P
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    doc = Document(str(path))
+    blocks: list[ParsedBlock] = []
+    heading_stack: list[str] = []
+    buf: list[str] = []
+
+    def flush() -> None:
+        body = "\n".join(buf).strip()
+        if body:
+            blocks.append(ParsedBlock(
+                text=body, heading_path=" > ".join(heading_stack) or None,
+                extra={"format": "docx"},
+            ))
+        buf.clear()
+
+    def heading_level(style_name: str) -> int | None:
+        # "Heading 1".."Heading 9" (và biến thể VN "Tiêu đề N"); trả cấp, None nếu không phải.
+        for prefix in ("heading ", "tiêu đề "):
+            if style_name.lower().startswith(prefix):
+                tail = style_name[len(prefix):].strip()
+                if tail.isdigit():
+                    return int(tail)
+        return None
+
+    for child in doc.element.body.iterchildren():
+        if isinstance(child, CT_P):
+            para = Paragraph(child, doc)
+            text = para.text.strip()
+            if not text:
+                continue
+            style = (para.style.name if para.style else "") or ""
+            lvl = heading_level(style)
+            if lvl is not None:
+                flush()
+                heading_stack = heading_stack[: max(lvl - 1, 0)] + [text]
+            else:
+                buf.append(text)
+        elif isinstance(child, CT_Tbl):
+            flush()
+            table = Table(child, doc)
+            rows = ["\t".join(c.text.strip() for c in row.cells) for row in table.rows]
+            body = "\n".join(r for r in rows if r.strip())
+            if body:
+                blocks.append(ParsedBlock(
+                    text=body, heading_path=" > ".join(heading_stack) or None,
+                    is_table=True, extra={"format": "docx"},
+                ))
+    flush()
+
+    if not blocks:  # fallback: gom toàn bộ text (tài liệu không có heading/bảng rõ)
+        full = "\n".join(p.text for p in doc.paragraphs).strip()
+        if full:
+            blocks.append(ParsedBlock(text=full, heading_path=Path(path).stem,
+                                      extra={"format": "docx"}))
     return blocks
 
 
