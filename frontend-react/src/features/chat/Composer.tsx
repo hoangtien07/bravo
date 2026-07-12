@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Send, Square, X, FileText, Loader2 } from "lucide-react";
+import { Paperclip, Pin, Send, Square, X, FileText, Loader2 } from "lucide-react";
 import { Button, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
-import type { StagedAttachment } from "@/api/types";
+import { listSources } from "@/api/workspace";
+import { useChat } from "@/store/chat";
+import type { SourceItem, StagedAttachment } from "@/api/types";
 
 interface Props {
   onSend: (q: string) => void;
@@ -21,6 +23,16 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const { pinnedSources, pinSource, unpinSource } = useChat();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [sources, setSources] = useState<SourceItem[]>([]);
+  const openPicker = async () => {
+    setPickerOpen((v) => !v);
+    if (!pickerOpen) {
+      try { setSources((await listSources("all")).filter((s) => s.status === "ready")); }
+      catch { setSources([]); }
+    }
+  };
 
   // Autosize: grow with content up to ~10 rows, then scroll inside.
   const autosize = () => {
@@ -60,6 +72,32 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
       onDragLeave={() => setDragOver(false)}
       onDrop={(e) => { e.preventDefault(); setDragOver(false); routeFiles(e.dataTransfer.files); }}
     >
+      {pinnedSources.length > 0 && (
+        <div className="mx-auto max-w-3xl mb-2 flex flex-wrap gap-2">
+          {pinnedSources.map((s) => (
+            <div key={s.id} className="flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs" title="Tài liệu ghim vào ngữ cảnh">
+              <Pin className="h-3.5 w-3.5 text-primary" />
+              <span className="max-w-[12rem] truncate">{s.filename}</span>
+              <button onClick={() => unpinSource(s.id)} aria-label={`bỏ ghim ${s.filename}`} className="ml-0.5 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
+            </div>
+          ))}
+        </div>
+      )}
+      {pickerOpen && (
+        <div className="mx-auto max-w-3xl mb-2 max-h-48 overflow-y-auto rounded-md border border-border bg-card p-1 text-sm">
+          {sources.length === 0 && <div className="px-2 py-1 text-muted-foreground">Không có tài liệu sẵn sàng.</div>}
+          {sources.map((s) => {
+            const on = pinnedSources.some((x) => x.id === s.id);
+            return (
+              <button key={s.id} onClick={() => (on ? unpinSource(s.id) : pinSource(s))} className={cn("flex w-full items-center gap-2 rounded px-2 py-1 text-left hover:bg-muted", on && "text-primary")}>
+                <Pin className={cn("h-3.5 w-3.5", on ? "text-primary" : "text-muted-foreground")} />
+                <span className="flex-1 truncate">{s.filename}</span>
+                <span className="text-[11px] text-muted-foreground">{s.visibility}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {staged.length > 0 && (
         <div className="mx-auto max-w-3xl mb-2 flex flex-wrap gap-2">
           {staged.map((a) => (
@@ -97,6 +135,16 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
           title="Đính kèm ảnh, .txt, .md, .docx, .pdf vào câu hỏi này"
         >
           <Paperclip className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={openPicker}
+          aria-label="ghim tài liệu workspace vào ngữ cảnh"
+          title="Ghim tài liệu từ workspace vào ngữ cảnh câu hỏi"
+          className={cn(pinnedSources.length > 0 && "text-primary border-primary/50")}
+        >
+          <Pin className="h-4 w-4" />
         </Button>
         <Textarea
           ref={taRef}

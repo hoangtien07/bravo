@@ -24,6 +24,8 @@ try:
     LLM_CALLS = Counter("bravo_llm_calls_total", "Số lời gọi LLM", ["backend"])
     LLM_TOKENS = Counter("bravo_llm_tokens_total", "Token LLM (usage thật)", ["backend", "kind"])
     TOOL_CALLS = Counter("bravo_tool_calls_total", "Số lần gọi tool", ["tool", "status"])
+    # F9: lượt truy hồi TRẢ VỀ RỖNG (lỗ corpus) — tín hiệu để đội corpus-ops bổ sung tài liệu.
+    RETRIEVAL_ZERO_HITS = Counter("bravo_retrieval_zero_hits_total", "Số lượt truy hồi 0 kết quả")
     AGENT_TURN_SECONDS = Histogram("bravo_agent_turn_seconds", "Thời lượng một lượt agent")
     # Q7: thời gian tới TOKEN ĐẦU TIÊN (request -> event 'answer' đầu). Cổng chất lượng: p95 < 3s.
     FIRST_TOKEN_SECONDS = Histogram(
@@ -62,6 +64,15 @@ def record_turn(seconds: float) -> None:
     if _PROM and _settings.metrics_enabled:
         try:
             AGENT_TURN_SECONDS.observe(max(0.0, seconds))
+        except Exception:
+            pass
+
+
+def record_zero_hit() -> None:
+    """F9: đếm một lượt truy hồi trả về rỗng (tín hiệu lỗ corpus). Best-effort."""
+    if _PROM and _settings.metrics_enabled:
+        try:
+            RETRIEVAL_ZERO_HITS.inc()
         except Exception:
             pass
 

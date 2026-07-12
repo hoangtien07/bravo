@@ -51,6 +51,7 @@ def _conv_lock(session_id: uuid.UUID) -> asyncio.Lock:
 class ChatIn(BaseModel):
     question: str
     attachment_ids: list[uuid.UUID] = []
+    source_ids: list[uuid.UUID] = []   # P4-lite: GHIM tài liệu workspace vào ngữ cảnh lượt này
 
 
 async def _load_attachment_payloads(
@@ -186,6 +187,7 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
         db, identity, conversation_id, body.attachment_ids)
 
     session = AgentSession(db, identity, session_id=conversation_id)
+    session.pinned_source_ids = body.source_ids   # P4-lite: pin workspace docs into this turn
 
     lock = _conv_lock(conversation_id)
 

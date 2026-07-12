@@ -29,6 +29,15 @@ _FTS = "simple"
 _log = logging.getLogger("bravo.rag")
 
 
+def _record_zero_hit() -> None:
+    """F9: đẩy counter zero-hit (best-effort; observability là tuỳ chọn)."""
+    try:
+        from app.observability import record_zero_hit
+        record_zero_hit()
+    except Exception:
+        pass
+
+
 @dataclass
 class Retrieved:
     chunk_id: str
@@ -240,6 +249,7 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
         # Q10 corpus-ops: a zero-hit query is a corpus gap signal — log it so the weekly
         # ritual (docs/CORPUS-OPS.md) can turn recurring gaps into acquisition work.
         _log.info("retrieval.gap zero_hit query=%r", query[:160])
+        _record_zero_hit()   # F9: đếm để corpus-ops thấy lỗ (không còn chỉ nằm trong log text)
         return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
     if not use_rerank:
@@ -304,6 +314,7 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
     fused = apply_version_policy(boost_for_bravo_intent(primary, rrf_fuse(*branches)))
     if not fused:
         _log.info("retrieval.gap zero_hit (multi) primary=%r", primary[:160])
+        _record_zero_hit()   # F9
         return []
     if not use_rerank:
         return await _maybe_expand(db, identity, fused[:top_n])

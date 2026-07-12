@@ -8,12 +8,13 @@ export async function streamChat(
   question: string,
   onEvent: (e: SseEvent) => void,
   signal: AbortSignal,
-  attachmentIds: string[] = []
+  attachmentIds: string[] = [],
+  sourceIds: string[] = []
 ): Promise<void> {
   const res = await fetch(`/api/chat/${conversationId}/messages`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({ question, attachment_ids: attachmentIds }),
+    body: JSON.stringify({ question, attachment_ids: attachmentIds, source_ids: sourceIds }),
     signal,
   });
   if (!res.ok || !res.body) {

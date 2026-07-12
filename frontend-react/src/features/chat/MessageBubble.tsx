@@ -5,7 +5,7 @@ import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { Check, ChevronDown, Cloud, Copy, Flag, Lock, Quote, RefreshCw, ShieldCheck, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
+import { Check, ChevronDown, Cloud, Copy, Flag, Lock, Pencil, Quote, RefreshCw, ShieldCheck, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
 import { Badge, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { DraftCard } from "./DraftCard";
@@ -41,6 +41,7 @@ interface Props {
   onFeedback?: (messageId: string, v: "like" | "dislike") => void;
   onReport?: (messageId: string) => void;
   onRegenerate?: (messageId: string) => void;
+  onEdit?: (messageId: string, newText: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   readOnly?: boolean;
@@ -92,8 +93,10 @@ function focusSource(n: number): void {
   }, 60);
 }
 
-export function MessageBubble({ m, onCite, onFeedback, onReport, onRegenerate, onApprove, onReject, readOnly }: Props) {
+export function MessageBubble({ m, onCite, onFeedback, onReport, onRegenerate, onEdit, onApprove, onReject, readOnly }: Props) {
   const isUser = m.role === "user";
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(m.content);
   const mdComponents = {
     // Khối ```mermaid -> render sơ đồ (thay cả <pre>); còn lại giữ <pre> mặc định.
     pre({ children, ...rest }: any) {
@@ -140,6 +143,28 @@ export function MessageBubble({ m, onCite, onFeedback, onReport, onRegenerate, o
           </div>
         )}
         {!isUser && m.steps && <Steps steps={m.steps} />}
+        {isUser && editing ? (
+          <div className="min-w-[16rem]">
+            <textarea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="w-full rounded-md bg-primary-foreground/10 p-2 text-sm text-primary-foreground outline-none"
+              rows={Math.min(8, Math.max(2, draft.split("\n").length))}
+            />
+            <div className="mt-1 flex justify-end gap-2 text-xs">
+              <button className="opacity-80 hover:opacity-100" onClick={() => { setEditing(false); setDraft(m.content); }}>Huỷ</button>
+              <button
+                className="font-medium hover:underline"
+                onClick={() => {
+                  const t = draft.trim();
+                  if (t && t !== m.content && m.id) onEdit?.(m.id, t);
+                  setEditing(false);
+                }}
+              >Lưu & gửi lại</button>
+            </div>
+          </div>
+        ) : (
         <div className={cn("prose-chat text-sm", isUser ? "text-primary-foreground" : "")}>
           {m.content ? (
             isUser ? (
@@ -174,6 +199,14 @@ export function MessageBubble({ m, onCite, onFeedback, onReport, onRegenerate, o
             </div>
           ) : null}
         </div>
+        )}
+        {isUser && !editing && m.id && onEdit && (
+          <div className="mt-1 flex justify-end">
+            <button aria-label="sửa câu hỏi" title="Sửa & gửi lại" className="p-1 rounded hover:bg-primary-foreground/15 text-primary-foreground/70" onClick={() => { setDraft(m.content); setEditing(true); }}>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         {!isUser && m.draft?.payload && (
           <DraftCard payload={m.draft.payload as any} draftId={m.draft.draft_id} onApprove={onApprove} onReject={onReject} readOnly={readOnly} />
         )}

@@ -143,6 +143,23 @@ export function ChatView() {
     useChat.setState((s) => ({ messages: s.messages.slice(0, idx - 1) })); // drop the old turn
     onSend(userMsg.content);   // re-run (BE re-persists the user turn fresh)
   };
+  // P3: edit a user question — truncate from that turn (inclusive) and re-run with the new text.
+  const edit = async (userMessageId: string, newText: string) => {
+    if (!conversationId || sending) return;
+    const idx = messages.findIndex((m) => m.id === userMessageId);
+    if (idx < 0) return;
+    try {
+      await api(`/api/conversations/${conversationId}/truncate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_message_id: userMessageId, inclusive: true }),
+      });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Không sửa được câu hỏi");
+      return;
+    }
+    useChat.setState((s) => ({ messages: s.messages.slice(0, idx) }));
+    onSend(newText);
+  };
   const share = async () => {
     if (!conversationId) return;
     const { url } = await api<{ url: string }>(`/api/conversations/${conversationId}/share`, { method: "POST" });
@@ -165,7 +182,7 @@ export function ChatView() {
               </div>
             )}
             {messages.map((m, i) => (
-              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onReport={report} onRegenerate={i === messages.length - 1 ? regenerate : undefined} onApprove={approve} onReject={reject} />
+              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onReport={report} onRegenerate={i === messages.length - 1 ? regenerate : undefined} onEdit={edit} onApprove={approve} onReject={reject} />
             ))}
           </div>
           {showJump && (

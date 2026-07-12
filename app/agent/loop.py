@@ -614,6 +614,7 @@ class AgentSession:
         self.memory = MemoryStore(db, self.session_id, identity)
         self.budget = budget or Budget()
         self.agent_run_id = uuid.uuid4()
+        self.pinned_source_ids: list = []   # P4-lite: workspace sources ghim vào ngữ cảnh
 
     async def _llm_decide(self, messages: list[dict],
                           context_objs: list) -> tuple[AgentDecision, int]:
@@ -884,6 +885,31 @@ class AgentSession:
         except Exception:
             return {}
 
+    async def _pinned_chunks(self, source_ids: list, per_source: int = 3) -> list:
+        """P4-lite: fetch a few chunks from workspace sources the user PINNED for this turn, RLS-
+        filtered IN SQL (chunk_scope_filter — a pinned id the user can't read returns nothing, no
+        leak). Shaped as Retrieved so downstream context-building + citations work unchanged."""
+        if not source_ids:
+            return []
+        try:
+            from sqlalchemy import select as _select
+
+            from app.database.models import Chunk
+            from app.rag.retriever import Retrieved
+            from app.security.rls import chunk_scope_filter
+            rows = (await self.db.execute(
+                _select(Chunk).where(
+                    Chunk.source_id.in_(source_ids), chunk_scope_filter(self.identity))
+                .order_by(Chunk.source_id, Chunk.page_number.nullslast())
+                .limit(per_source * max(1, len(source_ids)))
+            )).scalars().all()
+        except Exception:
+            return []
+        return [Retrieved(chunk_id=str(c.id), content=c.content, source_id=str(c.source_id),
+                          page_number=c.page_number, sheet_name=c.sheet_name,
+                          cell_range=c.cell_range, score=2.0, extra=c.extra or {})
+                for c in rows]
+
     async def _identity_block(self) -> str:
         """S7a: một dòng danh tính người hỏi (tên · phòng ban · vai trò) PIN vào prompt, để agent
         xưng hô đúng và dùng ngữ cảnh phòng ban khi câu hỏi mơ hồ. Best-effort + cache/phiên."""
@@ -952,6 +978,12 @@ class AgentSession:
         except asyncio.TimeoutError:
             _log.warning("retrieval timed out after %ss", _settings.retrieval_timeout_s)
             chunks = []
+        # P4-lite: prepend user-pinned workspace sources (RLS-filtered), dedup, cap total context.
+        pinned = await self._pinned_chunks(getattr(self, "pinned_source_ids", []) or [])
+        if pinned:
+            seen = {getattr(c, "chunk_id", None) for c in pinned}
+            chunks = pinned + [c for c in chunks if getattr(c, "chunk_id", None) not in seen]
+            chunks = chunks[:14]
 
         labels = await self._source_labels(chunks)
         blocks: list[str] = []

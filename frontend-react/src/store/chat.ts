@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { streamChat } from "@/api/sse";
 import { uploadAttachment, deleteAttachment, getAttachment } from "@/api/workspace";
-import type { ChatMessage, StagedAttachment } from "@/api/types";
+import type { ChatMessage, SourceItem, StagedAttachment } from "@/api/types";
 
 function uuid() {
   return crypto.randomUUID();
@@ -17,11 +17,14 @@ interface ChatState {
   sending: boolean;
   abort: AbortController | null;
   staged: StagedAttachment[];
+  pinnedSources: SourceItem[];   // P4-lite: workspace docs ghim vào ngữ cảnh hội thoại
   newConversation: () => string;
   setConversation: (id: string, messages: ChatMessage[]) => void;
   addMessage: (m: ChatMessage) => void;
   attach: (files: FileList | File[]) => Promise<void>;
   removeAttachment: (localId: string) => void;
+  pinSource: (s: SourceItem) => void;
+  unpinSource: (id: string) => void;
   send: (question: string, onDone?: () => void) => Promise<void>;
   stop: () => void;
 }
@@ -32,14 +35,19 @@ export const useChat = create<ChatState>((set, get) => ({
   sending: false,
   abort: null,
   staged: [],
+  pinnedSources: [],
+
+  pinSource: (s) => set((st) => st.pinnedSources.some((x) => x.id === s.id)
+    ? st : { pinnedSources: [...st.pinnedSources, s] }),
+  unpinSource: (id) => set((st) => ({ pinnedSources: st.pinnedSources.filter((x) => x.id !== id) })),
 
   newConversation: () => {
     const id = uuid();
-    set({ conversationId: id, messages: [], staged: [] });
+    set({ conversationId: id, messages: [], staged: [], pinnedSources: [] });
     return id;
   },
 
-  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [] }),
+  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [], pinnedSources: [] }),
 
   addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
 
@@ -133,6 +141,7 @@ export const useChat = create<ChatState>((set, get) => ({
     const ready = stagedNow.filter((a) => a.status === "ready" && a.id);
     const attachmentIds = ready.map((a) => a.id!) as string[];
     const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
+    const sourceIds = get().pinnedSources.map((s) => s.id);   // P4-lite: pinned workspace docs
 
     let cid = get().conversationId;
     if (!cid) cid = get().newConversation();
@@ -217,7 +226,8 @@ export const useChat = create<ChatState>((set, get) => ({
         }
       },
       ac.signal,
-      attachmentIds
+      attachmentIds,
+      sourceIds
     );
     set({ sending: false, abort: null });
     onDone?.();
