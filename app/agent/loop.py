@@ -454,6 +454,15 @@ def _register_builtin_tools() -> None:
             payload_builder=_build_journal_payload,
         )(_stub_create_journal_entry)
 
+    if "list_drafts" not in REGISTRY:
+        register(
+            "list_drafts",
+            description="Liệt kê các bút toán NHÁP đang CHỜ DUYỆT của người dùng (RLS theo phòng).",
+            json_schema={"type": "object", "properties": {}},
+            read_only=True,
+            required_permission="draft:create",
+        )(_list_drafts)
+
     if "preview_journal_entry" not in REGISTRY:
         register(
             "preview_journal_entry",
@@ -484,6 +493,19 @@ async def _kb_search(q: str, *, identity: Identity, db) -> dict:
         excerpt = (h.content or "")[:400]
         lines.append(f"[{i}] {frame_untrusted(excerpt, source=h.source_id)} {h.citation()}")
     return {"kb_snippets": "\n".join(lines)}
+
+
+async def _list_drafts(*, identity: Identity, db) -> dict:
+    """T5: read-only tool — bút toán nháp đang chờ duyệt của người dùng (RLS-in-SQL). Cho phép
+    agent trả lời 'nháp nào đang chờ tôi duyệt?' mà nó tự tạo nhưng trước đây không liệt kê được."""
+    from app.erp import draft_queue
+    rows = await draft_queue.list_pending(db, identity)
+    if not rows:
+        return {"kb_snippets": "Không có bút toán nháp nào đang chờ duyệt."}
+    lines = [f"- Nháp {d.id} ({getattr(d, 'kind', '?')}, trạng thái {getattr(d, 'status', '?')})"
+             for d in rows[:20]]
+    more = "" if len(rows) <= 20 else f"\n… và {len(rows) - 20} nháp khác."
+    return {"kb_snippets": "Các bút toán nháp đang chờ duyệt:\n" + "\n".join(lines) + more}
 
 
 def _metric_lookup(metric_id: str, params: dict | None = None, *, identity: Identity):

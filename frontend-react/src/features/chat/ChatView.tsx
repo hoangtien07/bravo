@@ -124,6 +124,25 @@ export function ChatView() {
     }).then(() => alert("Đã gửi báo cáo cho đội IT. Cảm ơn bạn!"))
       .catch((e) => alert(e instanceof Error ? e.message : "Không gửi được báo cáo"));
   };
+  // P3: regenerate — drop this turn (user question + its answer) and re-run the same question.
+  const regenerate = async (assistantId: string) => {
+    if (!conversationId || sending) return;
+    const idx = messages.findIndex((m) => m.id === assistantId);
+    if (idx < 1) return;
+    const userMsg = messages[idx - 1];
+    if (userMsg.role !== "user" || !userMsg.id) return;
+    try {
+      await api(`/api/conversations/${conversationId}/truncate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ from_message_id: userMsg.id, inclusive: true }),
+      });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Không tạo lại được câu trả lời");
+      return;
+    }
+    useChat.setState((s) => ({ messages: s.messages.slice(0, idx - 1) })); // drop the old turn
+    onSend(userMsg.content);   // re-run (BE re-persists the user turn fresh)
+  };
   const share = async () => {
     if (!conversationId) return;
     const { url } = await api<{ url: string }>(`/api/conversations/${conversationId}/share`, { method: "POST" });
@@ -146,7 +165,7 @@ export function ChatView() {
               </div>
             )}
             {messages.map((m, i) => (
-              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onReport={report} onApprove={approve} onReject={reject} />
+              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onReport={report} onRegenerate={i === messages.length - 1 ? regenerate : undefined} onApprove={approve} onReject={reject} />
             ))}
           </div>
           {showJump && (

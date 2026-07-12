@@ -151,6 +151,28 @@ def test_rename_share_and_rls(monkeypatch):
     _run(monkeypatch, body)
 
 
+def test_truncate_drops_turn_and_resets_summary(monkeypatch):
+    async def body(c):
+        cid = str(uuid.uuid4())
+        e1 = await _stream(c, cid, "Câu hỏi một")
+        await _stream(c, cid, "Câu hỏi hai")
+        # 4 messages persisted (2 user + 2 assistant).
+        msgs = (await c.get(f"/api/conversations/{cid}")).json()["messages"]
+        assert len(msgs) == 4
+        # Regenerate the FIRST answer: truncate from the first user message (inclusive) -> removes
+        # everything from turn 1 onward (P3).
+        first_user = next(m for m in msgs if m["role"] == "user")
+        r = await c.post(f"/api/conversations/{cid}/truncate",
+                         json={"from_message_id": first_user["id"], "inclusive": True})
+        assert r.status_code == 200 and r.json()["deleted"] == 4
+        assert len((await c.get(f"/api/conversations/{cid}")).json()["messages"]) == 0
+        # Foreign / unknown message id -> 404.
+        assert (await c.post(f"/api/conversations/{cid}/truncate",
+                             json={"from_message_id": str(uuid.uuid4())})).status_code == 404
+
+    _run(monkeypatch, body)
+
+
 def test_done_carries_message_id_and_feedback_report(monkeypatch):
     async def body(c):
         cid = str(uuid.uuid4())

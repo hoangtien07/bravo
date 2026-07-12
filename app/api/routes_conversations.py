@@ -15,13 +15,13 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent import conversations as conv_svc
 from app.agent.loop import AgentSession
 from app.database import get_db
-from app.database.models import Conversation, ConversationMessage, MemoryBlock
+from app.database.models import AuditLog, Conversation, ConversationMessage, MemoryBlock
 from app.ratelimit import chat_limit, limiter
 from app.security.auth import get_current_identity, require_permission
 from app.security.rls import Identity, conversation_scope_filter
@@ -288,6 +288,62 @@ async def delete_conversation(conversation_id: uuid.UUID,
     await db.delete(conv)
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+class TruncateIn(BaseModel):
+    from_message_id: uuid.UUID
+    inclusive: bool = True   # True: xoá cả tin mốc (regenerate assistant / edit user)
+
+
+@router.post("/conversations/{conversation_id}/truncate")
+async def truncate_conversation(conversation_id: uuid.UUID, body: TruncateIn,
+                                identity: Identity = Depends(get_current_identity),
+                                db: AsyncSession = Depends(get_db)) -> dict:
+    """ADR-0026: cắt hội thoại từ một tin nhắn trở đi (nền cho regenerate/edit tuyến tính).
+
+    Cắt theo `seq` (thứ tự tuyệt đối, không đụng độ như created_at). Ghi AuditLog (actor, session,
+    message_ids, content sha256) — sửa/hỏi lại KHÔNG được xoá sạch dấu vết tuân thủ (F-3). Xoá
+    summary MemoryBlocks (reset watermark, khớp B1 S3) + clear conversation_id của attachment thuộc
+    tin bị cắt (không thì re-inject mãi). Chạy dưới khoá per-conversation (không đua với lượt đang chạy).
+    """
+    import hashlib
+
+    from app.database.models import Attachment
+    await _owned(db, conversation_id, identity)
+    lock = _conv_lock(conversation_id)
+    if lock.locked():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Hội thoại đang xử lý một yêu cầu khác.")
+    async with lock:
+        target = (await db.execute(select(ConversationMessage).where(
+            ConversationMessage.id == body.from_message_id,
+            ConversationMessage.session_id == conversation_id))).scalar_one_or_none()
+        if target is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Tin nhắn không tồn tại")
+        cond = (ConversationMessage.seq >= target.seq if body.inclusive
+                else ConversationMessage.seq > target.seq)
+        doomed = list((await db.execute(select(ConversationMessage).where(
+            ConversationMessage.session_id == conversation_id, cond)
+            .order_by(ConversationMessage.seq))).scalars().all())
+        if not doomed:
+            return {"deleted": 0}
+        doomed_ids = [m.id for m in doomed]
+        db.add(AuditLog(actor_id=identity.employee_id, action="conversation.truncate", detail={
+            "session_id": str(conversation_id), "count": len(doomed_ids),
+            "message_ids": [str(i) for i in doomed_ids],
+            "content_sha256": [hashlib.sha256((m.content or "").encode()).hexdigest() for m in doomed],
+        }))
+        # Attachments bound to a doomed turn: unbind from the conversation so they stop re-injecting.
+        await db.execute(update(Attachment)
+                         .where(Attachment.message_id.in_(doomed_ids))
+                         .values(conversation_id=None))
+        # Rolling-summary is now wrong (covered deleted turns) -> reset watermark.
+        await db.execute(delete(MemoryBlock).where(
+            MemoryBlock.session_id == conversation_id,
+            MemoryBlock.label.in_(("summary", "summary_upto", "summary_n"))))
+        await db.execute(delete(ConversationMessage).where(
+            ConversationMessage.id.in_(doomed_ids)))
+        await db.commit()
+    return {"deleted": len(doomed_ids)}
 
 
 @router.post("/conversations/{conversation_id}/share")

@@ -190,14 +190,22 @@ export const useChat = create<ChatState>((set, get) => ({
             patchLast((m) => (m.content += e.delta));
             break;
           case "done":
-            patchLast((m) => {
-              m.streaming = false;
-              m.grounded = e.grounded;
-              m.routedCloud = e.routed_cloud;
-              m.clarify = e.clarify;
-              m.statusText = undefined;
-              if (e.message_id) m.id = e.message_id;   // P1: enables like/dislike immediately
-              if (e.citations) m.citations = e.citations;   // pruned citations from the gate
+            set((s) => {
+              const msgs = s.messages.slice();
+              const last = msgs.length - 1;
+              if (last >= 0) {
+                msgs[last] = {
+                  ...msgs[last], streaming: false, grounded: e.grounded,
+                  routedCloud: e.routed_cloud, clarify: e.clarify, statusText: undefined,
+                  ...(e.message_id ? { id: e.message_id } : {}),        // enables like/dislike now
+                  ...(e.citations ? { citations: e.citations } : {}),   // pruned citations
+                };
+              }
+              // Also stamp the user turn's id (needed to truncate/regenerate from it).
+              if (last - 1 >= 0 && e.user_message_id && msgs[last - 1].role === "user") {
+                msgs[last - 1] = { ...msgs[last - 1], id: e.user_message_id };
+              }
+              return { messages: msgs };
             });
             break;
           case "error":
