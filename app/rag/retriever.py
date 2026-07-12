@@ -96,8 +96,12 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
     Catches exact terms/codes/numbers (e.g. số chứng từ, mã tài khoản) that dense
     embeddings miss — RLS enforced IN the query, same as vector_search.
     """
-    tsv = func.to_tsvector(_FTS, Chunk.content)
-    tsq = func.plainto_tsquery(_FTS, query)
+    # unaccent CẢ HAI phía (migration 0008): người dùng VN gõ không dấu rất phổ biến
+    # ("cach len bao cao can doi phat sinh") — so khớp thô trượt hết nội dung có dấu ->
+    # retrieval nhiễu -> abstain/clarify sai. Câu CÓ dấu không đổi hành vi (2 phía cùng
+    # bỏ dấu); nhập nhằng đồng-tự-khác-dấu (bán/bàn) đã có dense + rerank phân xử qua RRF.
+    tsv = func.to_tsvector(_FTS, func.unaccent(Chunk.content))
+    tsq = func.plainto_tsquery(_FTS, func.unaccent(query))
     stmt = (
         select(Chunk, func.ts_rank(tsv, tsq).label("rank"))
         .where(chunk_scope_filter(identity, "read"))  # <-- RLS
