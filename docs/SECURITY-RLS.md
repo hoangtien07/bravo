@@ -20,9 +20,23 @@ Lọc trong bộ nhớ ứng dụng là *phản pattern* — một bug quên-l�
 
 ### 2.3 Gắn nhãn tài nguyên
 - **Tài liệu / chunk / bản ghi** gắn 0..n `department_id`.
-- **0 phòng ban = global** (mọi người có quyền `read` đều thấy).
 - **n phòng ban = OR scope** (thành viên của *bất kỳ* phòng nào trong đó thấy được).
 - Với phân tích ERP: scope thêm chiều **đơn vị cơ sở / kỳ kế toán** khi áp dụng.
+
+### 2.4 Ba tầng hiển thị v2 cho Source/Chunk (ADR-0020) — thay quy ước "rỗng = global"
+Từ v2, `Source`/`Chunk` mang cột **`visibility`** tường minh (`personal|department|global`) + `owner_id`:
+- **personal** — chỉ `owner_id` (+ admin) thấy. Upload end-user MẶC ĐỊNH tầng này (fail-closed).
+- **department** — scope qua `source_departments` (tầng B, cơ chế M2M cũ).
+- **global** — toàn công ty; cần hành động publish tường minh (`doc:create:all`).
+
+Predicate: `chunk_scope_filter`/`source_scope_filter` = `(personal & owner=me) OR global OR (department & dept-overlap)`. **Không còn suy luận `cardinality(department_ids)=0 ⇒ global`** — một upload cá nhân (mảng phòng rỗng) KHÔNG phải global.
+
+> ⚠ **Ba quy ước NULL/empty-scope cùng tồn tại — đừng copy-paste nhầm:**
+> 1. `Chunk`/`Source.visibility` (v2, ở trên) — nguồn sự thật cho tài liệu.
+> 2. `ArchivalPassage`: `owner_id == me OR department_ids && my_depts` (memory.py) — KHÔNG có cột visibility.
+> 3. `Draft.department_id IS NULL = global` (WP-E) — quy ước riêng của hàng đợi nháp.
+>
+> Khi thêm bảng có scope mới: dùng mô hình visibility tường minh (#1), KHÔNG tái dùng quy ước rỗng=global.
 
 ## 3. Điểm cưỡng chế (enforcement points)
 

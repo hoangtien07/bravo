@@ -26,6 +26,10 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0016](0016-pivot-standalone-ap-vertical.md) | Mũi nhọn đầu = "Copilot AP" độc lập (ship trên chứng từ upload, không phụ thuộc ERP API) | **Accepted** | 2026-07-05 |
 | [0017](0017-internal-demo-feature-package.md) | Gói tính năng DEMO NỘI BỘ: Knowledge Graph + AP đầy đủ + agent trên mock (nới tạm freeze 0016) | Accepted | 2026-06-29 |
 | [0018](0018-agentic-packaging-knowledge-as-data.md) | Đóng gói agentic: knowledge/rule-as-data + config-as-boot (single-tenant); cổng L3 cho multi-tenant/DSL; mốc chuyển-local trước dữ liệu thật | Accepted (hẹp) | 2026-07-09 |
+| [0019](0019-cloud-only-llm-strategy.md) | Chiến lược LLM **CLOUD-ONLY** v2.0 (nghỉ hưu local mặc định) — supersedes 0003/0009 | **Accepted** | 2026-07-12 |
+| [0020](0020-positioning-v2-cloud.md) | Định vị v2.0 — moat = nghiệp vụ BRAVO + kỷ luật số (không phải chủ quyền) — supersedes 0006 | **Accepted** | 2026-07-12 |
+| [0021](0021-labeled-world-knowledge-mode.md) | Chế độ trả lời "kiến thức chung" có nhãn (thay hard-abstain); số vẫn gated | **Accepted** | 2026-07-12 |
+| [0022](0022-egress-guard-to-audit.md) | Egress GUARD → AUDIT (giữ code phân loại, đổi vai trò dưới cloud-only) — amends 0011 | **Accepted** | 2026-07-12 |
 
 > ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 (verify-gate) **đã implement** — nối vào agent loop (`app/agent/loop.py`, gate `verify_numbers` tại `_finish_answer`), có test (`tests/test_grounding.py`). Trạng thái triển khai chi tiết: **nguồn sự thật = [../work-packages/STATUS.md](../work-packages/STATUS.md)**. Đánh giá tổng thể mức độ trưởng thành: [../COUNCIL-REVIEW-2026-07.md](../COUNCIL-REVIEW-2026-07.md).
 
