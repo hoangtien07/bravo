@@ -151,6 +151,22 @@ def test_rename_share_and_rls(monkeypatch):
     _run(monkeypatch, body)
 
 
+def test_advisory_lock_path_completes(monkeypatch):
+    """ADR-0024: with use_pg_advisory_lock on, a turn still completes and the lock is released
+    (a second turn on the same conversation also succeeds)."""
+    from app.config import get_settings
+    monkeypatch.setattr(get_settings(), "use_pg_advisory_lock", True)
+
+    async def body(c):
+        cid = str(uuid.uuid4())
+        ev1 = await _stream(c, cid, "Câu hỏi một (advisory)")
+        assert ev1[-1]["type"] == "done"
+        ev2 = await _stream(c, cid, "Câu hỏi hai (advisory)")   # lock released -> succeeds
+        assert ev2[-1]["type"] == "done"
+
+    _run(monkeypatch, body)
+
+
 def test_truncate_drops_turn_and_resets_summary(monkeypatch):
     async def body(c):
         cid = str(uuid.uuid4())

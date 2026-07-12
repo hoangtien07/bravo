@@ -122,6 +122,10 @@ class Settings(BaseSettings):
     # attach_image_max is the operative per-prompt cap on total images.
     attach_image_turns: int = 3
     attach_image_max: int = 4
+    # ADR-0024: the per-conversation lock is in-process (đủ cho single-worker). BẬT cờ này khi chạy
+    # NHIỀU worker/tiến trình để thêm khoá Postgres advisory (pg_try_advisory_lock trên hashtext của
+    # session_id) — chống hai worker cùng chạy một hội thoại. Default off (chưa deploy multi-worker).
+    use_pg_advisory_lock: bool = False
     # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).

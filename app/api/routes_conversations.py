@@ -15,11 +15,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent import conversations as conv_svc
 from app.agent.loop import AgentSession
+from app.config import get_settings
 from app.database import get_db
 from app.database.models import AuditLog, Conversation, ConversationMessage, MemoryBlock
 from app.ratelimit import chat_limit, limiter
@@ -67,7 +68,6 @@ async def _load_attachment_payloads(
     import base64
     from pathlib import Path
 
-    from app.config import get_settings
     from app.database.models import Attachment
 
     settings = get_settings()
@@ -202,6 +202,18 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                 ensure_ascii=False) + "\n\n")
             return
         async with lock:
+            # ADR-0024: cross-worker guard (chỉ khi bật cờ) — chống hai tiến trình cùng hội thoại.
+            adv = get_settings().use_pg_advisory_lock
+            if adv:
+                got = (await db.execute(
+                    text("SELECT pg_try_advisory_lock(hashtext(:s))"),
+                    {"s": str(conversation_id)})).scalar()
+                if not got:
+                    yield ("data: " + json.dumps(
+                        {"type": "error", "code": "busy",
+                         "message": "Hội thoại đang xử lý một yêu cầu khác, vui lòng đợi."},
+                        ensure_ascii=False) + "\n\n")
+                    return
             started = _time.monotonic()
             first_token_seen = False
             try:
@@ -224,6 +236,12 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                 )
             finally:
                 record_turn(_time.monotonic() - started)   # F5: turn-latency histogram
+                if adv:
+                    try:
+                        await db.execute(text("SELECT pg_advisory_unlock(hashtext(:s))"),
+                                         {"s": str(conversation_id)})
+                    except Exception:  # noqa: BLE001
+                        pass
                 try:
                     await conv_svc.touch(db, conversation_id)
                 except Exception:  # noqa: BLE001
