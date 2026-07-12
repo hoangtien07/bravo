@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Paperclip, Send, Square, X, FileText, Loader2 } from "lucide-react";
 import { Button, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,16 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
   const [text, setText] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Autosize: grow with content up to ~10 rows, then scroll inside.
+  const autosize = () => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 240) + "px";
+  };
+  useEffect(() => { autosize(); }, [text]);
 
   // Fail LOUD: never let a turn be sent while an attachment is still processing or has failed —
   // otherwise the file is silently dropped and the answer is wrong for lack of context (RC-FE1).
@@ -89,6 +99,7 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
           <Paperclip className="h-4 w-4" />
         </Button>
         <Textarea
+          ref={taRef}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -98,8 +109,8 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
               submit();
             }
           }}
-          placeholder={dragOver ? "Thả tệp để đính kèm…" : "Hỏi tri thức, số liệu, hoặc đính kèm tệp… (Enter để gửi)"}
-          className="min-h-[44px] max-h-40"
+          placeholder={dragOver ? "Thả tệp để đính kèm…" : "Hỏi tri thức, số liệu, hoặc đính kèm tệp… (Enter để gửi, Shift+Enter xuống dòng)"}
+          className="min-h-[44px] resize-none overflow-y-auto"
           aria-label="ô nhập câu hỏi"
         />
         {sending ? (

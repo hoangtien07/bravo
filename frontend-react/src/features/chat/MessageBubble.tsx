@@ -5,7 +5,7 @@ import remarkMath from "remark-math";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
-import { ChevronDown, Cloud, Lock, Quote, ShieldCheck, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
+import { Check, ChevronDown, Cloud, Copy, Flag, Lock, Quote, ShieldCheck, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
 import { Badge, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { DraftCard } from "./DraftCard";
@@ -39,9 +39,30 @@ interface Props {
   m: ChatMessage;
   onCite?: (citations: string[]) => void;
   onFeedback?: (messageId: string, v: "like" | "dislike") => void;
+  onReport?: (messageId: string) => void;
   onApprove?: (id: string) => void;
   onReject?: (id: string) => void;
   readOnly?: boolean;
+}
+
+// P1: copy an assistant answer to the clipboard, with a brief "copied" state.
+function CopyButton({ text }: { text: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      aria-label="sao chép"
+      className="p-1 rounded hover:bg-muted text-muted-foreground"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(text);
+          setDone(true);
+          setTimeout(() => setDone(false), 1500);
+        } catch { /* clipboard blocked */ }
+      }}
+    >
+      {done ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
 }
 
 // Biến marker [N] trong câu trả lời thành link #cite-N (bỏ qua [text](url) đã có).
@@ -70,7 +91,7 @@ function focusSource(n: number): void {
   }, 60);
 }
 
-export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, readOnly }: Props) {
+export function MessageBubble({ m, onCite, onFeedback, onReport, onApprove, onReject, readOnly }: Props) {
   const isUser = m.role === "user";
   const mdComponents = {
     // Khối ```mermaid -> render sơ đồ (thay cả <pre>); còn lại giữ <pre> mặc định.
@@ -146,7 +167,11 @@ export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, read
                 </>
               );
             })()
-          ) : m.streaming ? <Spinner /> : null}
+          ) : m.streaming ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Spinner /> {m.statusText && <span className="text-xs">{m.statusText}</span>}
+            </div>
+          ) : null}
         </div>
         {!isUser && m.draft?.payload && (
           <DraftCard payload={m.draft.payload as any} draftId={m.draft.draft_id} onApprove={onApprove} onReject={onReject} readOnly={readOnly} />
@@ -164,12 +189,18 @@ export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, read
                 <Quote className="h-3 w-3" /> {m.citations.length} nguồn
               </button>
             )}
-            {m.id && onFeedback && (
-              <span className="ml-auto flex gap-1">
-                <button aria-label="thích" className={cn("p-1 rounded hover:bg-muted", m.feedback === "like" && "text-success")} onClick={() => onFeedback(m.id!, "like")}><ThumbsUp className="h-3.5 w-3.5" /></button>
-                <button aria-label="không thích" className={cn("p-1 rounded hover:bg-muted", m.feedback === "dislike" && "text-destructive")} onClick={() => onFeedback(m.id!, "dislike")}><ThumbsDown className="h-3.5 w-3.5" /></button>
-              </span>
-            )}
+            <span className="ml-auto flex items-center gap-1">
+              {m.content && <CopyButton text={m.content} />}
+              {m.id && onFeedback && (
+                <>
+                  <button aria-label="thích" className={cn("p-1 rounded hover:bg-muted", m.feedback === "like" && "text-success")} onClick={() => onFeedback(m.id!, "like")}><ThumbsUp className="h-3.5 w-3.5" /></button>
+                  <button aria-label="không thích" className={cn("p-1 rounded hover:bg-muted", m.feedback === "dislike" && "text-destructive")} onClick={() => onFeedback(m.id!, "dislike")}><ThumbsDown className="h-3.5 w-3.5" /></button>
+                </>
+              )}
+              {m.id && onReport && (
+                <button aria-label="báo lỗi cho IT" title="Báo lỗi cho đội IT" className="p-1 rounded hover:bg-muted text-muted-foreground" onClick={() => onReport(m.id!)}><Flag className="h-3.5 w-3.5" /></button>
+              )}
+            </span>
           </div>
         )}
       </div>

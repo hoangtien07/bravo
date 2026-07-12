@@ -101,11 +101,28 @@ export function ChatView() {
     if (reason === null) return;
     await api(`/api/drafts/${did}/reject`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason }) });
   };
+  const patchFeedback = (mid: string, v: "like" | "dislike" | null) =>
+    useChat.setState((s) => ({ messages: s.messages.map((m) => (m.id === mid ? { ...m, feedback: v } : m)) }));
+
   const feedback = async (mid: string, v: "like" | "dislike") => {
     if (!conversationId) return;
+    const next = messages.find((m) => m.id === mid)?.feedback === v ? null : v;
+    patchFeedback(mid, next);   // optimistic
     await api(`/api/conversations/${conversationId}/messages/${mid}/feedback`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value: v }),
-    });
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ value: next }),
+    }).catch(() => patchFeedback(mid, next === v ? null : v));   // revert on failure
+  };
+  // P1: report a bad answer to the IT team (free-text + category), reuses the feedback endpoint.
+  const report = async (mid: string) => {
+    if (!conversationId) return;
+    const comment = window.prompt("Mô tả vấn đề để gửi đội IT cải thiện phần mềm:", "");
+    if (comment === null) return;
+    patchFeedback(mid, "dislike");
+    await api(`/api/conversations/${conversationId}/messages/${mid}/feedback`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: "dislike", comment, category: "other" }),
+    }).then(() => alert("Đã gửi báo cáo cho đội IT. Cảm ơn bạn!"))
+      .catch((e) => alert(e instanceof Error ? e.message : "Không gửi được báo cáo"));
   };
   const share = async () => {
     if (!conversationId) return;
@@ -129,7 +146,7 @@ export function ChatView() {
               </div>
             )}
             {messages.map((m, i) => (
-              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onApprove={approve} onReject={reject} />
+              <MessageBubble key={i} m={m} onCite={setCites} onFeedback={feedback} onReport={report} onApprove={approve} onReject={reject} />
             ))}
           </div>
           {showJump && (

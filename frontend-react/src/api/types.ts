@@ -28,6 +28,7 @@ export interface ChatMessage {
   routedCloud?: boolean;
   clarify?: boolean;
   streaming?: boolean;
+  statusText?: string;   // P1: transient "đang làm gì" line while streaming
 }
 
 // Chat-message attachment (v2 Track 3) — a staged/uploaded file for the current turn.
@@ -115,12 +116,13 @@ export type SseEvent =
   | { type: "source"; citations: string[] }
   | { type: "attachments"; items: { filename: string; kind: string }[] }
   | { type: "step"; action: string; step_n: number }
+  | { type: "status"; text: string }
   | { type: "tool_call"; tool: string; args: Record<string, unknown> }
   | { type: "tool_result"; tool: string; isError: boolean; summary: string }
   | { type: "draft"; draft_id?: string; kind?: string; payload?: JournalPayload }
   | { type: "answer"; delta: string }
-  | { type: "done"; grounded?: boolean; routed_cloud?: boolean; clarify?: boolean; stopped?: string; citations?: string[]; session_id?: string }
-  | { type: "error"; message: string }
+  | { type: "done"; grounded?: boolean; routed_cloud?: boolean; clarify?: boolean; stopped?: string; citations?: string[]; session_id?: string; message_id?: string; user_message_id?: string }
+  | { type: "error"; message: string; code?: string }
   | { type: "ping" };
 
 export interface Draft {

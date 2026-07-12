@@ -171,6 +171,9 @@ export const useChat = create<ChatState>((set, get) => ({
           case "attachments":
             // Backend echoes what it actually consumed (incl. re-injected prior text files).
             break;
+          case "status":
+            patchLast((m) => (m.statusText = e.text));
+            break;
           case "step":
             patchLast((m) => (m.steps = [...(m.steps || []), { type: "step", action: e.action }]));
             break;
@@ -192,6 +195,9 @@ export const useChat = create<ChatState>((set, get) => ({
               m.grounded = e.grounded;
               m.routedCloud = e.routed_cloud;
               m.clarify = e.clarify;
+              m.statusText = undefined;
+              if (e.message_id) m.id = e.message_id;   // P1: enables like/dislike immediately
+              if (e.citations) m.citations = e.citations;   // pruned citations from the gate
             });
             break;
           case "error":
