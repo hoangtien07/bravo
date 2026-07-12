@@ -18,6 +18,8 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   feedback?: "like" | "dislike" | null;
+  // user message: attachments sent with the turn (filename + kind, for display)
+  attachments?: { filename: string; kind: string }[];
   // assistant runtime extras (streaming)
   steps?: AgentStep[];
   citations?: string[];
@@ -26,6 +28,40 @@ export interface ChatMessage {
   routedCloud?: boolean;
   clarify?: boolean;
   streaming?: boolean;
+}
+
+// Chat-message attachment (v2 Track 3) — a staged/uploaded file for the current turn.
+export interface Attachment {
+  id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  kind: "image" | "text";
+  status: "pending" | "ready" | "failed";
+  token_count?: number;
+  error?: string | null;
+}
+
+// A staged attachment in the composer before/while it uploads.
+export interface StagedAttachment {
+  localId: string;
+  id?: string;              // server id once uploaded
+  name: string;
+  kind: "image" | "text";
+  status: "uploading" | "pending" | "ready" | "failed";
+  previewUrl?: string;      // object URL for image thumbnails
+  error?: string;
+}
+
+// Workspace document (v2 three-tier visibility).
+export interface SourceItem {
+  id: string;
+  filename: string;
+  status: string;
+  knowledge_type?: string | null;
+  visibility: "personal" | "department" | "global";
+  owned: boolean;
+  deduped?: boolean;
 }
 
 export interface AgentStep {
@@ -77,6 +113,7 @@ export interface JournalPayload {
 export type SseEvent =
   | { type: "id"; conversation_id: string; agent_run_id: string }
   | { type: "source"; citations: string[] }
+  | { type: "attachments"; items: { filename: string; kind: string }[] }
   | { type: "step"; action: string; step_n: number }
   | { type: "tool_call"; tool: string; args: Record<string, unknown> }
   | { type: "tool_result"; tool: string; isError: boolean; summary: string }

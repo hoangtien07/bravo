@@ -1,58 +1,89 @@
 import { useRef, useState } from "react";
-import { Paperclip, Send, Square } from "lucide-react";
+import { Paperclip, Send, Square, X, FileText, Loader2 } from "lucide-react";
 import { Button, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
+import type { StagedAttachment } from "@/api/types";
 
 interface Props {
   onSend: (q: string) => void;
   sending: boolean;
   onStop: () => void;
-  onUpload?: (files: FileList | null) => void | Promise<void>;
-  uploading?: boolean;
+  staged: StagedAttachment[];
+  onAttach: (files: FileList | File[]) => void | Promise<void>;
+  onRemoveAttach: (localId: string) => void;
+  onUploadInvoice?: (files: FileList | File[]) => void | Promise<void>; // XML -> journal draft
 }
 
-export function Composer({ onSend, sending, onStop, onUpload, uploading }: Props) {
+const ATTACH_ACCEPT = ".png,.jpg,.jpeg,.webp,.gif,.txt,.md,.markdown,.docx,.pdf,image/*";
+
+export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAttach, onUploadInvoice }: Props) {
   const [text, setText] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const anyUploading = staged.some((a) => a.status === "uploading");
+
   const submit = () => {
     const q = text.trim();
-    if (!q || sending) return;
+    if (!q || sending || anyUploading) return;
     onSend(q);
     setText("");
+  };
+
+  // Split dropped files: XML invoices go to the draft flow; everything else becomes an attachment.
+  const routeFiles = (files: FileList | File[]) => {
+    const arr = Array.from(files);
+    const xml = arr.filter((f) => /\.xml$/i.test(f.name) || f.type.includes("xml"));
+    const rest = arr.filter((f) => !(/\.xml$/i.test(f.name) || f.type.includes("xml")));
+    if (xml.length && onUploadInvoice) void onUploadInvoice(xml);
+    if (rest.length) void onAttach(rest);
   };
 
   return (
     <div
       className={cn("border-t border-border bg-background p-3", dragOver && "ring-2 ring-primary ring-inset")}
-      onDragOver={onUpload ? (e) => { e.preventDefault(); setDragOver(true); } : undefined}
-      onDragLeave={onUpload ? () => setDragOver(false) : undefined}
-      onDrop={onUpload ? (e) => { e.preventDefault(); setDragOver(false); onUpload(e.dataTransfer.files); } : undefined}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); routeFiles(e.dataTransfer.files); }}
     >
+      {staged.length > 0 && (
+        <div className="mx-auto max-w-3xl mb-2 flex flex-wrap gap-2">
+          {staged.map((a) => (
+            <div key={a.localId} className="relative flex items-center gap-2 rounded-md border border-border bg-card px-2 py-1 text-xs">
+              {a.kind === "image" && a.previewUrl ? (
+                <img src={a.previewUrl} alt={a.name} className="h-8 w-8 rounded object-cover" />
+              ) : (
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              )}
+              <span className="max-w-[10rem] truncate" title={a.name}>{a.name}</span>
+              {a.status === "uploading" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {a.status === "failed" && <span className="text-destructive" title={a.error}>lỗi</span>}
+              {a.status === "ready" && <span className="text-emerald-600">✓</span>}
+              <button onClick={() => onRemoveAttach(a.localId)} aria-label={`bỏ ${a.name}`} className="ml-1 text-muted-foreground hover:text-foreground">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="mx-auto max-w-3xl flex items-end gap-2">
-        {onUpload && (
-          <>
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept=".xml,.pdf,.docx,.xlsx,text/xml,application/pdf"
-              className="hidden"
-              onChange={(e) => { onUpload(e.target.files); if (fileRef.current) fileRef.current.value = ""; }}
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              aria-label="đính kèm hoá đơn / tài liệu"
-              title="Thả hoặc chọn hoá đơn XML / tài liệu (PDF, DOCX, XLSX)"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
-          </>
-        )}
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept={ATTACH_ACCEPT}
+          className="hidden"
+          onChange={(e) => { if (e.target.files) onAttach(e.target.files); if (fileRef.current) fileRef.current.value = ""; }}
+        />
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => fileRef.current?.click()}
+          aria-label="đính kèm tệp/ảnh vào tin nhắn"
+          title="Đính kèm ảnh, .txt, .md, .docx, .pdf vào câu hỏi này"
+        >
+          <Paperclip className="h-4 w-4" />
+        </Button>
         <Textarea
           rows={1}
           value={text}
@@ -63,7 +94,7 @@ export function Composer({ onSend, sending, onStop, onUpload, uploading }: Props
               submit();
             }
           }}
-          placeholder={dragOver ? "Thả tệp để nạp…" : "Hỏi tri thức, số liệu, hoặc yêu cầu agent… (Enter để gửi)"}
+          placeholder={dragOver ? "Thả tệp để đính kèm…" : "Hỏi tri thức, số liệu, hoặc đính kèm tệp… (Enter để gửi)"}
           className="min-h-[44px] max-h-40"
           aria-label="ô nhập câu hỏi"
         />
@@ -72,12 +103,12 @@ export function Composer({ onSend, sending, onStop, onUpload, uploading }: Props
             <Square className="h-4 w-4" />
           </Button>
         ) : (
-          <Button size="icon" onClick={submit} aria-label="gửi">
+          <Button size="icon" onClick={submit} disabled={anyUploading} aria-label="gửi">
             <Send className="h-4 w-4" />
           </Button>
         )}
       </div>
-      {uploading && <div className="mx-auto max-w-3xl mt-1 text-xs text-muted-foreground">Đang nạp tệp…</div>}
+      {anyUploading && <div className="mx-auto max-w-3xl mt-1 text-xs text-muted-foreground">Đang tải tệp đính kèm…</div>}
     </div>
   );
 }

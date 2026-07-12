@@ -1,9 +1,14 @@
 import { create } from "zustand";
 import { streamChat } from "@/api/sse";
-import type { ChatMessage } from "@/api/types";
+import { uploadAttachment, deleteAttachment } from "@/api/workspace";
+import type { ChatMessage, StagedAttachment } from "@/api/types";
 
 function uuid() {
   return crypto.randomUUID();
+}
+
+function kindOf(file: File): "image" | "text" {
+  return file.type.startsWith("image/") ? "image" : "text";
 }
 
 interface ChatState {
@@ -11,9 +16,12 @@ interface ChatState {
   messages: ChatMessage[];
   sending: boolean;
   abort: AbortController | null;
+  staged: StagedAttachment[];
   newConversation: () => string;
   setConversation: (id: string, messages: ChatMessage[]) => void;
   addMessage: (m: ChatMessage) => void;
+  attach: (files: FileList | File[]) => Promise<void>;
+  removeAttachment: (localId: string) => void;
   send: (question: string, onDone?: () => void) => Promise<void>;
   stop: () => void;
 }
@@ -23,16 +31,63 @@ export const useChat = create<ChatState>((set, get) => ({
   messages: [],
   sending: false,
   abort: null,
+  staged: [],
 
   newConversation: () => {
     const id = uuid();
-    set({ conversationId: id, messages: [] });
+    set({ conversationId: id, messages: [], staged: [] });
     return id;
   },
 
-  setConversation: (id, messages) => set({ conversationId: id, messages }),
+  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [] }),
 
   addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
+
+  attach: async (files) => {
+    const list = Array.from(files);
+    const patch = (localId: string, fn: (a: StagedAttachment) => void) =>
+      set((s) => ({
+        staged: s.staged.map((a) => {
+          if (a.localId !== localId) return a;
+          const next = { ...a };
+          fn(next);
+          return next;
+        }),
+      }));
+    for (const file of list) {
+      const localId = uuid();
+      const kind = kindOf(file);
+      const entry: StagedAttachment = {
+        localId,
+        name: file.name,
+        kind,
+        status: "uploading",
+        previewUrl: kind === "image" ? URL.createObjectURL(file) : undefined,
+      };
+      set((s) => ({ staged: [...s.staged, entry] }));
+      try {
+        const att = await uploadAttachment(file);
+        patch(localId, (a) => {
+          a.id = att.id;
+          a.status = att.status;
+          a.error = att.error || undefined;
+        });
+      } catch (e) {
+        patch(localId, (a) => {
+          a.status = "failed";
+          a.error = e instanceof Error ? e.message : "Tải lên thất bại";
+        });
+      }
+    }
+  },
+
+  removeAttachment: (localId) =>
+    set((s) => {
+      const a = s.staged.find((x) => x.localId === localId);
+      if (a?.previewUrl) URL.revokeObjectURL(a.previewUrl);
+      if (a?.id) void deleteAttachment(a.id).catch(() => {});
+      return { staged: s.staged.filter((x) => x.localId !== localId) };
+    }),
 
   stop: () => {
     get().abort?.abort();
@@ -43,13 +98,19 @@ export const useChat = create<ChatState>((set, get) => ({
     let cid = get().conversationId;
     if (!cid) cid = get().newConversation();
     const ac = new AbortController();
-    // optimistic: user message + assistant placeholder (streaming)
+    const ready = get().staged.filter((a) => a.status === "ready" && a.id);
+    const attachmentIds = ready.map((a) => a.id!) as string[];
+    const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
+    // Release image preview URLs now that the turn is sent.
+    get().staged.forEach((a) => a.previewUrl && URL.revokeObjectURL(a.previewUrl));
+    // optimistic: user message (with attachments) + assistant placeholder (streaming)
     set((s) => ({
       sending: true,
       abort: ac,
+      staged: [],
       messages: [
         ...s.messages,
-        { role: "user", content: question },
+        { role: "user", content: question, attachments: sentAttachments },
         { role: "assistant", content: "", streaming: true, steps: [], citations: [], draft: null },
       ],
     }));
@@ -70,6 +131,9 @@ export const useChat = create<ChatState>((set, get) => ({
         switch (e.type) {
           case "source":
             patchLast((m) => (m.citations = e.citations));
+            break;
+          case "attachments":
+            // Backend echoes what it actually consumed (incl. re-injected prior text files).
             break;
           case "step":
             patchLast((m) => (m.steps = [...(m.steps || []), { type: "step", action: e.action }]));
@@ -102,7 +166,8 @@ export const useChat = create<ChatState>((set, get) => ({
             break;
         }
       },
-      ac.signal
+      ac.signal,
+      attachmentIds
     );
     set({ sending: false, abort: null });
     onDone?.();

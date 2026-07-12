@@ -97,6 +97,15 @@ export function MessageBubble({ m, onCite, onFeedback, onApprove, onReject, read
   return (
     <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
       <div className={cn("max-w-[85%] rounded-lg px-4 py-2.5", isUser ? "bg-primary text-primary-foreground" : "bg-card border border-border shadow-card")}>
+        {isUser && m.attachments && m.attachments.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap gap-1.5">
+            {m.attachments.map((a, i) => (
+              <span key={i} className="inline-flex items-center gap-1 rounded bg-primary-foreground/15 px-1.5 py-0.5 text-[11px]">
+                {a.kind === "image" ? "🖼" : "📄"} {a.filename}
+              </span>
+            ))}
+          </div>
+        )}
         {!isUser && m.steps && <Steps steps={m.steps} />}
         <div className={cn("prose-chat text-sm", isUser ? "text-primary-foreground" : "")}>
           {m.content ? (

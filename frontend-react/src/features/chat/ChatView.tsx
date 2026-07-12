@@ -11,7 +11,7 @@ import type { ChatMessage } from "@/api/types";
 export function ChatView() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { conversationId, messages, sending, send, stop, setConversation, newConversation, addMessage } = useChat();
+  const { conversationId, messages, sending, send, stop, setConversation, newConversation, addMessage, staged, attach, removeAttachment } = useChat();
   const [cites, setCites] = useState<string[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,34 +60,24 @@ export function ChatView() {
     });
   };
 
-  // Nạp hoá đơn/tài liệu ngay trong khung chat: XML -> bút toán nháp; còn lại -> nguồn tri thức.
-  const onUpload = async (files: FileList | null) => {
-    if (!files?.length) return;
+  // Hoá đơn XML thả vào khung chat -> bút toán nháp (kiểm Nợ=Có, map TT99). Tài liệu/ảnh khác
+  // đi qua đính-kèm-tin-nhắn (store.attach) — xem Composer.
+  const onUploadInvoice = async (files: FileList | File[]) => {
+    if (!files || !Array.from(files).length) return;
     if (!conversationId) newConversation();
     setUploading(true);
     for (const f of Array.from(files)) {
       const fd = new FormData();
       fd.append("file", f);
-      const isXml = /\.xml$/i.test(f.name) || f.type.includes("xml");
       try {
-        if (isXml) {
-          const r = await fetch("/api/invoices/draft", { method: "POST", headers: authHeaders(), body: fd });
-          const d = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(d.detail || `Lỗi ${r.status}`);
-          addMessage({
-            role: "assistant",
-            content: `📎 Đã nạp hoá đơn **${f.name}** → bút toán nháp (kiểm Nợ=Có, map TT99):`,
-            draft: { draft_id: d.draft_id, kind: d.kind, payload: d.journal },
-          });
-        } else {
-          const r = await fetch("/api/sources", { method: "POST", headers: authHeaders(), body: fd });
-          const s = await r.json().catch(() => ({}));
-          if (!r.ok) throw new Error(s.detail || `Lỗi ${r.status}`);
-          addMessage({
-            role: "assistant",
-            content: `📎 Đã nạp tài liệu **${s.filename}** (trạng thái: ${s.status}). Bạn có thể hỏi về nội dung tài liệu này.`,
-          });
-        }
+        const r = await fetch("/api/invoices/draft", { method: "POST", headers: authHeaders(), body: fd });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.detail || `Lỗi ${r.status}`);
+        addMessage({
+          role: "assistant",
+          content: `📎 Đã nạp hoá đơn **${f.name}** → bút toán nháp (kiểm Nợ=Có, map TT99):`,
+          draft: { draft_id: d.draft_id, kind: d.kind, payload: d.journal },
+        });
       } catch (e) {
         addMessage({ role: "assistant", content: `⚠ Không nạp được **${f.name}**: ${e instanceof Error ? e.message : "lỗi"}` });
       }
@@ -152,7 +142,15 @@ export function ChatView() {
             </button>
           )}
         </div>
-        <Composer onSend={onSend} sending={sending} onStop={stop} onUpload={onUpload} uploading={uploading} />
+        <Composer
+          onSend={onSend}
+          sending={sending || uploading}
+          onStop={stop}
+          staged={staged}
+          onAttach={attach}
+          onRemoveAttach={removeAttachment}
+          onUploadInvoice={onUploadInvoice}
+        />
       </div>
       {cites && (
         <aside className="w-80 shrink-0 border-l border-border bg-card/60 overflow-y-auto">
