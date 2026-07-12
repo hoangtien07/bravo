@@ -68,3 +68,35 @@ async def test_audit_then_egress_writes_auditlog_before_call():
 async def test_audit_egress_noop_without_db():
     # db=None (unit context) -> no crash, no audit.
     await _audit_egress(None, RoutingDecision("cloud", "m", "r"), [{"role": "user", "content": "x"}])
+
+
+# --------------------------------------------------------------------------------------
+# Structured-output plumbing: local backend format phải theo local_structured_mode.
+# Regression: demo trỏ "local" -> OpenAI KHÔNG chấp nhận guided_json (lỗi 400).
+# --------------------------------------------------------------------------------------
+def test_structured_kwargs_local_mode(monkeypatch):
+    from app.llm.router import _settings, _structured_kwargs
+
+    schema = {"type": "object"}
+    monkeypatch.setattr(_settings, "structured_output", True)
+    cloud = RoutingDecision("cloud", "gpt-4o", "x")
+    local = RoutingDecision("local", "qwen", "x")
+
+    # cloud luôn json_object (OpenAI-compatible rộng rãi)
+    assert _structured_kwargs(cloud, schema) == {"response_format": {"type": "json_object"}}
+
+    # local=guided_json -> vLLM guided decoding (mặc định production)
+    monkeypatch.setattr(_settings, "local_structured_mode", "guided_json")
+    assert _structured_kwargs(local, schema) == {"extra_body": {"guided_json": schema}}
+
+    # local=json_object -> KHÔNG gửi guided_json (endpoint OpenAI-compatible như demo)
+    monkeypatch.setattr(_settings, "local_structured_mode", "json_object")
+    assert _structured_kwargs(local, schema) == {"response_format": {"type": "json_object"}}
+
+    # off -> không ép
+    monkeypatch.setattr(_settings, "local_structured_mode", "off")
+    assert _structured_kwargs(local, schema) == {}
+
+    # tắt structured_output -> luôn rỗng
+    monkeypatch.setattr(_settings, "structured_output", False)
+    assert _structured_kwargs(cloud, schema) == {}

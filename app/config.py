@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     # Structured output cho bước decide của agent (W1.3): json_object (cloud) / guided_json
     # (vLLM). Tắt -> chỉ dựa prompt + parser fallback. Bật mặc định (giảm output hỏng).
     structured_output: bool = True
+    # Định dạng structured-output cho backend LOCAL (cloud luôn json_object):
+    #   "guided_json"  -> vLLM/outlines ép schema (mạnh nhất; MẶC ĐỊNH production).
+    #   "json_object"  -> endpoint OpenAI-compatible dùng làm "local" (vd demo trỏ OpenAI) —
+    #                     guided_json KHÔNG được OpenAI chấp nhận (lỗi 400) nên phải json_object.
+    #   "off"          -> không ép (chỉ dựa prompt).
+    local_structured_mode: str = Field("guided_json", validation_alias="LOCAL_STRUCTURED_MODE")
     # W1.4: lượt tri thức -> COMPOSE câu trả lời bằng chat_stream (token THẬT chảy ra SSE).
     # Đây là LỜI GỌI LLM THỨ HAI (tái sinh câu trả lời) nên OFF mặc định (không double-cost,
     # test/eval ổn định); demo bật STREAM_COMPOSE_ANSWER=true để có streaming token thật. Khi

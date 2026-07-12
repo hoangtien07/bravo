@@ -96,15 +96,20 @@ def _structured_kwargs(d: RoutingDecision, schema: dict | None) -> dict:
 
     - cloud (OpenAI-compatible): response_format json_object (được hỗ trợ rộng; prompt đã yêu
       cầu 'chỉ JSON'). json_schema strict không phải endpoint nào cũng chịu -> dùng json_object.
-    - local (vLLM): guided_json (outlines) ép đúng schema — mạnh hơn hẳn. Ollama bỏ qua (nó
-      nhận `format=json` qua đường khác). Tắt bằng settings.structured_output=False.
+    - local: theo settings.local_structured_mode — 'guided_json' (vLLM/outlines, ép schema, mạnh
+      nhất) | 'json_object' (khi "local" thực chất là endpoint OpenAI-compatible, vd demo trỏ
+      OpenAI: guided_json bị OpenAI từ chối 400) | 'off'. Tắt chung bằng structured_output=False.
     """
     if schema is None or not _settings.structured_output:
         return {}
     if d.backend == "cloud":
         return {"response_format": {"type": "json_object"}}
-    # local vLLM guided decoding
-    return {"extra_body": {"guided_json": schema}}
+    mode = _settings.local_structured_mode
+    if mode == "off":
+        return {}
+    if mode == "json_object":
+        return {"response_format": {"type": "json_object"}}
+    return {"extra_body": {"guided_json": schema}}   # 'guided_json' (vLLM) — mặc định
 
 
 async def chat(messages: list[dict], *, context: list | None = None,
