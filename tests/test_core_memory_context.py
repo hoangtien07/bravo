@@ -133,3 +133,55 @@ def test_prepare_turn_injects_core_memory_into_messages(monkeypatch):
             await engine.dispose()
 
     asyncio.run(run())
+
+
+def test_history_watermark_summarizes_once_and_keeps_recent():
+    """S3: lượt cũ được tóm tắt DẦN theo watermark — không re-summarize khi không có lượt mới,
+    không amnesia, tóm tắt nạp ở role user-data (S4)."""
+    async def run() -> None:
+        from sqlalchemy import delete
+        from app.agent.memory import MemoryStore
+        from app.database.models import ConversationMessage, MemoryBlock
+
+        engine, factory = _engine_factory()
+        sid = uuid.uuid4()
+        ident = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
+                         permissions=frozenset({"doc:read"}))
+        calls = {"n": 0}
+
+        async def summarize_fn(text: str, prev: str) -> str:
+            calls["n"] += 1
+            return (prev or "") + " | " + f"tóm tắt {len(text)} ký tự"
+
+        try:
+            async with factory() as db:
+                mem = MemoryStore(db, sid, ident)
+                for i in range(14):
+                    await mem.recall_add("user" if i % 2 == 0 else "assistant",
+                                         f"Lượt hội thoại số {i} với nội dung dài vừa đủ.")
+                # keep_recent=4, max_tokens=5 -> buộc nén phần cũ (10 lượt).
+                out = await mem.history_for_prompt(summarize_fn, keep_recent=4, max_tokens=5)
+                assert calls["n"] == 1                       # tóm tắt đúng MỘT lần
+                assert out and out[0]["role"] == "user"       # S4: summary ở role user-data
+                assert "TÓM TẮT" in out[0]["content"]
+                assert len(out) == 1 + 4                       # summary head + 4 recent
+                assert "số 13" in out[-1]["content"]          # lượt mới nhất giữ nguyên văn
+
+                # Gọi lại KHÔNG có lượt mới -> KHÔNG tóm tắt lại (watermark không đổi).
+                await mem.history_for_prompt(summarize_fn, keep_recent=4, max_tokens=5)
+                assert calls["n"] == 1
+
+                # Thêm 2 lượt mới -> chỉ phần MỚI trượt ra được tóm tắt (1 lần nữa).
+                for i in range(14, 16):
+                    await mem.recall_add("user", f"Lượt mới số {i} nội dung bổ sung.")
+                await mem.history_for_prompt(summarize_fn, keep_recent=4, max_tokens=5)
+                assert calls["n"] == 2
+        finally:
+            async with factory() as db:
+                await db.execute(delete(MemoryBlock).where(MemoryBlock.session_id == sid))
+                await db.execute(
+                    delete(ConversationMessage).where(ConversationMessage.session_id == sid))
+                await db.commit()
+            await engine.dispose()
+
+    asyncio.run(run())

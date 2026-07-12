@@ -114,6 +114,8 @@ class Settings(BaseSettings):
     # giảm ~½ chi phí + không re-gửi ảnh). Hold-back khối kiến-thức-chung/abstain để guard chạy
     # TRƯỚC khi phát (F3). Lượt tài chính LUÔN buffered (verify-gate, invariant #3) bất kể cờ này.
     stream_decide_answer: bool = True
+    # M3: hard timeout (s) for a single retrieval call so a hung pgvector query can't stall a turn.
+    retrieval_timeout_s: float = 20.0
     # Ngưỡng tương đồng cosine tối thiểu cho truy hồi dense (0..1). Chunk dưới ngưỡng bị loại
     # để tránh "nhiễu" (vd câu hỏi 'mua' kéo về chunk 'bán' điểm thấp). 0 = tắt. Lexical (mã/số)
     # không bị ngưỡng này. Rỗng sau lọc -> agent trả "không tìm thấy" (zero-hallucination).

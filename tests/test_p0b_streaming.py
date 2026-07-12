@@ -208,3 +208,31 @@ def test_vision_guard_noop_without_image():
     from app.llm import router
     d = router.RoutingDecision("local", "qwen", "test")
     router._guard_vision(d, [{"role": "user", "content": "chỉ có chữ"}])   # no raise
+
+
+# --------------------------------------------------------------------------------------
+# F4 — hardened world-knowledge number guard
+# --------------------------------------------------------------------------------------
+@pytest.mark.parametrize("text", [
+    "khoảng 5.000.000đ",         # VND + separators
+    "chừng 12%",                  # percent
+    "$5,000 mỗi tháng",           # USD symbol
+    "tầm 5000 USD",               # USD code
+    "số dư 5000000",              # bare 5+ digit integer
+    "khoảng năm triệu đồng",      # spelled-out number
+    "gần hai tỷ",                 # spelled-out number
+])
+def test_wk_guard_redacts_numbers(text):
+    from app.agent.loop import _guard_wk_numbers
+    out = _guard_wk_numbers(text)
+    assert "đã ẩn" in out
+    # no bare 4+ digit run survives
+    import re as _re
+    assert not _re.search(r"\d{4,}", out)
+
+
+def test_wk_guard_keeps_years_and_short_counts():
+    from app.agent.loop import _guard_wk_numbers
+    # "năm 2024" (year) and "ba tháng" (3 months) are not monetary -> not redacted.
+    out = _guard_wk_numbers("trong năm 2024 làm ba tháng")
+    assert "2024" in out and "ba tháng" in out

@@ -30,6 +30,28 @@ def count_tokens(text: str) -> int:
         return max(1, len(text) // 4)
 
 
+# High-detail image ≈ 1–2k tokens; a flat estimate keeps multimodal turns from being counted as
+# ~0 tokens (M4 — a content-window cap that couldn't see images was effectively blind).
+IMAGE_TOKEN_EST = 1600
+
+
 def count_messages(messages: list[dict]) -> int:
-    """Tổng token xấp xỉ của một list message (+4/message cho overhead role)."""
-    return sum(count_tokens(m.get("content", "")) + 4 for m in messages)
+    """Tổng token xấp xỉ của một list message (+4/message cho overhead role).
+
+    M4: content có thể là str HOẶC mảng multimodal (text + image_url). Ảnh được tính bằng
+    IMAGE_TOKEN_EST (không phải ~0) để cap context không 'mù' với payload ảnh."""
+    total = 0
+    for m in messages:
+        content = m.get("content", "")
+        if isinstance(content, list):
+            for part in content:
+                if not isinstance(part, dict):
+                    total += count_tokens(str(part))
+                elif part.get("type") == "image_url":
+                    total += IMAGE_TOKEN_EST
+                else:
+                    total += count_tokens(part.get("text", ""))
+        else:
+            total += count_tokens(content)
+        total += 4
+    return total
