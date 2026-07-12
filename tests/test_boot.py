@@ -31,6 +31,13 @@ def test_boot_guard_blocks_default_secret_in_prod(env):
                  mcp_token_pepper="x" * 32).validate_boot()
 
 
+def test_boot_guard_blocks_default_mcp_pepper_in_prod():
+    """T9: the MCP token pepper (HMAC for scoped MCP tokens) must not stay 'change-me' in prod."""
+    with pytest.raises(RuntimeError, match="mcp_token_pepper"):
+        Settings(env="production", jwt_secret="a" * 32,
+                 mcp_token_pepper="change-me").validate_boot()
+
+
 def test_boot_guard_blocks_cloud_without_key():
     with pytest.raises(RuntimeError, match="cloud_enabled"):
         Settings(env="production", jwt_secret="a" * 32, mcp_token_pepper="b" * 32,

@@ -122,12 +122,23 @@ async def _load_attachment_payloads(
         return {"kind": "image", "filename": a.filename,
                 "data_url": f"data:{a.mime_type};base64,{b64}"}
 
-    for a in current + prior_text:
-        if a.kind == "text" and a.content:
+    # Text (M4): current-turn text is always full; prior text keeps FULL for the most-recent
+    # `attach_text_full` overall, a bounded DIGEST for older ones — deterministic by recency.
+    current_text = [a for a in current if a.kind == "text" and a.content]
+    prior_text_sorted = sorted(prior_text, key=lambda a: a.created_at, reverse=True)
+    for a in current_text:
+        payloads.append({"kind": "text", "filename": a.filename, "content": a.content})
+    full_slots = max(0, settings.attach_text_full - len(current_text))
+    for i, a in enumerate(prior_text_sorted):
+        if i < full_slots:
             payloads.append({"kind": "text", "filename": a.filename, "content": a.content})
-        elif a.kind == "image" and a in current:
-            if (p := _img_payload(a)):
-                payloads.append(p)
+        else:
+            digest = (a.content or "")[:settings.attach_text_digest_chars]
+            payloads.append({"kind": "text", "filename": a.filename,
+                             "content": digest + " …[rút gọn — hỏi chi tiết để tra sâu]"})
+    for a in current:
+        if a.kind == "image" and (p := _img_payload(a)):
+            payloads.append(p)
     for a in prior_images:
         if (p := _img_payload(a)):
             payloads.append(p)

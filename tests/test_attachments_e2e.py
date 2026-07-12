@@ -211,3 +211,48 @@ def test_oversized_text_falls_back_to_personal_source(tmp_path, monkeypatch):
             await eng.dispose()
 
     asyncio.run(run())
+
+
+@pytestmark_db
+def test_m4_older_text_attachments_are_digested(monkeypatch):
+    """M4: prior text attachments beyond `attach_text_full` are injected as a bounded DIGEST,
+    not full text — deterministic by recency, so a long conversation can't blow the context."""
+    from app.api.routes_conversations import _load_attachment_payloads
+    from app.config import get_settings
+    from app.database.models import Attachment
+
+    async def run():
+        eng, factory = _factory()
+        owner = await _mk_employee(factory)
+        conv = uuid.uuid4()
+        s = get_settings()
+        monkeypatch.setattr(s, "attach_text_full", 2)
+        monkeypatch.setattr(s, "attach_text_digest_chars", 40)
+        try:
+            async with factory() as db:
+                for i in range(4):
+                    db.add(Attachment(owner_id=owner, conversation_id=conv, filename=f"f{i}.txt",
+                                      mime_type="text/plain", size_bytes=10, storage_path="",
+                                      kind="text", status="ready",
+                                      content="Y" * 500 + f" doc{i}", token_count=1))
+                await db.commit()
+            ident = Identity(employee_id=owner, department_ids=frozenset(),
+                             permissions=frozenset(), is_admin=False)
+            async with factory() as db:
+                payloads = await _load_attachment_payloads(db, ident, conv, [])
+            texts = [p for p in payloads if p["kind"] == "text"]
+            digested = [p for p in texts if "rút gọn" in p["content"]]
+            full = [p for p in texts if "rút gọn" not in p["content"]]
+            assert len(texts) == 4
+            assert len(full) == 2 and len(digested) == 2      # exactly attach_text_full kept full
+            assert all(len(p["content"]) < 120 for p in digested)   # digest is bounded
+        finally:
+            async with factory() as db:
+                from sqlalchemy import delete
+                from app.database.models import Employee
+                await db.execute(delete(Attachment).where(Attachment.conversation_id == conv))
+                await db.execute(delete(Employee).where(Employee.id == owner))
+                await db.commit()
+            await eng.dispose()
+
+    asyncio.run(run())

@@ -48,6 +48,15 @@ def test_malformed_permission_warns():
     assert any("resource:action" in w for w in report.warnings)
 
 
+def test_open_read_tool_without_identity_is_flagged():
+    """T3-lite: an open read tool that doesn't take `identity` may bypass RLS -> error."""
+    bad = {"leaky": Tool(name="leaky", fn=lambda q: q, read_only=True)}  # no perm, no identity
+    assert any("bypass RLS" in e for e in audit_registry(bad).errors)
+    # A read tool that DOES consume identity is fine (kb_search shape).
+    ok = {"safe": Tool(name="safe", fn=lambda q, *, identity, db=None: q, read_only=True)}
+    assert audit_registry(ok).clean
+
+
 @pytest.mark.asyncio
 async def test_llm_cannot_escalate_identity_via_args():
     """On-behalf-of: a tool always runs under the CALLER identity, even if the LLM injects

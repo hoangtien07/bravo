@@ -15,6 +15,7 @@ tool. Wire it into CI so a newly-registered tool that grants itself excessive ag
 """
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 
 from app.agent.tools import Tool
@@ -83,6 +84,17 @@ def audit_registry(registry: dict[str, Tool]) -> AuditReport:
         if perm is not None and ":" not in perm:
             report.warnings.append(
                 f"{t.name}: required_permission '{perm}' is not 'resource:action' shaped")
+        # 5. T3-lite: a read tool OPEN to everyone (no required_permission) MUST consume the caller
+        #    `identity` so it can RLS-filter in-query; a read tool that ignores identity can leak
+        #    across tenants silently (call_tool only INJECTS identity to fns that declare it).
+        if t.read_only and t.required_permission is None:
+            try:
+                params = inspect.signature(t.fn).parameters
+            except (TypeError, ValueError):
+                params = {}
+            if "identity" not in params:
+                report.errors.append(
+                    f"{t.name}: open read tool without an `identity` param (may bypass RLS)")
     return report
 
 

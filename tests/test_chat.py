@@ -170,7 +170,7 @@ def test_advisory_lock_path_completes(monkeypatch):
 def test_truncate_drops_turn_and_resets_summary(monkeypatch):
     async def body(c):
         cid = str(uuid.uuid4())
-        e1 = await _stream(c, cid, "Câu hỏi một")
+        await _stream(c, cid, "Câu hỏi một")
         await _stream(c, cid, "Câu hỏi hai")
         # 4 messages persisted (2 user + 2 assistant).
         msgs = (await c.get(f"/api/conversations/{cid}")).json()["messages"]

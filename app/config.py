@@ -122,6 +122,11 @@ class Settings(BaseSettings):
     # attach_image_max is the operative per-prompt cap on total images.
     attach_image_turns: int = 3
     attach_image_max: int = 4
+    # M4: text attachments — inject FULL text for the N most-recent, a bounded DIGEST for older
+    # ones (deterministic-by-recency, so a long conversation doesn't silently drop context or blow
+    # the context window based on unrelated history length).
+    attach_text_full: int = 3
+    attach_text_digest_chars: int = 1200
     # ADR-0024: the per-conversation lock is in-process (đủ cho single-worker). BẬT cờ này khi chạy
     # NHIỀU worker/tiến trình để thêm khoá Postgres advisory (pg_try_advisory_lock trên hashtext của
     # session_id) — chống hai worker cùng chạy một hội thoại. Default off (chưa deploy multi-worker).
