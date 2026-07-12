@@ -55,3 +55,25 @@ def test_boost_keeps_unknown_query_order():
     ranked = boost_for_bravo_intent("xin chao", [first, second])
 
     assert ranked == [first, second]
+
+
+def test_infer_customization_integration_prefers_technical_manual():
+    """Câu dev (tùy biến / tích hợp API / loại giao dịch) phải ưu tiên technical_manual —
+    trước đây thiếu keyword nên kéo nhầm user_guide (T4/T7/T11 abstain)."""
+    for q in (
+        "quy trình tùy biến chức năng nghiệp vụ mà vẫn nâng cấp được",
+        "cách tích hợp nhập xuất dữ liệu với hệ thống ngoài qua API",
+        "tạo loại giao dịch mới với định khoản tự động",
+        "khai báo Layout để thêm cột vào lưới dữ liệu",
+    ):
+        intent = infer_query_intent(q)
+        assert "technical_manual" in intent.source_types, q
+
+
+def test_boost_lifts_technical_manual_for_customization_query():
+    results = [
+        _r(0.30, "user_guide", "hrm"),
+        _r(0.28, "technical_manual", "platform", "technical_design"),
+    ]
+    ordered = boost_for_bravo_intent("quy trình tùy biến chức năng trong BRAVO", results)
+    assert ordered[0].extra["source_type"] == "technical_manual"  # kỹ thuật lên đầu

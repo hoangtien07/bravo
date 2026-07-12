@@ -68,6 +68,10 @@ def infer_query_intent(query: str) -> BravoQueryIntent:
         "evaluator", "commandvalidator", "commandvalidators", "b00command",
         "reporter", "uspcaller", "wizard", "taskman", "attachfile", "expression",
         "bravouploadfilebox", "bravopictureinputbox",
+        # dev/customization/integration — trước đây thiếu nên câu kỹ thuật kéo nhầm user_guide
+        "tuy bien", "tuy chinh", "customize", "customise", "khai bao",
+        "tich hop", "webservice", "web service", " api", "api ", "restful",
+        "loai giao dich", "loai chung tu", "dinh khoan tu dong", "cau hinh he thong",
     )):
         source_types.extend(["technical_manual", "kqpt_ptnv"])
         modules.append("platform")
