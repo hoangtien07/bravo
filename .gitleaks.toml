@@ -1,0 +1,19 @@
+# gitleaks config — block secrets from ever landing in git (Q4/secret-hygiene).
+# Run locally: gitleaks detect --config .gitleaks.toml
+# CI runs it on every push (see .github/workflows/gitleaks.yml).
+title = "bravo gitleaks"
+
+[extend]
+useDefault = true   # inherit gitleaks' built-in rules (OpenAI keys, AWS, JWTs, ...)
+
+[allowlist]
+description = "Placeholders in templates/docs are not real secrets"
+paths = [
+  '''\.env\.example$''',
+  '''docs/.*\.md$''',
+]
+regexes = [
+  '''sk-REPLACE_ME''',
+  '''change-me[-a-z0-9]*''',
+  '''REPLACE_ME''',
+]
