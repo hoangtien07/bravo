@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     cloud_model: str = ""
     cloud_api_key: str = ""
 
+    # Egress policy (ADR-0019/0022, v2 cloud-only). Governs router local-vs-cloud AND the
+    # embedding/pipeline egress guards. Retires invariant #4 by CONFIG, not by deletion:
+    #   "hybrid"     -> ADR-0003 behavior: fail-closed to local; sensitive pinned local (default).
+    #   "cloud_only" -> no local backend exists; every call routes cloud; the sensitive-raise in
+    #                   embed() is downgraded to an audit log (still recorded, never blocked).
+    # The egress AUDIT trail (_audit_egress / bravo.egress log) is kept under BOTH policies — it
+    # is the PDPL/91-2025 compliance artifact, not a sovereignty block.
+    egress_policy: str = "hybrid"
+
     # Embedding — provider switch for the DEMO (machine too weak for local models).
     #   "local"            -> bge-m3 (ADR-0009, production default)
     #   "openai_compatible"-> cloud embeddings API (demo; corpus is non-sensitive guides)
@@ -94,6 +103,21 @@ class Settings(BaseSettings):
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"
+    # Ingest inline (no arq/Redis). Test/dev fallback so the suite runs without a worker.
+    # Prod runs the arq worker and enqueues -> keep False.
+    ingest_sync: bool = False
+
+    # Agent turn token budget (circuit breaker, loop.Budget). v2 cloud-only raises this from the
+    # on-prem 8k floor because a single chat attachment inject (≤50k tokens) must fit within one
+    # turn; gpt-4o-class context is 128k. max_steps/deadline stay tight as the real cost guard.
+    agent_max_tokens: int = 120_000
+
+    # Chat attachments (Track 3). Text at/under the cap is injected full-text into the prompt;
+    # oversized text falls back to RAG-ingest into the user's personal workspace. 50k leaves
+    # headroom for retrieval context + history + output inside a 128k window (LibreChat uses 100k
+    # for the file alone; we stack retrieval on top, so pick lower).
+    attachment_inject_token_cap: int = 50_000
+    attachment_max_bytes: int = 30 * 1024 * 1024        # 30 MB doc / image ceiling
 
     # MCP server scoped-by-token tại /mcp (W1.5). Tắt nếu không muốn expose.
     mcp_enabled: bool = True
@@ -149,6 +173,15 @@ class Settings(BaseSettings):
         if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
             raise RuntimeError(
                 "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
+            )
+        # Cloud-only (ADR-0019): there is NO local backend to fall back to, so the cloud path
+        # must be fully configured or the app cannot answer at all -> fail-closed at boot.
+        if self.egress_policy == "cloud_only" and not (
+            self.cloud_enabled and self.cloud_api_key and self.cloud_base_url and self.cloud_model
+        ):
+            raise RuntimeError(
+                "[boot-guard] egress_policy=cloud_only yêu cầu cloud_enabled + "
+                "cloud_api_key + cloud_base_url + cloud_model (không còn backend local)."
             )
         # W2.6: tự-duyệt là lỗ hổng maker-checker ở prod -> cấm.
         if self.allow_self_approval:

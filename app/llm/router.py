@@ -51,7 +51,10 @@ class RoutingDecision:
 
 
 def decide(sensitive: bool | None, allow_cloud_task: bool = False) -> RoutingDecision:
-    """Choose backend. Fail-closed to local."""
+    """Choose backend. Fail-closed to local — EXCEPT under egress_policy=cloud_only (ADR-0019),
+    where no local backend exists and every call routes cloud (egress still audited)."""
+    if _settings.egress_policy == "cloud_only" and _cloud is not None:
+        return RoutingDecision("cloud", _settings.cloud_model, "cloud-only policy (ADR-0019)")
     if not _settings.cloud_enabled or _cloud is None:
         return RoutingDecision("local", _settings.llm_local_model, "cloud disabled")
     if sensitive is None:
@@ -76,8 +79,28 @@ async def _audit_egress(db, d: RoutingDecision, messages: list[dict]) -> None:
 
     from app.database.models import AuditLog
 
+    # Replace multimodal image payloads with their own sha256 so we hash a compact digest,
+    # not megabytes of base64 (Track 3). The audit still uniquely fingerprints the prompt.
+    def _lean(messages: list[dict]) -> list[dict]:
+        out = []
+        for m in messages:
+            content = m.get("content")
+            if isinstance(content, list):
+                parts = []
+                for p in content:
+                    if isinstance(p, dict) and p.get("type") == "image_url":
+                        url = (p.get("image_url") or {}).get("url", "")
+                        parts.append({"type": "image_url",
+                                      "sha256": hashlib.sha256(url.encode()).hexdigest()})
+                    else:
+                        parts.append(p)
+                out.append({**m, "content": parts})
+            else:
+                out.append(m)
+        return out
+
     prompt_hash = hashlib.sha256(
-        _json.dumps(messages, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+        _json.dumps(_lean(messages), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     db.add(AuditLog(action="llm.egress",
                     detail={"provider": d.backend, "model": d.model, "prompt_hash": prompt_hash}))
     await db.commit()

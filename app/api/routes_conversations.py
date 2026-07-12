@@ -31,6 +31,62 @@ _DISPLAY_ROLES = ("user", "assistant")
 
 class ChatIn(BaseModel):
     question: str
+    attachment_ids: list[uuid.UUID] = []
+
+
+async def _load_attachment_payloads(
+    db: AsyncSession, identity: Identity, conversation_id: uuid.UUID,
+    attachment_ids: list[uuid.UUID],
+) -> list[dict]:
+    """Load this turn's attachments (owner-scoped, ready) + prior TEXT attachments of the
+    conversation, and shape them for the agent loop. Foreign/unknown ids are silently dropped
+    (RLS-in-SQL: no existence leak). Images are only sent for the CURRENT turn (cost); prior
+    text attachments are re-injected so the assistant keeps the document across turns.
+    """
+    import base64
+    from pathlib import Path
+
+    from app.database.models import Attachment
+
+    payloads: list[dict] = []
+    current: list[Attachment] = []
+    if attachment_ids:
+        current = list((await db.execute(
+            select(Attachment).where(
+                Attachment.id.in_(attachment_ids),
+                Attachment.owner_id == identity.employee_id,
+                Attachment.status == "ready",
+            )
+        )).scalars().all())
+        # Bind to the conversation so prior turns can re-inject text attachments.
+        for a in current:
+            if a.conversation_id is None:
+                a.conversation_id = conversation_id
+        await db.commit()
+
+    prior_text = list((await db.execute(
+        select(Attachment).where(
+            Attachment.conversation_id == conversation_id,
+            Attachment.owner_id == identity.employee_id,
+            Attachment.status == "ready",
+            Attachment.kind == "text",
+            Attachment.content.isnot(None),
+            Attachment.id.notin_([a.id for a in current]) if current else True,
+        )
+    )).scalars().all())
+
+    for a in current + prior_text:
+        if a.kind == "text" and a.content:
+            payloads.append({"kind": "text", "filename": a.filename, "content": a.content})
+        elif a.kind == "image" and a in current:   # images: current turn only
+            try:
+                data = Path(a.storage_path).read_bytes()
+            except OSError:
+                continue
+            b64 = base64.b64encode(data).decode()
+            payloads.append({"kind": "image", "filename": a.filename,
+                             "data_url": f"data:{a.mime_type};base64,{b64}"})
+    return payloads
 
 
 class RenameIn(BaseModel):
@@ -77,11 +133,14 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
     except PermissionError as exc:
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
 
+    attachments = await _load_attachment_payloads(
+        db, identity, conversation_id, body.attachment_ids)
+
     session = AgentSession(db, identity, session_id=conversation_id)
 
     async def gen():
         try:
-            async for event in session.step_stream(body.question):
+            async for event in session.step_stream(body.question, attachments):
                 yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
         except Exception as exc:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
             yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"

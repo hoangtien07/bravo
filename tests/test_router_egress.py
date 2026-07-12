@@ -100,3 +100,24 @@ def test_structured_kwargs_local_mode(monkeypatch):
     # tắt structured_output -> luôn rỗng
     monkeypatch.setattr(_settings, "structured_output", False)
     assert _structured_kwargs(cloud, schema) == {}
+
+
+# --------------------------------------------------------------------------------------
+# ADR-0019 cloud-only egress policy: no local backend -> every call routes cloud, even
+# sensitive context (the egress AUDIT stays as the compliance artifact, not a block).
+# --------------------------------------------------------------------------------------
+def test_cloud_only_policy_routes_cloud_even_when_sensitive(monkeypatch):
+    from app.llm.router import _settings, decide
+    monkeypatch.setattr(_settings, "egress_policy", "cloud_only")
+    monkeypatch.setattr(_settings, "cloud_model", "gpt-4o")
+    monkeypatch.setattr(router, "_cloud", _FakeClient())  # cloud client present
+    assert decide(sensitive=True).backend == "cloud"
+    assert decide(sensitive=None).backend == "cloud"
+
+
+def test_hybrid_policy_still_fails_closed_to_local(monkeypatch):
+    from app.llm.router import _settings, decide
+    monkeypatch.setattr(_settings, "egress_policy", "hybrid")
+    monkeypatch.setattr(router, "_cloud", _FakeClient())
+    assert decide(sensitive=True).backend == "local"        # sensitive pinned local
+    assert decide(sensitive=None).backend == "local"        # unknown -> fail-closed

@@ -93,8 +93,10 @@ async def knowledge_graph(identity: Identity = Depends(require_permission("doc:r
         WITH scoped AS (
             SELECT source_id, embedding FROM chunks
             WHERE :is_all
-               OR cardinality(department_ids) = 0
-               OR (:has_depts AND department_ids && CAST(:depts AS uuid[]))
+               OR (visibility = 'personal' AND owner_id = CAST(:me AS uuid))
+               OR visibility = 'global'
+               OR (:has_depts AND visibility = 'department'
+                   AND department_ids && CAST(:depts AS uuid[]))
         ),
         cent AS (
             SELECT source_id, avg(embedding) AS c
@@ -106,7 +108,8 @@ async def knowledge_graph(identity: Identity = Depends(require_permission("doc:r
         WHERE (a.c <=> b.c) <= :maxdist
         ORDER BY sim DESC
         """
-    ).bindparams(is_all=is_all, has_depts=bool(depts), depts=depts, maxdist=1.0 - SIM_MIN)
+    ).bindparams(is_all=is_all, has_depts=bool(depts), depts=depts,
+                 me=str(identity.employee_id), maxdist=1.0 - SIM_MIN)
     edge_rows = (await db.execute(sql)).all()
     edges = [
         GraphEdge(source=a, target=b, weight=round(float(sim), 3))

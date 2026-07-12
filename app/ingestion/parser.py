@@ -51,7 +51,8 @@ def detect_kind(path: str | Path) -> Kind:
     suffix = Path(path).suffix.lower()
     if suffix == ".docx":
         return "docx"
-    if suffix in (".md", ".markdown"):
+    if suffix in (".md", ".markdown", ".txt"):
+        # Plain text has no headings; the markdown parser degrades it to one block.
         return "markdown"
     if suffix in (".xlsx", ".xlsm"):
         return "xlsx"

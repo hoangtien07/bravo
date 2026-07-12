@@ -10,6 +10,7 @@ import uuid
 from app.config import get_settings
 from app.database import async_session_factory
 from app.ingestion.pipeline import ingest_source
+from app.queue import redis_settings
 
 _settings = get_settings()
 
@@ -19,10 +20,14 @@ async def ingest_task(ctx, source_id: str, path: str) -> int:
         return await ingest_source(db, uuid.UUID(source_id), path)
 
 
-class WorkerSettings:
-    functions = [ingest_task]
-    redis_settings = None  # parsed from REDIS_URL at deploy
+async def attachment_extract_task(ctx, attachment_id: str) -> str:
+    """Extract text (or RAG-fallback for oversized) for a chat attachment (Track 3)."""
+    from app.ingestion.attachments import extract_attachment
 
-    @staticmethod
-    def get_redis_url() -> str:
-        return _settings.redis_url
+    async with async_session_factory() as db:
+        return await extract_attachment(db, uuid.UUID(attachment_id))
+
+
+class WorkerSettings:
+    functions = [ingest_task, attachment_extract_task]
+    redis_settings = redis_settings()

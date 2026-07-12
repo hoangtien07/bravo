@@ -84,16 +84,17 @@ async def test_rejected_uploads_fail_before_source_or_chunk_persistence(monkeypa
         def add(self, _value):  # pragma: no cover - assertion path only
             raise AssertionError("rejected upload must not create a Source or Chunk")
 
-    monkeypatch.setattr(routes_sources, "_DATA_DIR", tmp_path)
     writer = _identity(
         departments=[DEPT_A], permissions={"doc:create:own_dept"},
     )
 
-    async def assert_denied(*, department_ids: str | None = None, shared: bool = False) -> None:
+    async def assert_denied(*, visibility: str = "department",
+                            department_ids: str | None = None, shared: bool = False) -> None:
         upload = UploadFile(filename="scope.txt", file=BytesIO(b"fixture"))
         with pytest.raises(HTTPException) as exc:
             await routes_sources.upload_source(
                 file=upload,
+                visibility=visibility,
                 department_ids=department_ids,
                 shared=shared,
                 identity=writer,
@@ -101,9 +102,10 @@ async def test_rejected_uploads_fail_before_source_or_chunk_persistence(monkeypa
             )
         assert exc.value.status_code == 403
 
+    # Authorization is resolved BEFORE the file is read or any row is added.
     await assert_denied(department_ids=str(DEPT_B))
     await assert_denied(department_ids=f"{DEPT_A},{DEPT_B}")
-    await assert_denied(shared=True)
+    await assert_denied(visibility="global", shared=True)
 
 
 def _db_available() -> bool:
@@ -157,6 +159,8 @@ def test_source_upload_scope_and_retrieval_isolation(monkeypatch, tmp_path):
             content=f"{tag} {src.filename}",
             embedding=vector,
             department_ids=dept_ids,
+            visibility=src.visibility,
+            owner_id=src.owner_id,
             extra={},
         ))
         src.status = "ready"
@@ -176,7 +180,12 @@ def test_source_upload_scope_and_retrieval_isolation(monkeypatch, tmp_path):
 
         app.dependency_overrides[get_db] = _db_override
         app.dependency_overrides[get_current_identity] = _identity_override
-        monkeypatch.setattr(routes_sources, "_DATA_DIR", tmp_path)
+        # v2: files land under upload_root/workspace/...; ingest runs inline in tests.
+        monkeypatch.setattr(get_settings(), "upload_root", str(tmp_path))
+        monkeypatch.setattr(get_settings(), "ingest_sync", True)
+        monkeypatch.setattr(routes_sources._settings, "ingest_sync", True)
+        import app.storage_paths as storage_paths
+        monkeypatch.setattr(storage_paths._settings, "upload_root", str(tmp_path))
         monkeypatch.setattr(routes_sources, "ingest_source", _fake_ingest)
 
         async with factory() as db:
@@ -195,32 +204,41 @@ def test_source_upload_scope_and_retrieval_isolation(monkeypatch, tmp_path):
         reader_a = _identity(departments=[dept_a.id], permissions={"doc:read:own_dept"})
         reader_b = _identity(departments=[dept_b.id], permissions={"doc:read:own_dept"})
 
+        upload_seq = {"n": 0}
+
         async def upload(identity: Identity, data: dict[str, str] | None = None):
             state["identity"] = identity
+            upload_seq["n"] += 1
+            # Unique bytes per call so scope-aware content-hash dedup does not collapse
+            # these distinct authorization probes into one source.
+            body = f"scope fixture {upload_seq['n']}".encode()
             return await client.post(
                 "/api/sources",
                 data=data,
-                files={"file": (f"{tag}.txt", b"scope fixture", "text/plain")},
+                files={"file": (f"{tag}.txt", body, "text/plain")},
             )
 
         source_ids: list[uuid.UUID] = []
         try:
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
                 # 1. Explicit own department succeeds.
-                own = await upload(writer_a, {"department_ids": str(dept_a.id)})
+                own = await upload(writer_a, {"visibility": "department",
+                                              "department_ids": str(dept_a.id)})
                 assert own.status_code == 201, own.text
                 source_ids.append(uuid.UUID(own.json()["id"]))
 
                 # 2–3. Omitted/empty scope resolves only to the sole authoritative department.
-                omitted = await upload(writer_a)
-                empty = await upload(writer_a, {"department_ids": ""})
+                omitted = await upload(writer_a, {"visibility": "department"})
+                empty = await upload(writer_a, {"visibility": "department", "department_ids": ""})
                 assert omitted.status_code == empty.status_code == 201
                 source_ids.extend([uuid.UUID(omitted.json()["id"]), uuid.UUID(empty.json()["id"])])
 
                 # 4–5. Foreign and mixed requests fail without persisting a new source/chunk.
                 rejected_before = len(source_ids)
-                foreign = await upload(writer_a, {"department_ids": str(dept_b.id)})
-                mixed = await upload(writer_a, {"department_ids": f"{dept_a.id},{dept_b.id}"})
+                foreign = await upload(writer_a, {"visibility": "department",
+                                                  "department_ids": str(dept_b.id)})
+                mixed = await upload(writer_a, {"visibility": "department",
+                                                "department_ids": f"{dept_a.id},{dept_b.id}"})
                 assert foreign.status_code == mixed.status_code == 403
 
                 # Own-department writers cannot opt into shared publication.

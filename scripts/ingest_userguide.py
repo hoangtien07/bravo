@@ -152,7 +152,11 @@ async def main(
             if old:
                 await db.commit()
 
-            src = Source(filename=f.name, knowledge_type=kt, status="pending")
+            # Corpus (system context) is shared knowledge, never a personal upload:
+            # scope to a department when given, else company-global (v2 visibility, ADR-0020).
+            visibility = "department" if dept_id is not None else "global"
+            src = Source(filename=f.name, knowledge_type=kt, status="pending",
+                         visibility=visibility)
             db.add(src)
             await db.flush()
             if dept_id is not None:

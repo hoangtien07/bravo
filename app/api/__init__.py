@@ -8,6 +8,7 @@ from app.api import (
     routes_agent,
     routes_agents,
     routes_ask,
+    routes_attachments,
     routes_auth,
     routes_conversations,
     routes_drafts,
@@ -27,5 +28,6 @@ router.include_router(routes_agents.router, tags=["agents"])
 router.include_router(routes_ask.router, tags=["knowledge"])
 router.include_router(routes_agent.router, tags=["agent"])
 router.include_router(routes_conversations.router, tags=["chat"])
+router.include_router(routes_attachments.router, tags=["chat"])
 router.include_router(routes_invoices.router, tags=["money-engine"])
 router.include_router(routes_drafts.router, tags=["drafts"])

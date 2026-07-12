@@ -76,6 +76,9 @@ async def ingest_source(
             page_number=b.page_number, sheet_name=b.sheet_name, cell_range=b.cell_range,
             heading_path=b.heading_path, is_table=b.is_table, extra=extra,
             department_ids=dept_ids,
+            # Denormalize visibility/owner for RLS-on-vector (v2). Mirror the parent Source so
+            # a personal upload's chunks are gated by owner, not the empty-array=global rule.
+            visibility=source.visibility, owner_id=source.owner_id,
         ))
     source.status = "ready"
     await db.commit()

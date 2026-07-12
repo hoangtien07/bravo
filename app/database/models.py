@@ -82,7 +82,19 @@ class Source(Base):
     knowledge_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending")  # pending|ready|failed
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    # Departments scoping this source. EMPTY = global (visible to all with read).
+    # v2 three-tier visibility (ADR-0020, DOCUMENT-MANAGEMENT.md). Replaces the old
+    # "empty departments == global" inference with an EXPLICIT column so a personal upload
+    # (empty departments) is NOT global. FAIL-CLOSED default: personal (owner-only).
+    #   personal   -> visible only to owner_id (+ admin). End-user chat uploads land here.
+    #   department -> scoped via source_departments (tier B, existing mechanism).
+    #   global     -> company-wide; requires an explicit doc:create:all publish.
+    visibility: Mapped[str] = mapped_column(String(20), default="personal")
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("employees.id"), nullable=True, index=True
+    )
+    # SHA-256 of the uploaded bytes — scope-aware dedup (same hash + same scope => reuse).
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    # Departments scoping this source (tier B). Only meaningful when visibility='department'.
     departments: Mapped[list[Department]] = relationship(
         secondary="source_departments", lazy="selectin"
     )
@@ -112,8 +124,12 @@ class Chunk(Base):
     is_table: Mapped[bool] = mapped_column(default=False)
     extra: Mapped[dict] = mapped_column(JSONB, default=dict)
     # Denormalized scope for RLS-on-vector predicate pushdown (findings/J).
-    # Mirrors source departments; empty array = global.
+    # Mirrors source departments (tier B).
     department_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    # Denormalized visibility/owner mirroring the parent Source (v2, ADR-0020). RLS-on-vector
+    # keys off these so a personal chunk never leaks via the old empty-array=global rule.
+    visibility: Mapped[str] = mapped_column(String(20), default="personal")
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
 
 
 # --- Drafts (non-invasive write path) & audit ---
@@ -200,6 +216,34 @@ class Conversation(Base):
     last_message_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, index=True)
     shared_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+
+
+class Attachment(Base):
+    """Chat-message attachment (v2 Track 3) — NOT vectorized (DocsGPT pattern).
+
+    An attachment is strictly PERSONAL: owner-only, gated in SQL by owner_id (admin bypass).
+    `kind` splits the chat handling: image -> multimodal base64 to the vision LLM; text ->
+    extracted `content` injected into the prompt (framed as DATA). Oversized text falls back
+    to RAG: a personal Source is created and `source_id` links it (retrieved via the normal
+    personal-tier chunk scope).
+    """
+    __tablename__ = "attachments"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"), index=True)
+    # Bound at first chat use so the attachment is reusable across the conversation's turns.
+    conversation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, index=True)
+    filename: Mapped[str] = mapped_column(String(500))
+    mime_type: Mapped[str] = mapped_column(String(100), default="application/octet-stream")
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    storage_path: Mapped[str] = mapped_column(String(1000))
+    kind: Mapped[str] = mapped_column(String(20), default="text")     # image | text
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending|ready|failed
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)   # extracted text (kind=text)
+    token_count: Mapped[int] = mapped_column(Integer, default=0)
+    source_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class ArchivalPassage(Base):

@@ -141,14 +141,23 @@ def boost_for_bravo_intent(query: str, results: list) -> list:
 
     source_types = set(intent.source_types)
     modules = set(intent.modules)
+    # Q8 (anti-KQPT dominance): for pure how-to / end-user questions, DEMOTE BA-analysis docs
+    # (kqpt_ptnv = 41% of the corpus, wins retrieval by volume and makes answers read like
+    # system analysis). Only when the how-to intent did NOT itself request kqpt_ptnv.
+    demote_kqpt = (
+        intent.lifecycle_stage == "end_user_guidance" and "kqpt_ptnv" not in source_types
+    )
     for r in results:
         boost = 0.0
-        if _extra_value(r, "source_type") in source_types:
+        stype = _extra_value(r, "source_type")
+        if stype in source_types:
             boost += 0.05
         if _extra_value(r, "module") in modules:
             boost += 0.025
         if intent.lifecycle_stage and _extra_value(r, "lifecycle_stage") == intent.lifecycle_stage:
             boost += 0.015
+        if demote_kqpt and stype == "kqpt_ptnv":
+            boost -= 0.04
         r.score = float(getattr(r, "score", 0.0)) + boost
 
     return sorted(results, key=lambda r: r.score, reverse=True)

@@ -89,6 +89,31 @@ def resolve_source_write_scope(
     return requested
 
 
+def resolve_source_visibility(
+    identity: Identity,
+    visibility: str,
+    requested_department_ids: list[uuid.UUID] | None = None,
+) -> tuple[str, list[uuid.UUID], uuid.UUID | None]:
+    """Authorize a v2 workspace upload and resolve (visibility, department_ids, owner_id).
+
+    FAIL-CLOSED default is 'personal' (owner-only) — the caller passes an explicit tier:
+      personal   -> always allowed for any authenticated identity; no departments; owner=self.
+      department -> reuses resolve_source_write_scope (own_dept subset / doc:create:all).
+      global     -> reuses resolve_source_write_scope(shared=True) -> requires doc:create:all.
+    Raises ValueError / PermissionError on an unauthorized or malformed request.
+    """
+    requested = list(requested_department_ids or [])
+    if visibility == "personal":
+        if requested:
+            raise ValueError("personal scope cannot include departments")
+        return "personal", [], identity.employee_id
+    if visibility == "global":
+        return "global", resolve_source_write_scope(identity, [], shared=True), None
+    if visibility == "department":
+        return "department", resolve_source_write_scope(identity, requested, shared=False), None
+    raise ValueError(f"unknown visibility: {visibility!r}")
+
+
 def chunk_scope_filter(identity: Identity, action: str = "read") -> "ColumnElement[bool]":
     """SQL predicate restricting Chunk rows to what `identity` may access.
 
@@ -98,58 +123,64 @@ def chunk_scope_filter(identity: Identity, action: str = "read") -> "ColumnEleme
             Chunk.embedding.cosine_distance(query_vec)
         ).limit(k)
 
+    v2 three-tier model (ADR-0020):
     - Admin / `doc:read:all`  -> no restriction.
-    - `doc:read:own_dept`     -> chunk is global (empty department_ids) OR overlaps user depts.
-    - No permission           -> deny all.
+    - `doc:read:own_dept`     -> own personal chunks OR global OR department-overlap.
+    - No permission           -> own personal chunks ONLY (a bare end-user can still chat over
+                                 their own uploaded files; they just can't see shared/global KB).
+
+    Personal chunks are gated by (visibility='personal' AND owner_id=me) — NEVER by the old
+    empty-array=global rule, so a user's private upload never leaks to their department.
     """
-    from sqlalchemy import cast, func, or_, true
+    from sqlalchemy import and_, cast, or_, true
     from sqlalchemy.dialects.postgresql import ARRAY, array
     from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
     from app.database.models import Chunk
 
+    mine = and_(Chunk.visibility == "personal", Chunk.owner_id == identity.employee_id)
     level = identity.scope_level("doc", action)
     if level == "all":
         return true()
     if level is None:
-        # Deny everything (false predicate).
-        return Chunk.id.is_(None)
+        # No shared-doc read permission -> personal-only (fail-closed to owner, not deny-all).
+        return mine
 
-    # own_dept: global rows (empty array) OR array overlap with user's departments.
-    is_global = func.cardinality(Chunk.department_ids) == 0
+    is_global = Chunk.visibility == "global"
     if not identity.department_ids:
-        return is_global
+        return or_(mine, is_global)
     dept_array = cast(array(identity.department_ids), ARRAY(PGUUID(as_uuid=True)))
-    return or_(is_global, Chunk.department_ids.op("&&")(dept_array))
+    in_dept = and_(Chunk.visibility == "department", Chunk.department_ids.op("&&")(dept_array))
+    return or_(mine, is_global, in_dept)
 
 
 def source_scope_filter(identity: Identity, action: str = "read") -> "ColumnElement[bool]":
-    """SQL predicate restricting Source rows (list endpoints). Same rule as chunks:
-    a source with NO rows in source_departments is GLOBAL; else OR-overlap with depts.
-    Enforced IN the query (no post-filter)."""
-    from sqlalchemy import exists, or_, select, true
+    """SQL predicate restricting Source rows (list endpoints). Mirrors chunk_scope_filter's
+    v2 three-tier model (personal/department/global); enforced IN the query (no post-filter)."""
+    from sqlalchemy import and_, exists, or_, select, true
 
     from app.database.models import Source, SourceDepartment
 
+    mine = and_(Source.visibility == "personal", Source.owner_id == identity.employee_id)
     level = identity.scope_level("doc", action)
     if level == "all":
         return true()
     if level is None:
-        return Source.id.is_(None)
+        return mine
 
-    has_any_dept = exists(
-        select(SourceDepartment.source_id).where(SourceDepartment.source_id == Source.id)
-    )
-    is_global = ~has_any_dept
+    is_global = Source.visibility == "global"
     if not identity.department_ids:
-        return is_global
-    in_my_dept = exists(
-        select(SourceDepartment.source_id).where(
-            (SourceDepartment.source_id == Source.id)
-            & (SourceDepartment.department_id.in_(identity.department_ids))
-        )
+        return or_(mine, is_global)
+    in_my_dept = and_(
+        Source.visibility == "department",
+        exists(
+            select(SourceDepartment.source_id).where(
+                (SourceDepartment.source_id == Source.id)
+                & (SourceDepartment.department_id.in_(identity.department_ids))
+            )
+        ),
     )
-    return or_(is_global, in_my_dept)
+    return or_(mine, is_global, in_my_dept)
 
 
 def conversation_scope_filter(identity: Identity) -> "ColumnElement[bool]":

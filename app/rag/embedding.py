@@ -38,8 +38,10 @@ def embed(texts: list[str], *, sensitive: bool = False) -> list[list[float]]:
     if not texts:
         return []
     if _settings.embedding_provider == "openai_compatible":
-        # Egress-guard: KHÔNG nhúng nội dung nhạy lên cloud.
-        if sensitive:
+        # Egress-guard: KHÔNG nhúng nội dung nhạy lên cloud — TRỪ khi egress_policy=cloud_only
+        # (ADR-0019/0022): không còn embedding local nên guard hạ xuống AUDIT (vẫn ghi vết ở
+        # dưới), không chặn. Dưới policy hybrid (mặc định) guard vẫn fail-closed như cũ.
+        if sensitive and _settings.egress_policy != "cloud_only":
             raise RuntimeError(
                 "[egress-guard] Từ chối nhúng nội dung NHẠY (HR/kế toán/PII) lên cloud — "
                 "đặt EMBEDDING_PROVIDER=local cho nguồn nhạy (invariant #4)."
