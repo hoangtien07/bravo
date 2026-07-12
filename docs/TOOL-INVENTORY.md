@@ -11,6 +11,7 @@
 |---|---|---|---|---|
 | `kb_search` | read | — (mở) | — | ✅ |
 | `metric_lookup` | read | `metric:read` | — | ✅ |
+| `preview_journal_entry` | read | `draft:create` | — (chỉ đọc draft đã dựng) | ✅ |
 | `create_journal_entry` | **write → draft** | `draft:create` | ✅ Nợ=Có (payload_builder) | ✅ |
 
 Sinh lại bảng này + chạy audit: `python -m app.agent.tool_inventory` (exit ≠0 nếu vi phạm).

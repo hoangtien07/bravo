@@ -282,6 +282,19 @@ def _register_builtin_tools() -> None:
             payload_builder=_build_journal_payload,
         )(_stub_create_journal_entry)
 
+    if "preview_journal_entry" not in REGISTRY:
+        register(
+            "preview_journal_entry",
+            # READ-ONLY: lộ money-engine cho chat — xem bút toán của 1 draft journal_entry
+            # (RLS-scoped). Số trả về là MetricResult -> verify-gate (invariant #3).
+            json_schema={"type": "object",
+                         "properties": {"draft_id": {"type": "string",
+                                                      "description": "ID bút toán nháp cần xem"}},
+                         "required": ["draft_id"]},
+            read_only=True,
+            required_permission="draft:create",   # AP maker; RLS phòng qua draft_scope_filter
+        )(_preview_journal_entry)
+
 
 def _noop_kb_search(**kwargs):  # placeholder fn; the loop performs retrieval directly
     return {"note": "kb_search được loop thực thi trực tiếp với db+identity (RLS-in-SQL)."}
@@ -301,6 +314,52 @@ def _metric_lookup(metric_id: str, params: dict | None = None, *, identity: Iden
 
 def _stub_create_journal_entry(**kwargs):  # never executed (write -> draft); here for schema
     return {"note": "đường ghi đi qua draft_queue.create_draft sau payload_builder (WP-E/W1.9)."}
+
+
+async def _preview_journal_entry(draft_id: str, *, identity: Identity, db: AsyncSession):
+    """READ-ONLY: lộ money-engine AP cho chat. Xem BÚT TOÁN của một draft journal_entry (đã dựng
+    deterministic từ hoá đơn qua build_journal_entry). Trả list[MetricResult] -> loop harvest vào
+    engine_values -> verify-gate: mọi số trong câu trả lời PHẢI khớp số engine (zero-hallucination,
+    invariant #3). RLS: chỉ draft trong phạm vi phòng người hỏi (draft_scope_filter). Đây là năng
+    lực bravo-insight (chat thuần) KHÔNG có: giải thích bút toán hoá đơn THẬT có số kiểm chứng."""
+    import uuid as _uuid
+    from decimal import Decimal
+
+    from sqlalchemy import select
+
+    from app.data_layer.semantic import MetricResult
+    from app.database.models import Draft
+    from app.erp.draft_queue import canonical_draft_kind, draft_scope_filter
+
+    try:
+        did = _uuid.UUID(str(draft_id))
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise ValueError("draft_id không hợp lệ.") from exc
+    draft = (await db.execute(select(Draft).where(
+        Draft.id == did, draft_scope_filter(identity, action="create")))).scalar_one_or_none()
+    if draft is None:  # không tồn tại HOẶC ngoài phạm vi phòng -> ẩn (RLS, không rò tồn tại)
+        raise ValueError("Không tìm thấy bút toán nháp trong phạm vi được phép truy cập.")
+    if canonical_draft_kind(draft.kind) != "journal_entry":
+        raise ValueError(f"Draft {did} không phải bút toán (kind={draft.kind}).")
+
+    payload = draft.payload or {}
+    out: list[MetricResult] = []
+    for ln in payload.get("lines", []):
+        acc = str(ln.get("account", "")).strip()
+        tail = "".join([f" · {ln['memo']}" if ln.get("memo") else "",
+                        f" · {ln['source_ref']}" if ln.get("source_ref") else ""])
+        for side, vi in (("debit", "Nợ"), ("credit", "Có")):
+            amt = ln.get(side)
+            if amt in (None, "", 0, "0"):
+                continue
+            out.append(MetricResult(
+                metric_id=f"butoan.{acc}.{side}", value=Decimal(str(amt)),
+                provenance=f"draft {did} · TK {acc} {vi}{tail}", scale=None))
+    for tot, vi in (("total_debit", "Tổng Nợ"), ("total_credit", "Tổng Có")):
+        if payload.get(tot) not in (None, ""):
+            out.append(MetricResult(metric_id=f"butoan.{tot}", value=Decimal(str(payload[tot])),
+                                    provenance=f"draft {did} · {vi}", scale=None))
+    return out
 
 
 def _build_journal_payload(args: dict) -> dict:
@@ -831,6 +890,10 @@ class AgentSession:
         ev = result.get("result")
         if isinstance(ev, MetricResult):
             return f"{ev.metric_id}={ev.value} {ev.scale or ''} ({ev.provenance})"
+        if isinstance(ev, list) and ev and all(isinstance(x, MetricResult) for x in ev):
+            # nhiều số engine (vd bút toán nhiều dòng) -> render từng dòng đọc được cho LLM
+            return "\n".join(f"{x.metric_id}={x.value} {x.scale or ''} ({x.provenance})"
+                             for x in ev)[:1500]
         if result.get("is_write"):
             return result.get("message", "đã tạo nháp")
         return json.dumps(result, ensure_ascii=False, default=str)[:500]
