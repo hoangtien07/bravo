@@ -174,6 +174,14 @@ class Settings(BaseSettings):
     openai_agents_max_turns: int = 8
     openai_agents_trace_sensitive_data: bool = False
 
+    # Frontier optional surfaces remain opt-in. Realtime is not exposed until a deployment has
+    # an authenticated transport; computer-use is proposal-only and blocked by policy first.
+    realtime_enabled: bool = False
+    realtime_model: str = "gpt-realtime"
+    computer_use_enabled: bool = False
+    computer_use_allowed_domains: str = ""
+    computer_use_max_steps: int = 8
+
     # Chat attachments (Track 3). Text at/under the cap is injected full-text into the prompt;
     # oversized text falls back to RAG-ingest into the user's personal workspace. 50k leaves
     # headroom for retrieval context + history + output inside a 128k window (LibreChat uses 100k
@@ -226,6 +234,8 @@ class Settings(BaseSettings):
             raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
         if not 0 <= self.agent_runtime_canary_percent <= 100:
             raise RuntimeError("[boot-guard] agent_runtime_canary_percent must be 0..100.")
+        if self.computer_use_max_steps < 1 or self.computer_use_max_steps > 50:
+            raise RuntimeError("[boot-guard] computer_use_max_steps must be 1..50.")
         if self.env not in {"staging", "production", "prod"}:
             return
         weak = {"change-me", "change-me-in-production", "change-me-256-bit-random"}

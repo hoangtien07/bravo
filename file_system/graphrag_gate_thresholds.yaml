@@ -1,0 +1,7 @@
+# A GraphRAG implementation may be promoted only after a blinded, relation-heavy evaluation.
+# Absolute quality must not regress, and the candidate must earn a meaningful lift on the subset
+# where a graph should help. Values are proportions in [0, 1].
+min_relation_lift: 0.05
+max_overall_regression: 0.01
+min_relation_cases: 30
+max_p95_latency_multiplier: 1.5

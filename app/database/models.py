@@ -16,6 +16,7 @@ from datetime import datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     Integer,
@@ -166,7 +167,12 @@ class AgentRun(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
     employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    status: Mapped[str] = mapped_column(String(40), default="running")  # running|paused_for_approval|done|failed
+    status: Mapped[str] = mapped_column(String(40), default="running")
+    # queued|planning|running|waiting_approval|completed|failed|cancelled. Legacy statuses
+    # remain accepted during the strangler migration so existing run history stays readable.
+    mode: Mapped[str] = mapped_column(String(30), default="auto")
+    plan: Mapped[dict] = mapped_column(JSONB, default=dict)
+    cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False)
     checkpoint_state: Mapped[dict] = mapped_column(JSONB, default=dict)
     # Token usage THẬT của lượt (W1.2) — nền cho cost-tracking (W2.4). 0 nếu backend không trả
     # usage. routed_cloud/backend nằm trong checkpoint_state.
@@ -174,6 +180,58 @@ class AgentRun(Base):
     idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     lease_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class AgentRunEvent(Base):
+    """Append-only, replayable client-safe progress events for a durable agent run."""
+    __tablename__ = "agent_run_events"
+    __table_args__ = (UniqueConstraint("agent_run_id", "seq", name="uq_agent_run_event_seq"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    agent_run_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("agent_runs.id", ondelete="CASCADE"), index=True)
+    seq: Mapped[int] = mapped_column(Integer)
+    event_type: Mapped[str] = mapped_column(String(80))
+    payload: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentApproval(Base):
+    """Approval interruption independent of domain Draft approvals.
+
+    A Draft remains the accounting-maker-checker artifact. This table is for any future SDK tool
+    call that needs an explicit pause/resume decision (connector action, computer-use, export).
+    """
+    __tablename__ = "agent_approvals"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    agent_run_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("agent_runs.id", ondelete="CASCADE"), index=True)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    tool_name: Mapped[str] = mapped_column(String(120))
+    args_hash: Mapped[str] = mapped_column(String(64))
+    preview: Mapped[dict] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(30), default="pending")
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Artifact(Base):
+    """Versioned, owner-scoped output produced by an agent run."""
+    __tablename__ = "artifacts"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    agent_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("agent_runs.id", ondelete="SET NULL"), nullable=True, index=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(60))  # research_report | spreadsheet | chart | document
+    title: Mapped[str] = mapped_column(String(300))
+    mime_type: Mapped[str] = mapped_column(String(120), default="text/markdown")
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    storage_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    provenance: Mapped[dict] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(30), default="ready")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

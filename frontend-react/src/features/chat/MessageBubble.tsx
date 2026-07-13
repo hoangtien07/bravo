@@ -10,6 +10,7 @@ import { Badge, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { DraftCard } from "./DraftCard";
 import { MermaidBlock } from "./MermaidBlock";
+import { downloadFile } from "@/api/client";
 import type { ChatMessage } from "@/api/types";
 
 function Steps({ steps }: { steps: NonNullable<ChatMessage["steps"]> }) {
@@ -27,6 +28,7 @@ function Steps({ steps }: { steps: NonNullable<ChatMessage["steps"]> }) {
               {s.type === "tool_call" && <span>🔧 gọi <b>{s.tool}</b></span>}
               {s.type === "tool_result" && <span>{s.isError ? "⚠" : "✓"} {s.tool}: {s.summary}</span>}
               {s.type === "step" && <span>· {s.action}</span>}
+              {s.type === "plan" && <span>→ {s.plan?.join(" → ")}</span>}
             </li>
           ))}
         </ul>
@@ -209,6 +211,20 @@ export function MessageBubble({ m, onCite, onFeedback, onReport, onRegenerate, o
         )}
         {!isUser && m.draft?.payload && (
           <DraftCard payload={m.draft.payload as any} draftId={m.draft.draft_id} onApprove={onApprove} onReject={onReject} readOnly={readOnly} />
+        )}
+        {!isUser && !!m.artifacts?.length && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {m.artifacts.map((artifact) => (
+              <button
+                key={artifact.id}
+                type="button"
+                className="rounded border border-border px-2 py-1 text-xs text-primary hover:bg-muted"
+                onClick={() => downloadFile(`/api/artifacts/${artifact.id}/download`, artifact.title)}
+              >
+                Tải {artifact.title}
+              </button>
+            ))}
+          </div>
         )}
         {!isUser && !m.streaming && (
           <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">

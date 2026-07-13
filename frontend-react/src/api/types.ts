@@ -23,6 +23,7 @@ export interface ChatMessage {
   // assistant runtime extras (streaming)
   steps?: AgentStep[];
   citations?: string[];
+  artifacts?: { id: string; kind: string; title: string }[];
   draft?: DraftEvent | null;
   grounded?: boolean;
   routedCloud?: boolean;
@@ -66,11 +67,12 @@ export interface SourceItem {
 }
 
 export interface AgentStep {
-  type: "step" | "tool_call" | "tool_result";
+  type: "step" | "tool_call" | "tool_result" | "plan";
   action?: string;
   tool?: string;
   isError?: boolean;
   summary?: string;
+  plan?: string[];
   args?: Record<string, unknown>;
 }
 
@@ -113,6 +115,9 @@ export interface JournalPayload {
 // SSE event union (khớp backend step_stream)
 export type SseEvent =
   | { type: "id"; conversation_id: string; agent_run_id: string }
+  | { type: "plan"; steps: string[] }
+  | { type: "plan_update"; steps: string[] }
+  | { type: "artifact"; artifact_id: string; kind: string; title: string }
   | { type: "source"; citations: string[] }
   | { type: "attachments"; items: { filename: string; kind: string }[] }
   | { type: "step"; action: string; step_n: number }

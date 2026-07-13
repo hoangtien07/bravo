@@ -1,0 +1,34 @@
+# Connector catalog is configuration, not authority.  An enabled entry is still filtered by
+# the caller's permissions and may only expose the listed operations.  External write actions
+# always require an AgentApproval; no credential or endpoint belongs in this file.
+connectors:
+  - id: workspace_documents
+    title: Tài liệu BRAVO trong workspace
+    kind: internal
+    enabled: true
+    required_permission: doc:read
+    operations: [search, read]
+    data_classification: internal
+  - id: erp_drafts
+    title: Bản nháp nghiệp vụ BRAVO
+    kind: internal
+    enabled: true
+    required_permission: draft:read
+    operations: [read, propose_write]
+    data_classification: restricted
+  # Examples of future external sources.  They remain disabled until an administrator provides
+  # a dedicated adapter, credentials in deployment secrets, and a reviewed data contract.
+  - id: sharepoint_knowledge
+    title: SharePoint Knowledge
+    kind: external
+    enabled: false
+    required_permission: connector:sharepoint:read
+    operations: [search, read]
+    data_classification: internal
+  - id: finance_mailbox
+    title: Hộp thư chứng từ tài chính
+    kind: external
+    enabled: false
+    required_permission: connector:mail:read
+    operations: [search, read, propose_write]
+    data_classification: restricted

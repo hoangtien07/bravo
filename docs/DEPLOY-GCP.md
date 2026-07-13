@@ -198,6 +198,46 @@ hỏi ngoài corpus → từ chối. (Chi tiết kịch bản: [DEPLOY-DEMO.md �
 
 ---
 
+### 5.1 Nâng cấp sang frontier control plane (migration 0012)
+
+Sau khi lấy commit có migration `0012_frontier_run_control_plane`, build lại cả `api` và `worker`
+(SDK Agents được cài trong image), rồi migrate **trước** khi recreate application containers:
+
+```bash
+cd ~/bravo
+dc() { docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"; }
+git pull --ff-only
+dc build api worker
+dc up -d postgres redis
+dc run --rm api alembic upgrade head
+dc up -d --force-recreate api worker caddy
+dc ps
+curl -fsS https://app.<domain>/readyz
+```
+
+Migration thêm durable run events, approval records và artifacts; không thay đổi/chạy lại corpus
+hay embeddings. Không chạy `down` trên VM production. Sau upgrade, đăng nhập rồi thử một lượt
+**Nghiên cứu sâu**: câu trả lời kết thúc phải có nút tải báo cáo; `GET /api/agent-runs/<id>/events`
+phải trả được plan/progress mà không trả token hay đối số tool.
+
+Rollout runtime phải theo thứ tự, mỗi bước theo dõi lỗi/latency/citation trước khi tăng tiếp:
+
+```ini
+# Bước 0: giữ hành vi hiện tại nhưng có control plane/UI mới
+AGENT_RUNTIME=legacy
+
+# Bước 1: canary text-only; attachment, write tool vẫn bắt buộc legacy/HITL
+AGENT_RUNTIME=canary
+AGENT_RUNTIME_CANARY_PERCENT=5
+
+# Chỉ sau khi canary vượt eval nghiệp vụ mới tăng dần 10 -> 25 -> 50 -> 100.
+```
+
+`REALTIME_ENABLED=false` và `COMPUTER_USE_ENABLED=false` phải giữ nguyên cho đến khi có session
+broker/allowlist HTTPS đã được security review. Computer-use hiện là proposal-only, không được
+phép tự thao tác ERP. GraphRAG cũng không bật bằng env: chỉ xem xét sau khi candidate vượt
+`python -m app.eval.graphrag_gate baseline.json candidate.json` theo ADR-0028.
+
 ## 6. Backup & Disaster Recovery (W2.5)
 
 Chi tiết restore + drill: [RUNBOOK-DR.md](RUNBOOK-DR.md). Trên GCP:

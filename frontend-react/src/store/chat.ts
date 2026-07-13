@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { streamChat } from "@/api/sse";
 import { uploadAttachment, deleteAttachment, getAttachment } from "@/api/workspace";
-import type { ChatMessage, SourceItem, StagedAttachment } from "@/api/types";
+import type { AgentStep, ChatMessage, SourceItem, StagedAttachment } from "@/api/types";
 
 function uuid() {
   return crypto.randomUUID();
@@ -17,6 +17,7 @@ interface ChatState {
   sending: boolean;
   abort: AbortController | null;
   staged: StagedAttachment[];
+  runMode: "auto" | "deep_research";
   pinnedSources: SourceItem[];   // P4-lite: workspace docs ghim vào ngữ cảnh hội thoại
   newConversation: () => string;
   setConversation: (id: string, messages: ChatMessage[]) => void;
@@ -25,6 +26,7 @@ interface ChatState {
   removeAttachment: (localId: string) => void;
   pinSource: (s: SourceItem) => void;
   unpinSource: (id: string) => void;
+  setRunMode: (mode: "auto" | "deep_research") => void;
   send: (question: string, onDone?: () => void) => Promise<void>;
   stop: () => void;
 }
@@ -35,11 +37,13 @@ export const useChat = create<ChatState>((set, get) => ({
   sending: false,
   abort: null,
   staged: [],
+  runMode: "auto",
   pinnedSources: [],
 
   pinSource: (s) => set((st) => st.pinnedSources.some((x) => x.id === s.id)
     ? st : { pinnedSources: [...st.pinnedSources, s] }),
   unpinSource: (id) => set((st) => ({ pinnedSources: st.pinnedSources.filter((x) => x.id !== id) })),
+  setRunMode: (runMode) => set({ runMode }),
 
   newConversation: () => {
     const id = uuid();
@@ -142,6 +146,7 @@ export const useChat = create<ChatState>((set, get) => ({
     const attachmentIds = ready.map((a) => a.id!) as string[];
     const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
     const sourceIds = get().pinnedSources.map((s) => s.id);   // P4-lite: pinned workspace docs
+    const mode = get().runMode;
 
     let cid = get().conversationId;
     if (!cid) cid = get().newConversation();
@@ -182,6 +187,22 @@ export const useChat = create<ChatState>((set, get) => ({
             break;
           case "status":
             patchLast((m) => (m.statusText = e.text));
+            break;
+          case "plan":
+          case "plan_update":
+            patchLast((m) => {
+              const prior = m.steps || [];
+              const nextPlan: AgentStep = { type: "plan", plan: e.steps };
+              const lastPlan = [...prior].map((s, i) => ({ s, i })).reverse().find(({ s }) => s.type === "plan");
+              m.steps = lastPlan
+                ? prior.map((s, i) => i === lastPlan.i ? nextPlan : s)
+                : [...prior, nextPlan];
+            });
+            break;
+          case "artifact":
+            patchLast((m) => (m.artifacts = [...(m.artifacts || []), {
+              id: e.artifact_id, kind: e.kind, title: e.title,
+            }]));
             break;
           case "step":
             patchLast((m) => (m.steps = [...(m.steps || []), { type: "step", action: e.action }]));
@@ -227,7 +248,8 @@ export const useChat = create<ChatState>((set, get) => ({
       },
       ac.signal,
       attachmentIds,
-      sourceIds
+      sourceIds,
+      mode
     );
     set({ sending: false, abort: null });
     onDone?.();

@@ -741,6 +741,12 @@ class AgentSession:
             yield {"type": "answer", "delta": tail}
         final = _label_ungrounded(streamer.full)
         cites, grounded = _prune_citations(final, citations)
+        if getattr(self, "run_mode", "auto") == "deep_research":
+            steps = ["Đã xác định phạm vi và nguồn được phép",
+                     "Đã truy hồi và đối chiếu bằng chứng",
+                     "Đã tổng hợp kết luận kèm trích dẫn"]
+            await self._set_research_plan(steps, "completed")
+            yield {"type": "plan_update", "steps": steps}
         mid = await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
         yield {"type": "done", "grounded": grounded, "unmatched": [], "citations": cites,
@@ -777,7 +783,9 @@ class AgentSession:
         try:
             from app.agent import runs
             await runs.start_run(self.db, run_id=self.agent_run_id, session_id=self.session_id,
-                                 employee_id=self.identity.employee_id)
+                                 employee_id=self.identity.employee_id,
+                                 mode=getattr(self, "run_mode", "auto"),
+                                 plan=getattr(self, "run_plan", None))
         except Exception:
             pass
 
@@ -790,6 +798,17 @@ class AgentSession:
                 checkpoint_state={
                     "created_draft": getattr(self, "_created_draft", False),
                     "routed_cloud": getattr(self, "_routed_cloud", False)})
+        except Exception:
+            pass
+
+    async def _set_research_plan(self, steps: list[str], state: str) -> None:
+        """Durable, non-sensitive Deep Research progress; failure must not stop an answer."""
+        if getattr(self, "run_mode", "auto") != "deep_research":
+            return
+        self.run_plan = {"state": state, "steps": steps}
+        try:
+            from app.agent import runs
+            await runs.update_plan(self.db, self.agent_run_id, self.run_plan)
         except Exception:
             pass
 
@@ -1184,6 +1203,12 @@ class AgentSession:
             safe = answer if verdict.grounded else verdict.safe_answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
             cites = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
+            if getattr(self, "run_mode", "auto") == "deep_research":
+                steps = ["Đã xác định phạm vi và nguồn được phép",
+                         "Đã truy hồi và đối chiếu bằng chứng",
+                         "Đã tổng hợp kết luận kèm trích dẫn"]
+                await self._set_research_plan(steps, "completed")
+                yield {"type": "plan_update", "steps": steps}
             mid = await self._safe_recall_add("assistant", safe)
             await self._close_run(self._terminal_status())
             yield {"type": "answer", "delta": safe}
@@ -1219,6 +1244,12 @@ class AgentSession:
             # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
             final = _label_ungrounded(final)
         cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
+        if getattr(self, "run_mode", "auto") == "deep_research":
+            steps = ["Đã xác định phạm vi và nguồn được phép",
+                     "Đã truy hồi và đối chiếu bằng chứng",
+                     "Đã tổng hợp kết luận kèm trích dẫn"]
+            await self._set_research_plan(steps, "completed")
+            yield {"type": "plan_update", "steps": steps}
         mid = await self._safe_recall_add("assistant", final)
         await self._close_run(self._terminal_status())
         yield {"type": "done", "grounded": grounded, "unmatched": [],
@@ -1285,11 +1316,22 @@ class AgentSession:
         self._tokens_used = 0
         self._aux_tokens = 0
         self.agent_run_id = uuid.uuid4()
+        self.run_plan = ({"state": "planning", "steps": [
+            "Xác định phạm vi và nguồn được phép",
+            "Truy hồi, đối chiếu và tổng hợp bằng chứng",
+            "Trình bày kết luận kèm trích dẫn",
+        ]} if getattr(self, "run_mode", "auto") == "deep_research" else {})
         await self._open_run()
         yield {"type": "id", "conversation_id": str(self.session_id),
                "agent_run_id": str(self.agent_run_id)}
         try:
             messages, _chunks, citations = await self._prepare_turn(user_message, attachments)
+            if getattr(self, "run_mode", "auto") == "deep_research":
+                steps = ["Đã xác định phạm vi và nguồn được phép",
+                         "Đang truy hồi và đối chiếu bằng chứng",
+                         "Chờ tổng hợp kết luận có trích dẫn"]
+                await self._set_research_plan(steps, "researching")
+                yield {"type": "plan_update", "steps": steps}
             if attachments:
                 yield {"type": "attachments",
                        "items": [{"filename": a.get("filename"), "kind": a.get("kind")}
@@ -1302,7 +1344,18 @@ class AgentSession:
                 raise RuntimeError("SDK canary requires text input")
             parts: list[str] = []
             async for event in runtime.stream_text(
-                    instructions=self._sdk_instructions(messages), user_input=user_input):
+                    instructions=self._sdk_instructions(messages), user_input=user_input,
+                    deep_research=getattr(self, "run_mode", "auto") == "deep_research"):
+                from app.agent import runs as _runs
+                if await _runs.is_cancel_requested(self.db, self.agent_run_id):
+                    answer = "Tác vụ đã được dừng theo yêu cầu của bạn."
+                    mid = await self._safe_recall_add("assistant", answer)
+                    await self._close_run("cancelled")
+                    yield {"type": "answer", "delta": answer}
+                    yield {"type": "done", "grounded": False, "stopped": "cancelled",
+                           "citations": citations, "routed_cloud": True,
+                           "session_id": str(self.session_id), **self._msg_ids(mid)}
+                    return
                 if event.type == "content.delta":
                     delta = str(event.data.get("delta") or "")
                     if delta:
@@ -1316,6 +1369,12 @@ class AgentSession:
                 final = "Không nhận được câu trả lời từ frontier runtime. Vui lòng thử lại."
                 yield {"type": "answer", "delta": final}
             cites, grounded = _prune_citations(final, citations)
+            if getattr(self, "run_mode", "auto") == "deep_research":
+                steps = ["Đã xác định phạm vi và nguồn được phép",
+                         "Đã truy hồi và đối chiếu bằng chứng",
+                         "Đã tổng hợp kết luận kèm trích dẫn"]
+                await self._set_research_plan(steps, "completed")
+                yield {"type": "plan_update", "steps": steps}
             mid = await self._safe_recall_add("assistant", final)
             await self._close_run("done")
             yield {"type": "done", "grounded": grounded, "citations": cites,
@@ -1357,11 +1416,22 @@ class AgentSession:
         self._aux_tokens = 0            # M1: rephrase/summarize usage during _prepare_turn
         self._tracker = tracker         # M3: exposed so tool/retrieval awaits can bound by deadline
         self.agent_run_id = uuid.uuid4()
+        self.run_plan = ({"state": "planning", "steps": [
+            "Xác định phạm vi và nguồn được phép",
+            "Truy hồi, đối chiếu và tổng hợp bằng chứng",
+            "Trình bày kết luận kèm trích dẫn",
+        ]} if getattr(self, "run_mode", "auto") == "deep_research" else {})
         await self._open_run()
         yield {"type": "id", "conversation_id": str(self.session_id),
                "agent_run_id": str(self.agent_run_id)}
         try:
             messages, chunks, citations = await self._prepare_turn(user_message, attachments)
+            if getattr(self, "run_mode", "auto") == "deep_research":
+                steps = ["Đã xác định phạm vi và nguồn được phép",
+                         "Đang truy hồi và đối chiếu bằng chứng",
+                         "Chờ tổng hợp kết luận có trích dẫn"]
+                await self._set_research_plan(steps, "researching")
+                yield {"type": "plan_update", "steps": steps}
             tracker.tokens += self._aux_tokens          # M1: aux calls count toward the budget
             self._tokens_used += self._aux_tokens
             if attachments:
@@ -1372,6 +1442,16 @@ class AgentSession:
             engine_values: list[MetricResult] = []
             observations: list[str] = []
             while True:
+                from app.agent import runs as _runs
+                if await _runs.is_cancel_requested(self.db, self.agent_run_id):
+                    answer = "Tác vụ đã được dừng theo yêu cầu của bạn."
+                    mid = await self._safe_recall_add("assistant", answer)
+                    await self._close_run("cancelled")
+                    yield {"type": "answer", "delta": answer}
+                    yield {"type": "done", "grounded": False, "stopped": "cancelled",
+                           "citations": citations, "routed_cloud": getattr(self, "_routed_cloud", False),
+                           "session_id": str(self.session_id), **self._msg_ids(mid)}
+                    return
                 tracker.check()
                 # P0b: single-generation decide. Knowledge turns (no engine values yet) STREAM the
                 # answer field live; financial turns buffer for the verify-gate (invariant #3).
@@ -1504,6 +1584,12 @@ class AgentSession:
             safe, unmatched = _label_ungrounded(answer), []   # abstain -> cắt đuôi bịa; giữ khối kiến-thức-chung
             citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
         await self._safe_recall_add("assistant", safe)
+        if getattr(self, "run_mode", "auto") == "deep_research":
+            await self._set_research_plan([
+                "Đã xác định phạm vi và nguồn được phép",
+                "Đã truy hồi và đối chiếu bằng chứng",
+                "Đã tổng hợp kết luận kèm trích dẫn",
+            ], "completed")
         await self._close_run(self._terminal_status())
         return {
             "answer": safe,

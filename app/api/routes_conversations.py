@@ -11,6 +11,7 @@ import json
 import logging
 import secrets
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import StreamingResponse
@@ -18,7 +19,9 @@ from pydantic import BaseModel
 from sqlalchemy import delete, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent import artifacts as artifact_svc
 from app.agent import conversations as conv_svc
+from app.agent import runs
 from app.agent.loop import AgentSession
 from app.config import get_settings
 from app.database import get_db
@@ -53,6 +56,10 @@ class ChatIn(BaseModel):
     question: str
     attachment_ids: list[uuid.UUID] = []
     source_ids: list[uuid.UUID] = []   # P4-lite: GHIM tài liệu workspace vào ngữ cảnh lượt này
+
+
+    mode: Literal["auto", "deep_research"] = "auto"
+    web_access: Literal["off", "auto", "on"] = "off"
 
 
 async def _load_attachment_payloads(
@@ -199,6 +206,8 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
 
     session = AgentSession(db, identity, session_id=conversation_id)
     session.pinned_source_ids = body.source_ids   # P4-lite: pin workspace docs into this turn
+    session.run_mode = body.mode
+    session.web_access = body.web_access
 
     lock = _conv_lock(conversation_id)
 
@@ -227,11 +236,46 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                     return
             started = _time.monotonic()
             first_token_seen = False
+            run_id: uuid.UUID | None = None
+            answer_parts: list[str] = []
+            artifact_emitted = False
             try:
                 async for event in session.step_stream(body.question, attachments):
+                    if event.get("type") == "id" and event.get("agent_run_id"):
+                        try:
+                            run_id = uuid.UUID(str(event["agent_run_id"]))
+                        except ValueError:
+                            run_id = None
                     if not first_token_seen and event.get("type") == "answer":
                         first_token_seen = True
                         record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
+                    if event.get("type") == "answer":
+                        answer_parts.append(str(event.get("delta") or ""))
+                    # Emit an artifact before `done` so the completed run has a durable,
+                    # owner-scoped report and a reconnecting client can discover it.
+                    if (event.get("type") == "done" and body.mode == "deep_research"
+                            and run_id is not None and not artifact_emitted and answer_parts):
+                        try:
+                            artifact = await artifact_svc.create_research_report(
+                                db, run_id=run_id, identity=identity, question=body.question,
+                                answer="".join(answer_parts),
+                                citations=list(event.get("citations") or []),
+                            )
+                            artifact_event = {
+                                "type": "artifact", "artifact_id": str(artifact.id),
+                                "kind": artifact.kind, "title": artifact.title,
+                            }
+                            await runs.record_event(db, run_id, artifact_event)
+                            artifact_emitted = True
+                            yield f"data: {json.dumps(artifact_event, ensure_ascii=False)}\\n\\n"
+                        except Exception:
+                            _log.warning("could not create deep research artifact for %s", run_id,
+                                         exc_info=True)
+                    if run_id is not None:
+                        try:
+                            await runs.record_event(db, run_id, event)
+                        except Exception:
+                            _log.warning("could not persist run event %s", run_id, exc_info=True)
                     yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
             except Exception:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
                 # Sanitize: KHÔNG leak chi tiết nội bộ (SQL/key-adjacent/stacktrace) ra client (F-7).

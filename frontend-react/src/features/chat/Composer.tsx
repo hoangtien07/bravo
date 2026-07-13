@@ -23,7 +23,7 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const { pinnedSources, pinSource, unpinSource } = useChat();
+  const { pinnedSources, pinSource, unpinSource, runMode, setRunMode } = useChat();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sources, setSources] = useState<SourceItem[]>([]);
   const openPicker = async () => {
@@ -119,6 +119,17 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
         </div>
       )}
       <div className="mx-auto max-w-3xl flex items-end gap-2">
+        <select
+          value={runMode}
+          onChange={(e) => setRunMode(e.target.value as "auto" | "deep_research")}
+          disabled={sending}
+          className="h-10 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+          aria-label="Chế độ xử lý"
+          title="Tự động chọn chiến lược, hoặc Nghiên cứu sâu cho câu hỏi đa nguồn"
+        >
+          <option value="auto">Tự động</option>
+          <option value="deep_research">Nghiên cứu sâu</option>
+        </select>
         <input
           ref={fileRef}
           type="file"
