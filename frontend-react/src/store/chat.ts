@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { streamChat } from "@/api/sse";
+import { api } from "@/api/client";
 import { uploadAttachment, deleteAttachment, getAttachment } from "@/api/workspace";
 import type { AgentStep, ChatMessage, SourceItem, StagedAttachment } from "@/api/types";
 
@@ -16,6 +17,7 @@ interface ChatState {
   messages: ChatMessage[];
   sending: boolean;
   abort: AbortController | null;
+  activeRunId: string | null;
   staged: StagedAttachment[];
   runMode: "auto" | "deep_research";
   pinnedSources: SourceItem[];   // P4-lite: workspace docs ghim vào ngữ cảnh hội thoại
@@ -36,6 +38,7 @@ export const useChat = create<ChatState>((set, get) => ({
   messages: [],
   sending: false,
   abort: null,
+  activeRunId: null,
   staged: [],
   runMode: "auto",
   pinnedSources: [],
@@ -47,11 +50,11 @@ export const useChat = create<ChatState>((set, get) => ({
 
   newConversation: () => {
     const id = uuid();
-    set({ conversationId: id, messages: [], staged: [], pinnedSources: [] });
+    set({ conversationId: id, messages: [], staged: [], pinnedSources: [], activeRunId: null });
     return id;
   },
 
-  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [], pinnedSources: [] }),
+  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [], pinnedSources: [], activeRunId: null }),
 
   addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
 
@@ -134,8 +137,13 @@ export const useChat = create<ChatState>((set, get) => ({
     }),
 
   stop: () => {
+    const runId = get().activeRunId;
+    if (runId) {
+      // Cooperative server cancellation persists even after this browser stream is aborted.
+      void api(`/api/agent-runs/${runId}/cancel`, { method: "POST" }).catch(() => {});
+    }
     get().abort?.abort();
-    set({ sending: false, abort: null });
+    set({ sending: false, abort: null, activeRunId: null });
   },
 
   send: async (question, onDone) => {
@@ -157,6 +165,7 @@ export const useChat = create<ChatState>((set, get) => ({
     set((s) => ({
       sending: true,
       abort: ac,
+      activeRunId: null,
       staged: [],
       messages: [
         ...s.messages,
@@ -179,6 +188,9 @@ export const useChat = create<ChatState>((set, get) => ({
       question,
       (e) => {
         switch (e.type) {
+          case "id":
+            set({ activeRunId: e.agent_run_id });
+            break;
           case "source":
             patchLast((m) => (m.citations = e.citations));
             break;
@@ -235,7 +247,7 @@ export const useChat = create<ChatState>((set, get) => ({
               if (last - 1 >= 0 && e.user_message_id && msgs[last - 1].role === "user") {
                 msgs[last - 1] = { ...msgs[last - 1], id: e.user_message_id };
               }
-              return { messages: msgs };
+              return { messages: msgs, activeRunId: null };
             });
             break;
           case "error":
@@ -243,6 +255,7 @@ export const useChat = create<ChatState>((set, get) => ({
               m.streaming = false;
               m.content = (m.content || "") + `\n\n⚠ ${e.message}`;
             });
+            set({ activeRunId: null });
             break;
         }
       },
@@ -251,7 +264,11 @@ export const useChat = create<ChatState>((set, get) => ({
       sourceIds,
       mode
     );
-    set({ sending: false, abort: null });
+    // Do not clear state owned by a newer send. `stop` also clears this state
+    // immediately, while the backend receives the durable cancellation request.
+    if (get().abort === ac) {
+      set({ sending: false, abort: null, activeRunId: null });
+    }
     onDone?.();
   },
 }));

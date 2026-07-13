@@ -62,6 +62,21 @@ class ChatIn(BaseModel):
     web_access: Literal["off", "auto", "on"] = "off"
 
 
+def _merge_pinned_source_ids(requested: list[uuid.UUID], attachments: list[dict]) -> list[uuid.UUID]:
+    """Pin RAG-fallback attachments to this turn instead of relying on ambient retrieval."""
+    merged = list(requested)
+    for item in attachments:
+        source_id = item.get("source_id")
+        if source_id:
+            try:
+                parsed = uuid.UUID(str(source_id))
+            except ValueError:
+                continue
+            if parsed not in merged:
+                merged.append(parsed)
+    return merged
+
+
 async def _load_attachment_payloads(
     db: AsyncSession, identity: Identity, conversation_id: uuid.UUID,
     attachment_ids: list[uuid.UUID],
@@ -95,6 +110,11 @@ async def _load_attachment_payloads(
         await db.commit()
 
     current_ids = [a.id for a in current]
+    # A large attachment is ingested as a personal Source. Include only its identifier here;
+    # `chat_stream` pins it with the same RLS query used for user-selected workspace sources.
+    for a in current:
+        if a.source_id:
+            payloads.append({"kind": "source", "filename": a.filename, "source_id": str(a.source_id)})
     prior_text = list((await db.execute(
         select(Attachment).where(
             Attachment.conversation_id == conversation_id,
@@ -194,6 +214,11 @@ async def _messages(db: AsyncSession, conv_id: uuid.UUID) -> list[ConversationMe
 async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn,
                       identity: Identity = Depends(require_permission("doc:read")),
                       db: AsyncSession = Depends(get_db)):
+    if body.web_access != "off":
+        # Do not silently accept a product option with no approved web connector/runtime.
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            "Web research chưa được cấu hình cho môi trường này.")
+
     # Ownership: không được post vào session của người khác (chống forgery session_id).
     try:
         await conv_svc.ensure_conversation(db, conversation_id, identity.employee_id,
@@ -205,7 +230,7 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
         db, identity, conversation_id, body.attachment_ids)
 
     session = AgentSession(db, identity, session_id=conversation_id)
-    session.pinned_source_ids = body.source_ids   # P4-lite: pin workspace docs into this turn
+    session.pinned_source_ids = _merge_pinned_source_ids(body.source_ids, attachments)
     session.run_mode = body.mode
     session.web_access = body.web_access
 
@@ -239,6 +264,8 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
             run_id: uuid.UUID | None = None
             answer_parts: list[str] = []
             artifact_emitted = False
+            terminal_event = False
+            stream_failed = False
             try:
                 async for event in session.step_stream(body.question, attachments):
                     if event.get("type") == "id" and event.get("agent_run_id"):
@@ -251,6 +278,8 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                         record_first_token(_time.monotonic() - started)   # Q7 gate: p95 < 3s
                     if event.get("type") == "answer":
                         answer_parts.append(str(event.get("delta") or ""))
+                    if event.get("type") == "done":
+                        terminal_event = True
                     # Emit an artifact before `done` so the completed run has a durable,
                     # owner-scoped report and a reconnecting client can discover it.
                     if (event.get("type") == "done" and body.mode == "deep_research"
@@ -278,6 +307,7 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                             _log.warning("could not persist run event %s", run_id, exc_info=True)
                     yield f"data: {json.dumps(event, ensure_ascii=False, default=str)}\n\n"
             except Exception:  # noqa: BLE001 — báo lỗi qua stream, không 500 giữa chừng
+                stream_failed = True
                 # Sanitize: KHÔNG leak chi tiết nội bộ (SQL/key-adjacent/stacktrace) ra client (F-7).
                 _log.exception("chat_stream failed for conversation %s", conversation_id)
                 yield (
@@ -290,6 +320,18 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
                     + "\n\n"
                 )
             finally:
+                # A client can abort the SSE fetch after the run id has been emitted. Without
+                # this terminal write the durable run remains falsely "running" forever.
+                if run_id is not None and not terminal_event:
+                    try:
+                        status_name = "failed" if stream_failed else "cancelled"
+                        await runs.finish_run(db, run_id, status=status_name)
+                        await runs.record_event(db, run_id, {
+                            "type": "status",
+                            "text": "Tác vụ bị gián đoạn trước khi hoàn tất.",
+                        })
+                    except Exception:
+                        _log.warning("could not close interrupted run %s", run_id, exc_info=True)
                 record_turn(_time.monotonic() - started)   # F5: turn-latency histogram
                 if adv:
                     try:

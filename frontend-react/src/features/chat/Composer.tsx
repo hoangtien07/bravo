@@ -136,7 +136,7 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
           multiple
           accept={ATTACH_ACCEPT}
           className="hidden"
-          onChange={(e) => { if (e.target.files) onAttach(e.target.files); if (fileRef.current) fileRef.current.value = ""; }}
+          onChange={(e) => { if (e.target.files) routeFiles(e.target.files); if (fileRef.current) fileRef.current.value = ""; }}
         />
         <Button
           variant="outline"
@@ -168,7 +168,15 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
               submit();
             }
           }}
-          placeholder={dragOver ? "Thả tệp để đính kèm…" : "Hỏi tri thức, số liệu, hoặc đính kèm tệp… (Enter để gửi, Shift+Enter xuống dòng)"}
+          onPaste={(e) => {
+            const files = Array.from(e.clipboardData.files);
+            if (!files.length) return;
+            // Browser screenshots arrive as clipboard Files. Preventing the default avoids
+            // inserting an irrelevant clipboard representation into the question text.
+            e.preventDefault();
+            routeFiles(files);
+          }}
+          placeholder={dragOver ? "Thả tệp để đính kèm…" : "Hỏi tri thức, số liệu, hoặc dán ảnh/đính kèm tệp… (Enter để gửi, Shift+Enter xuống dòng)"}
           className="min-h-[44px] resize-none overflow-y-auto"
           aria-label="ô nhập câu hỏi"
         />

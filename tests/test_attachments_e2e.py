@@ -83,6 +83,21 @@ def test_image_attachment_becomes_multimodal_content_array(monkeypatch):
     assert img["image_url"]["url"].startswith("data:image/png;base64,")
 
 
+def test_rag_fallback_attachment_source_is_pinned_to_the_current_turn():
+    """Large attachment sources must not depend on an unrelated ambient retrieval hit."""
+    from app.api.routes_conversations import _merge_pinned_source_ids
+
+    explicit = uuid.uuid4()
+    attachment_source = uuid.uuid4()
+    merged = _merge_pinned_source_ids(
+        [explicit],
+        [{"kind": "source", "source_id": str(attachment_source)},
+         {"kind": "source", "source_id": str(explicit)},
+         {"kind": "source", "source_id": "not-a-uuid"}],
+    )
+    assert merged == [explicit, attachment_source]
+
+
 # --- DB: extraction + oversized fallback + owner isolation -------------------------- #
 def _db_available() -> bool:
     import asyncpg
