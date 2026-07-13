@@ -11,12 +11,14 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
+from typing import Iterable
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Chunk
 from app.rag.bravo_intent import boost_for_bravo_intent
+from app.rag.filters import RetrievalFilters
 from app.rag.kb_lifecycle import apply_version_policy
 from app.rag import rerank as _rerank
 from app.rag.embedding import embed_one
@@ -62,8 +64,29 @@ class Retrieved:
         return f"(nguồn: {self.source_id}{', ' + ', '.join(loc) if loc else ''})"
 
 
+def _clean_values(values: Iterable[str]) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(v.strip() for v in values if v and v.strip()))
+
+
+def _apply_metadata_filters(stmt, filters: RetrievalFilters | None):
+    """Apply manifest metadata filters to a Chunk statement without weakening RLS."""
+    if not filters or not filters.active:
+        return stmt
+    source_types = _clean_values(filters.source_types)
+    modules = _clean_values(filters.modules)
+    stages = _clean_values(filters.lifecycle_stages)
+    if source_types:
+        stmt = stmt.where(Chunk.extra["source_type"].astext.in_(source_types))
+    if modules:
+        stmt = stmt.where(Chunk.extra["module"].astext.in_(modules))
+    if stages:
+        stmt = stmt.where(Chunk.extra["lifecycle_stage"].astext.in_(stages))
+    return stmt
+
+
 async def vector_search(db: AsyncSession, identity: Identity, query: str,
-                        k: int = 150, min_score: float = 0.0) -> list[Retrieved]:
+                        k: int = 150, min_score: float = 0.0,
+                        filters: RetrievalFilters | None = None) -> list[Retrieved]:
     """Scope-filtered dense vector search (RLS enforced IN the query).
 
     `min_score`: bỏ chunk có cosine-sim < ngưỡng (giảm nhiễu ngữ nghĩa). 0 = không lọc.
@@ -75,6 +98,7 @@ async def vector_search(db: AsyncSession, identity: Identity, query: str,
         .order_by("dist")
         .limit(k)
     )
+    stmt = _apply_metadata_filters(stmt, filters)
     rows = (await db.execute(stmt)).all()
     out = [
         Retrieved(
@@ -103,7 +127,8 @@ def rrf_fuse(*ranked_lists: list[Retrieved], k: int = 60) -> list[Retrieved]:
 
 
 async def lexical_search(db: AsyncSession, identity: Identity, query: str,
-                         k: int = 150) -> list[Retrieved]:
+                         k: int = 150,
+                         filters: RetrievalFilters | None = None) -> list[Retrieved]:
     """Scope-filtered lexical search via Postgres full-text search (BM25-like).
 
     Catches exact terms/codes/numbers (e.g. số chứng từ, mã tài khoản) that dense
@@ -122,6 +147,7 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
         .order_by(func.ts_rank(tsv, tsq).desc())
         .limit(k)
     )
+    stmt = _apply_metadata_filters(stmt, filters)
     rows = list((await db.execute(stmt)).all())
 
     # OR-fallback (council 2026-07-12 #2): plainto = AND-toàn-bộ-từ + 'simple' không có
@@ -146,6 +172,7 @@ async def lexical_search(db: AsyncSession, identity: Identity, query: str,
                 .order_by(rank_or.desc())
                 .limit(k)
             )
+            stmt_or = _apply_metadata_filters(stmt_or, filters)
             seen = {c.id for c, _ in rows}
             rows.extend((c, r) for c, r in (await db.execute(stmt_or)).all()
                         if c.id not in seen)
@@ -222,7 +249,8 @@ async def _maybe_expand(db: AsyncSession, identity: Identity,
 
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
                    candidate_k: int = 150, use_rerank: bool | None = None,
-                   min_score: float | None = None) -> list[Retrieved]:
+                   min_score: float | None = None,
+                   filters: RetrievalFilters | None = None) -> list[Retrieved]:
     """Full hybrid pipeline (findings/J): vector + lexical -> RRF -> cross-encoder rerank.
 
     All branches enforce RLS in-query. Rerank defaults to settings.rerank_enabled
@@ -241,8 +269,9 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
     from app.rag.vn_terms import expand_abbreviations
     query = expand_abbreviations(query)
 
-    dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score)
-    lexical = await lexical_search(db, identity, query, k=candidate_k)
+    dense = await vector_search(db, identity, query, k=candidate_k, min_score=min_score,
+                                filters=filters)
+    lexical = await lexical_search(db, identity, query, k=candidate_k, filters=filters)
     # intent boost -> version policy (current version wins over superseded/deprecated).
     fused = apply_version_policy(boost_for_bravo_intent(query, rrf_fuse(dense, lexical)))
     if not fused:
@@ -284,7 +313,8 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
 async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str],
                          top_n: int = 20, candidate_k: int = 150,
                          use_rerank: bool | None = None,
-                         min_score: float | None = None) -> list[Retrieved]:
+                         min_score: float | None = None,
+                         filters: RetrievalFilters | None = None) -> list[Retrieved]:
     """Multi-query hybrid retrieval (Q2): run each query's dense+lexical branches, RRF-fuse
     ALL branches together, then boost/version/rerank ONCE against the primary query.
 
@@ -295,7 +325,8 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
     qs = [q for q in dict.fromkeys(q.strip() for q in queries) if q.strip()]
     if len(qs) <= 1:
         return await retrieve(db, identity, qs[0] if qs else "", top_n=top_n,
-                              candidate_k=candidate_k, use_rerank=use_rerank, min_score=min_score)
+                              candidate_k=candidate_k, use_rerank=use_rerank, min_score=min_score,
+                              filters=filters)
 
     from app.config import get_settings
     from app.rag.vn_terms import expand_abbreviations
@@ -309,8 +340,9 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
     branches: list[list[Retrieved]] = []
     for q in qs:
         qx = expand_abbreviations(q)
-        branches.append(await vector_search(db, identity, qx, k=candidate_k, min_score=min_score))
-        branches.append(await lexical_search(db, identity, qx, k=candidate_k))
+        branches.append(await vector_search(
+            db, identity, qx, k=candidate_k, min_score=min_score, filters=filters))
+        branches.append(await lexical_search(db, identity, qx, k=candidate_k, filters=filters))
     fused = apply_version_policy(boost_for_bravo_intent(primary, rrf_fuse(*branches)))
     if not fused:
         _log.info("retrieval.gap zero_hit (multi) primary=%r", primary[:160])

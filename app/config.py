@@ -164,6 +164,16 @@ class Settings(BaseSettings):
     # turn; gpt-4o-class context is 128k. max_steps/deadline stay tight as the real cost guard.
     agent_max_tokens: int = 120_000
 
+    # Frontier runtime migration. "legacy" keeps the current constrained ReAct loop; "openai"
+    # selects the OpenAI Agents SDK adapter once its canary is enabled.  The switch is explicit so
+    # a provider/runtime regression never silently changes the deployed chatbot behavior.
+    agent_runtime: str = "legacy"              # legacy | openai | canary
+    agent_runtime_canary_percent: int = 0       # 0..100; evaluated per user in the API layer
+    openai_agents_fast_model: str = "gpt-5.4-mini"
+    openai_agents_reasoning_model: str = "gpt-5.6-sol"
+    openai_agents_max_turns: int = 8
+    openai_agents_trace_sensitive_data: bool = False
+
     # Chat attachments (Track 3). Text at/under the cap is injected full-text into the prompt;
     # oversized text falls back to RAG-ingest into the user's personal workspace. 50k leaves
     # headroom for retrieval context + history + output inside a 128k window (LibreChat uses 100k
@@ -212,6 +222,10 @@ class Settings(BaseSettings):
             from app.site_config import load_site_config
             load_site_config(self.site_config)
         self.validate_data_runtime_policy()
+        if self.agent_runtime not in {"legacy", "openai", "canary"}:
+            raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
+        if not 0 <= self.agent_runtime_canary_percent <= 100:
+            raise RuntimeError("[boot-guard] agent_runtime_canary_percent must be 0..100.")
         if self.env not in {"staging", "production", "prod"}:
             return
         weak = {"change-me", "change-me-in-production", "change-me-256-bit-random"}

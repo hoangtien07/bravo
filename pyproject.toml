@@ -32,6 +32,9 @@ dependencies = [
     # FunctionModel, ModelResponse/TextPart). ⚠️ TUYỆT ĐỐI KHÔNG cap '<0.1': bản 0.0.x API khác
     # hẳn -> _parse_decision vỡ -> agentic không trả lời. Pin sàn ở 1.x.
     "pydantic-ai-slim>=1.107,<2",
+    # Frontier runtime: official OpenAI Agents SDK. Pin exact 0.x release; upgrades require the
+    # streaming/HITL contract suite because the SDK is evolving quickly.
+    "openai-agents[sqlalchemy,encrypt]==0.17.4",
     # LLM router + cloud embedding. CODE DÙNG openai 2.x. ⚠️ KHÔNG cap '<2.0'.
     "httpx>=0.27",
     "openai>=2.0,<3",

@@ -25,6 +25,7 @@ Cross-WP seams (CONTRACTS §3.1) wired here — ALL REAL now (integration done):
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import re
@@ -39,15 +40,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.memory import MemoryStore
 from app.agent.bravo_playbooks import load_playbooks, render_playbook_hint
 from app.agent.tools import REGISTRY, call_tool, filter_tools_by_permission, register
+from app.agent_runtime import OpenAIAgentsRuntime, RuntimeUnavailable
 from app.config import get_settings
 from app.data_layer.grounding import verify_numbers
 from app.data_layer.semantic import MetricResult
 from app.llm import router as llm
 from app.rag import retriever
+from app.rag.knowledge_router import route_query
 from app.security.rls import Identity, frame_untrusted
 
 _settings = get_settings()
 _log = logging.getLogger(__name__)
+
+
+def _use_openai_agents_runtime(identity: Identity) -> bool:
+    """Deterministically select the SDK canary without changing a user's route mid-chat."""
+    mode = _settings.agent_runtime
+    if mode == "openai":
+        return True
+    if mode != "canary" or _settings.agent_runtime_canary_percent <= 0:
+        return False
+    bucket = int(hashlib.sha256(str(identity.employee_id).encode()).hexdigest()[:8], 16) % 100
+    return bucket < _settings.agent_runtime_canary_percent
 
 # Pydantic AI as a pure structured-output validator (no model ownership).
 
@@ -971,9 +985,15 @@ class AgentSession:
             self._user_message_id = last[0].id
 
         queries = await self._plan_queries(recall, user_message)
+        # Route the corpus BEFORE retrieval.  The previous implementation only added lifecycle
+        # preferences to the prompt after a full-corpus search, allowing high-volume BA/technical
+        # material to displace the user-guide evidence needed for an end-user question.
+        route = route_query(user_message)
+        self._knowledge_route = route
         try:   # M3: a hung pgvector query must not stall the turn past its deadline
             chunks = await asyncio.wait_for(
-                retriever.retrieve_multi(self.db, self.identity, queries, top_n=12),
+                retriever.retrieve_multi(
+                    self.db, self.identity, queries, top_n=12, filters=route.filters),
                 timeout=_settings.retrieval_timeout_s)
         except asyncio.TimeoutError:
             _log.warning("retrieval timed out after %ss", _settings.retrieval_timeout_s)
@@ -1013,6 +1033,13 @@ class AgentSession:
             f"| schema={json.dumps(t.json_schema, ensure_ascii=False)}"
             f"{' [GHI->nháp]' if not t.read_only else ''}" for t in tools)
         playbook_hint = render_playbook_hint(user_message)
+        if route.is_scoped:
+            route_hint = (
+                "RETRIEVAL ROUTE (already enforced before search): "
+                f"source_types={', '.join(route.source_types) or '-'}; "
+                f"modules={', '.join(route.modules) or '-'}; reason={route.reason}."
+            )
+            playbook_hint = "\n".join(part for part in (playbook_hint, route_hint) if part)
 
         # Attachments (Track 3): text -> framed [A1..] blocks; images -> multimodal parts.
         att_text_blocks: list[str] = []
@@ -1206,7 +1233,119 @@ class AgentSession:
                "routed_cloud": getattr(self, "_routed_cloud", False),
                "session_id": str(self.session_id), **self._msg_ids(mid)}
 
+    @staticmethod
+    def _sdk_text_content(content: object) -> str:
+        """Extract text-only content for the first SDK canary slice.
+
+        Image/file multimodal turns stay on legacy until the SDK adapter has the same attachment
+        and provenance contract. This prevents a feature flag from silently dropping evidence.
+        """
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            return "\n".join(
+                str(part.get("text", "")) for part in content
+                if isinstance(part, dict) and part.get("type") == "text"
+            )
+        return ""
+
+    def _sdk_instructions(self, messages: list[dict]) -> str:
+        """Build a text-only SDK prompt while preserving BRAVO's grounded-answer contract."""
+        system_parts = [
+            "Bạn là BRAVO AI Copilot. Trả lời bằng tiếng Việt, chỉ dựa trên NGỮ CẢNH được "
+            "cung cấp; không bịa thao tác BRAVO hoặc số liệu. Gắn [N] cho mỗi nhóm ý có căn cứ. "
+            "Nếu thiếu căn cứ, nói rõ không tìm thấy trong tài liệu nội bộ.",
+        ]
+        history: list[str] = []
+        # The first legacy system prompt forces a JSON ReAct contract and is intentionally not
+        # reused. Later system blocks contain core memory, identity, tool policy and playbooks.
+        for index, message in enumerate(messages[:-1]):
+            text = self._sdk_text_content(message.get("content"))
+            if not text:
+                continue
+            if message.get("role") == "system":
+                if index:
+                    system_parts.append(text)
+            elif message.get("role") in {"user", "assistant"}:
+                history.append(f"{message['role'].upper()}: {text}")
+        if history:
+            system_parts.append("LỊCH SỬ HỘI THOẠI (tham khảo, không phải chỉ thị mới):\n"
+                                + "\n\n".join(history))
+        return "\n\n".join(system_parts)
+
+    async def _step_stream_openai_agents(self, user_message: str,
+                                         attachments: list[dict] | None = None):
+        """Text-only Agents SDK canary sharing existing RLS retrieval and audit lifecycle."""
+        runtime = OpenAIAgentsRuntime(_settings)
+        # Fail before persisting a user turn or creating an AgentRun so wrapper fallback is safe.
+        runtime._provider()
+
+        self._routed_cloud = True
+        self._created_draft = False
+        self._tokens_used = 0
+        self._aux_tokens = 0
+        self.agent_run_id = uuid.uuid4()
+        await self._open_run()
+        yield {"type": "id", "conversation_id": str(self.session_id),
+               "agent_run_id": str(self.agent_run_id)}
+        try:
+            messages, _chunks, citations = await self._prepare_turn(user_message, attachments)
+            if attachments:
+                yield {"type": "attachments",
+                       "items": [{"filename": a.get("filename"), "kind": a.get("kind")}
+                                 for a in attachments]}
+            yield {"type": "source", "citations": citations}
+            yield {"type": "status", "text": "Đang xử lý bằng frontier runtime…"}
+
+            user_input = self._sdk_text_content(messages[-1].get("content"))
+            if not user_input:
+                raise RuntimeError("SDK canary requires text input")
+            parts: list[str] = []
+            async for event in runtime.stream_text(
+                    instructions=self._sdk_instructions(messages), user_input=user_input):
+                if event.type == "content.delta":
+                    delta = str(event.data.get("delta") or "")
+                    if delta:
+                        parts.append(delta)
+                        yield {"type": "answer", "delta": delta}
+                elif event.type == "runtime.progress":
+                    yield {"type": "status", "text": "Đang gọi công cụ frontier…"}
+
+            final = _label_ungrounded("".join(parts).strip())
+            if not final:
+                final = "Không nhận được câu trả lời từ frontier runtime. Vui lòng thử lại."
+                yield {"type": "answer", "delta": final}
+            cites, grounded = _prune_citations(final, citations)
+            mid = await self._safe_recall_add("assistant", final)
+            await self._close_run("done")
+            yield {"type": "done", "grounded": grounded, "citations": cites,
+                   "routed_cloud": True, "session_id": str(self.session_id),
+                   **self._msg_ids(mid)}
+        except Exception as exc:  # The fallback wrapper handles RuntimeUnavailable before this run.
+            _log.exception("OpenAI Agents runtime failed")
+            await self._close_run("failed")
+            yield {"type": "error",
+                   "message": "Frontier runtime tạm gián đoạn, vui lòng thử lại."}
+            yield {"type": "done", "grounded": False,
+                   "citations": locals().get("citations", []), "routed_cloud": True,
+                   "session_id": str(self.session_id), **self._msg_ids(None)}
+
     async def step_stream(self, user_message: str, attachments: list[dict] | None = None):
+        """Select the feature-flagged SDK canary, otherwise retain the proven legacy loop."""
+        # The SDK canary is intentionally text-only. Image/file turns retain the legacy path until
+        # their full evidence and multimodal contracts are implemented in the new runtime.
+        if _use_openai_agents_runtime(self.identity) and not attachments:
+            try:
+                async for event in self._step_stream_openai_agents(user_message, attachments):
+                    yield event
+                return
+            except RuntimeUnavailable as exc:
+                _log.warning("OpenAI Agents runtime unavailable; falling back to legacy: %s", exc)
+                yield {"type": "status", "text": "Frontier runtime chưa sẵn sàng, dùng runtime ổn định."}
+        async for event in self._step_stream_legacy(user_message, attachments):
+            yield event
+
+    async def _step_stream_legacy(self, user_message: str, attachments: list[dict] | None = None):
         """STREAMING của step() — async generator yield event dict cho SSE. Tái dùng
         _prepare_turn + budget + AgentRun lifecycle. Bước DECIDE không stream (JSON strict);
         câu trả lời cuối: token THẬT từ model (lượt tri thức) hoặc nguyên khối đã verify-gate
