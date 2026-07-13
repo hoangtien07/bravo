@@ -177,13 +177,22 @@ async def health() -> dict[str, str]:
 if _FRONTEND.exists():
     app.mount("/static", StaticFiles(directory=str(_FRONTEND)), name="static")
 
+    def _spa_index_response() -> FileResponse:
+        # The entry HTML points to hashed assets. Do not let a browser retain an
+        # old entry document after a deployment, otherwise it can keep loading
+        # the old UI bundle even though the API container was replaced.
+        return FileResponse(
+            str(_FRONTEND / "index.html"),
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
+
     @app.get("/")
     async def index() -> FileResponse:
-        return FileResponse(str(_FRONTEND / "index.html"))
+        return _spa_index_response()
 
     @app.get("/{full_path:path}")
     async def spa_fallback(full_path: str) -> FileResponse:
         if full_path.startswith(("api/", "static/")) or full_path in (
                 "livez", "readyz", "health", "metrics", "docs", "openapi.json"):
             raise HTTPException(status_code=404)
-        return FileResponse(str(_FRONTEND / "index.html"))
+        return _spa_index_response()

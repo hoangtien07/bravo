@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { setUnauthorizedHandler } from "@/api/client";
 import { useAuth } from "@/store/auth";
 import { AppShell } from "@/features/chat/AppShell";
@@ -17,7 +17,13 @@ import { SharedPage } from "@/features/shared/SharedPage";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { identity, loading } = useAuth();
-  if (!identity && !loading) return <Navigate to="/login" replace />;
+  const location = useLocation();
+  // Keep the original SPA URL across authentication. In particular, this means
+  // `/?ui=beta` reaches the beta selector after a user signs in.
+  if (!identity && !loading) {
+    const next = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/login?next=${next}`} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -45,7 +51,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={identity ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/shared/:token" element={<SharedPage />} />
       <Route element={<Protected><AppShell /></Protected>}>
         <Route path="/" element={<Chat />} />

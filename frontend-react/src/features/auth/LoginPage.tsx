@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, auth as tokenStore } from "@/api/client";
 import { Button, Card, Input } from "@/components/ui";
 import { useAuth } from "@/store/auth";
@@ -16,21 +16,31 @@ export function LoginPage() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [oidc, setOidc] = useState(false);
-  const { login, loadMe } = useAuth();
+  const { identity, login, loadMe } = useAuth();
   const nav = useNavigate();
+  const location = useLocation();
+  const requestedNext = new URLSearchParams(location.search).get("next");
+  // Only allow an in-app relative destination; this prevents an open redirect.
+  const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+    ? requestedNext
+    : "/";
 
   // OIDC callback redirect về /login#token=<jwt> -> lưu token + vào app (W2.1).
   useEffect(() => {
+    if (identity) {
+      nav(next, { replace: true });
+      return;
+    }
     const m = window.location.hash.match(/token=([^&]+)/);
     if (m) {
       tokenStore.set(decodeURIComponent(m[1]));
       window.location.hash = "";
-      loadMe().then(() => nav("/"));
+      loadMe().then(() => nav(next, { replace: true }));
       return;
     }
     api<{ oidc_enabled: boolean }>("/api/auth/config")
       .then((c) => setOidc(c.oidc_enabled)).catch(() => {});
-  }, []);
+  }, [identity, loadMe, nav, next]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +48,7 @@ export function LoginPage() {
     setErr("");
     try {
       await login(email, pw);
-      nav("/");
+      nav(next, { replace: true });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Đăng nhập thất bại");
     } finally {
