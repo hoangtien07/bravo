@@ -158,11 +158,14 @@ EMBEDDING_PROVIDER=local
 EMBEDDING_MODEL=BAAI/bge-m3
 EMBEDDING_DIM=1024
 
-# LLM: cloud (demo, corpus KHÔNG nhạy) HOẶC Qwen local (§7.4)
+# LLM cloud-only cho demo: khai báo tường minh để ảnh đi đúng model vision và mọi egress được audit.
+# Chỉ bật khi đã phê duyệt việc corpus/tệp người dùng rời hạ tầng.
+EGRESS_POLICY=cloud_only
 CLOUD_ENABLED=true
 CLOUD_BASE_URL=<endpoint OpenAI-compatible>
 CLOUD_MODEL=<model>
 CLOUD_API_KEY=<key>                  # chỉ nằm trong .env trên VM, KHÔNG commit
+CLOUD_VISION=true
 DEMO_ALLOW_CLOUD_ANSWERS=true
 STREAM_COMPOSE_ANSWER=true           # streaming token thật (W1.4)
 
