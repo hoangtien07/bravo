@@ -25,7 +25,7 @@ không phải retrieval. Không quy trình nào tự đóng lỗ đó — cần 
 
 - **Bộ câu hỏi**: `app/eval/parity_questions.yaml` (mẫu: `.example.yaml`) — phân tầng theo nhóm nghiệp vụ (nhập chứng từ / báo cáo / khoá sổ / lỗi thường gặp), lấy từ log pilot + phàn nàn council.
 - **Chạy bravo**: `python -m app.eval.parity_bench app/eval/parity_questions.yaml > parity_run.json` (dùng đúng cấu hình prod: rerank theo settings, top_n=12).
-- **Chạy BravoGen**: thu thủ công (không có API) → điền `bravogen_answer`.
+- **Chạy BravoGen**: dùng runner xác thực `python -m app.eval.bravogen_benchmark run app/eval/bravogen_benchmark.example.yaml --out artifacts/bravogen/run.json` với token test ngắn hạn trong `BRAVOGEN_BENCHMARK_TOKEN`; không lưu token/cURL/HAR. Xem [BRAVOGEN-BENCHMARK.md](BRAVOGEN-BENCHMARK.md). Reviewer vẫn điền verdict thủ công sau khi đối chiếu ground truth.
 - **Chấm mù**: 2 người (helpdesk + triển khai), rubric:
   - đúng nghiệp vụ BRAVO · đầy đủ · khả thi thao tác · **trung thực nguồn** (world-knowledge KHÔNG nhãn = thua tự động).
   - điền `verdict` = win|tie|loss, `failure_label` cho mỗi ca thua.

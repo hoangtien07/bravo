@@ -46,6 +46,7 @@ Thumbs.db
 # Runtime
 server.log
 *.log
+artifacts/bravogen/
 .venv/
 data/
 # ...nhưng danh mục TT99 freeze (nguồn-sự-thật runtime) PHẢI version:
