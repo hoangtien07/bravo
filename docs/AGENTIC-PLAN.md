@@ -1,5 +1,9 @@
 # AGENTIC-PLAN — Chuyển BRAVO AI Copilot sang Constrained Agentic AI
 
+> **Status: IMPLEMENTED LEGACY WORK-PACKAGE PLAN / REFERENCE.** The 8/8 marker below describes the
+> original work-package scope, not current conversational quality or rebuild readiness. Current
+> status is [PROJECT-STATE.md](PROJECT-STATE.md).
+
 > Kết tinh từ: **nghiên cứu agentic** ([research/findings/K](research/findings/K-agentic-architecture.md) + [phụ lục](research/findings/K-appendix-threads-detail.md)) → **thẩm định Hội đồng** (phán quyết **GO_WITH_CHANGES**) → **đánh giá lại code thực tế**. Bám 4 nguyên tắc bất biến ([../CLAUDE.md](../CLAUDE.md)).
 > **Trạng thái: kế hoạch task-level — ĐÃ TRIỂN KHAI** (8/8 WP DONE, xem [work-packages/STATUS.md](work-packages/STATUS.md)). File này giữ lại làm "definition of ready" gốc; trạng thái hiện tại + đánh giá độ trưởng thành: [COUNCIL-REVIEW-2026-07.md](COUNCIL-REVIEW-2026-07.md).
 > **Cập nhật 2026-06-10 theo định hướng mới của chủ dự án:** (1) **tạm chưa dùng ERP read-only API**; demo gồm **2 phần** — *Chat AI hướng dẫn* + *Agentic AI*; (2) chế độ kế toán **TT99/2025**; (3) tài nguyên khiêm tốn (mở rộng khi chứng minh được giá trị); (4) tạm chưa triển khai endpoint đọc data doanh nghiệp bằng **LLM cục bộ** — demo chạy trên **cloud model** với corpus không nhạy ([../app/config.py](../app/config.py) đã có cờ demo).

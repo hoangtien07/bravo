@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.rag.knowledge_router import route_query
+from app.rag.knowledge_router import route_for_profile, route_query
 
 
 def test_end_user_question_scopes_to_end_user_playbook_before_retrieval():
@@ -25,3 +25,17 @@ def test_unknown_question_remains_unscoped_instead_of_forcing_a_false_zero_hit()
 
     assert route.reason == "unscoped"
     assert not route.filters.active
+
+
+def test_explicit_profile_scopes_retrieval_before_search():
+    route = route_for_profile("Tạo B00Lookup", "bravo_user_guide")
+
+    assert route.reason == "profile:bravo_user_guide"
+    assert route.filters.source_types == ("user_guide", "mindmap", "basic_rule")
+    assert "technical_manual" not in route.filters.source_types
+
+
+def test_isms_profile_is_fail_closed_to_policy_sources():
+    route = route_for_profile("Quy trình kiểm soát", "isms")
+
+    assert route.filters.source_types == ("legal_standard",)

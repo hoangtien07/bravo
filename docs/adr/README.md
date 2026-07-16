@@ -1,5 +1,10 @@
 # Architecture Decision Records (ADR)
 
+> **Numbering note:** two accepted decisions were historically created with prefix `0027`.
+> This index assigns stable aliases `0027a` (feedback) and `0027b` (OpenAI runtime migration).
+> Do not infer that they are the same ADR. Renumbering/moving accepted ADRs requires a separate
+> owner decision because existing documents reference both filenames.
+
 Mỗi ADR ghi lại **một** quyết định kiến trúc quan trọng tại thời điểm đưa ra: bối cảnh, các phương án, lựa chọn và hệ quả. ADR là *bất biến* sau khi `Accepted` — muốn đổi thì viết ADR mới thay thế.
 
 Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập nhật index này).

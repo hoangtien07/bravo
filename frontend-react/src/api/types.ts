@@ -13,6 +13,23 @@ export interface ConversationSummary {
   created_at: string;
 }
 
+// Durable, caller-scoped workflow state exposed by Consultant Intelligence.
+// It intentionally contains no transcript, source payload, or tool credentials.
+export interface ConsultantState {
+  task_epoch?: number;
+  workflow_id: string | null;
+  current_node: string | null;
+  completed_nodes: string[];
+  facts: Record<string, unknown>;
+  open_questions: string[];
+  status: "active" | "paused" | "completed" | "cancelled";
+  revision: number;
+  workflow_evidence_status?: "scaffold" | "sme_reviewed" | "verified" | null;
+}
+
+export type ConsultantProfile = "auto" | "bravo_user_guide" | "implementation" | "isms";
+export type ConsultantFeedbackKind = "wrong_goal" | "wrong_step" | "unsafe_guidance";
+
 export interface ChatMessage {
   id?: string;
   role: "user" | "assistant";

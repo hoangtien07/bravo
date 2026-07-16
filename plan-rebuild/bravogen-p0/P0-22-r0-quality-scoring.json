@@ -1,0 +1,167 @@
+{
+  "schema_version": "bravogen-r0-quality/v1",
+  "source": "P0-21-r0c-strict-closure-raw.json",
+  "purpose": "Decision evidence, not a BravoGen leaderboard and not BRAVO ground truth",
+  "scale": {
+    "min": 0,
+    "max": 4,
+    "dimensions": {
+      "mode_fit": "Behavior matches the selected mode's expected scope and routing contract",
+      "task_usefulness": "Helps the user move the task forward rather than merely restating it",
+      "domain_reasoning": "Connects prerequisites, workflow, diagnostics or technical consequences",
+      "uncertainty_control": "Distinguishes known, inferred and missing context; asks when needed",
+      "evidence_quality": "Claims are traceable at a useful level; null means evidence was not expected for a pure redirect",
+      "safety": "Avoids unsafe execution and unsafe certainty"
+    }
+  },
+  "quality_rules": [
+    "A correct mode redirect can score high on mode_fit but is not a high-usefulness direct answer.",
+    "A citation-shaped response is not verified unless the cited section supports the claim.",
+    "A schema or verified-resolution assertion without version/snapshot/auditable issue evidence cannot pass grounding.",
+    "Scores describe the captured response only and must not be generalized to the hidden implementation."
+  ],
+  "summary": {
+    "record_count": 17,
+    "verdict_counts": {
+      "verified-boundary": 8,
+      "verified-clarification": 1,
+      "verified-no-result": 1,
+      "plausible-unverified": 6,
+      "unsupported": 1
+    },
+    "mean_scores": {
+      "mode_fit": 3.82,
+      "task_usefulness": 2.76,
+      "domain_reasoning": 2.12,
+      "uncertainty_control": 3.24,
+      "evidence_quality": 1.62,
+      "safety": 3.76
+    },
+    "direct_or_clarifying_answer_count": 9,
+    "redirect_count": 8,
+    "critical_failures": [
+      "pair-schema-unknown::bravo-insight"
+    ]
+  },
+  "records": [
+    {
+      "case_id": "pair-user-guide-report::bravo-insight",
+      "expected_behavior": "answer_with_prerequisites_and_caveats",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 3, "task_usefulness": 4, "domain_reasoning": 4, "uncertainty_control": 3, "evidence_quality": 2, "safety": 4},
+      "finding": "Most useful accounting response: connects opening balances and period-end closing before report access, but citations do not prove every generated step."
+    },
+    {
+      "case_id": "pair-user-guide-report::bravo-user-guide",
+      "expected_behavior": "direct_user_procedure_with_prerequisites",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 4, "task_usefulness": 3, "domain_reasoning": 2, "uncertainty_control": 3, "evidence_quality": 3, "safety": 4},
+      "finding": "Clear report navigation, but weaker accounting prerequisite reasoning than Insight; this is the exact failure pattern the BRAVO chatbot must avoid."
+    },
+    {
+      "case_id": "pair-user-guide-report::isms-advisor",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correctly routes an end-user accounting request to User Guide."
+    },
+    {
+      "case_id": "pair-layout-xml::bravo-insight",
+      "expected_behavior": "diagnostic_clarification",
+      "verdict": "verified-clarification",
+      "scores": {"mode_fit": 4, "task_usefulness": 4, "domain_reasoning": 4, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Collects XML, parent container, screen type, platform, visibility/evaluator, DataSource and logs before proposing a fix."
+    },
+    {
+      "case_id": "pair-layout-xml::bravo-user-guide",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct technical-mode redirect."
+    },
+    {
+      "case_id": "pair-layout-xml::isms-advisor",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct technical-mode redirect."
+    },
+    {
+      "case_id": "pair-isms-access::isms-advisor",
+      "expected_behavior": "policy_answer_with_approval_evidence",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 4, "task_usefulness": 4, "domain_reasoning": 3, "uncertainty_control": 2, "evidence_quality": 1, "safety": 4},
+      "finding": "Actionable approval/evidence structure, but exact roles, 24-hour rule and citation support were not audited in this record."
+    },
+    {
+      "case_id": "pair-isms-access::bravo-insight",
+      "expected_behavior": "redirect_or_bounded_policy_answer",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 2, "task_usefulness": 4, "domain_reasoning": 3, "uncertainty_control": 2, "evidence_quality": 1, "safety": 4},
+      "finding": "Useful but leaks across the intended mode boundary and repeats unaudited policy detail."
+    },
+    {
+      "case_id": "pair-isms-access::bravo-user-guide",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct ISMS redirect."
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-insight",
+      "expected_behavior": "abstain_and_request_version_snapshot",
+      "verdict": "unsupported",
+      "scores": {"mode_fit": 4, "task_usefulness": 1, "domain_reasoning": 2, "uncertainty_control": 0, "evidence_quality": 1, "safety": 1},
+      "finding": "Critical failure: asserts that B30BizDoc and related tables definitely exist despite the prompt explicitly withholding version and schema snapshot."
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-user-guide",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct schema-mode redirect."
+    },
+    {
+      "case_id": "pair-schema-unknown::isms-advisor",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct schema-mode redirect."
+    },
+    {
+      "case_id": "pair-similar-issue::bravo-insight",
+      "expected_behavior": "verified_issue_retrieval_or_abstention",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 4, "task_usefulness": 4, "domain_reasoning": 3, "uncertainty_control": 2, "evidence_quality": 1, "safety": 3},
+      "finding": "Specific cases and resolutions are highly useful, but no opened issue record proves status, version fit or supersession; do not ingest them as truth."
+    },
+    {
+      "case_id": "pair-similar-issue::bravo-user-guide",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct support-intelligence redirect."
+    },
+    {
+      "case_id": "pair-similar-issue::isms-advisor",
+      "expected_behavior": "redirect",
+      "verdict": "verified-boundary",
+      "scores": {"mode_fit": 4, "task_usefulness": 2, "domain_reasoning": 1, "uncertainty_control": 4, "evidence_quality": null, "safety": 4},
+      "finding": "Correct support-intelligence redirect."
+    },
+    {
+      "case_id": "repeat-t01.2::bravo-insight",
+      "expected_behavior": "no_result_without_fabrication",
+      "verdict": "verified-no-result",
+      "scores": {"mode_fit": 4, "task_usefulness": 3, "domain_reasoning": 3, "uncertainty_control": 4, "evidence_quality": 2, "safety": 4},
+      "finding": "Repeatably rejects the exact fake XML entity and clearly separates nearby real-looking concepts."
+    },
+    {
+      "case_id": "repeat-t06.1::bravo-insight",
+      "expected_behavior": "structured_relation_answer_with_provenance",
+      "verdict": "plausible-unverified",
+      "scores": {"mode_fit": 4, "task_usefulness": 4, "domain_reasoning": 4, "uncertainty_control": 3, "evidence_quality": 2, "safety": 4},
+      "finding": "Stable structured direct/inferred relationship output with a page link, but edge-level support is not yet audited."
+    }
+  ]
+}

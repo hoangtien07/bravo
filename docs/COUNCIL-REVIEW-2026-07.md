@@ -1,5 +1,8 @@
 # Biên bản Hội đồng — BRAVO đáp ứng bao nhiêu % so với mặt bằng agentic doanh nghiệp 7/2026
 
+> **Status: HISTORICAL REVIEW EVIDENCE (2026-07-05).** Scores and recommendations are a dated
+> snapshot, not current project state. See [PROJECT-STATE.md](PROJECT-STATE.md).
+
 - **Ngày:** 2026-07-05
 - **Yêu cầu:** Chấm điểm BRAVO AI Copilot so với các hệ AI agentic doanh nghiệp lớn (tính đến 7/2026); lập hội đồng chuyên gia + end-user phản biện khó tính; lên kế hoạch sửa.
 - **Phương pháp:** 3 nhóm hội đồng độc lập (benchmark agentic · 4 end-user khó tính · kiến trúc sư/SRE) chấm trên khảo sát code thật (file:line kiểm chứng), nhánh `bravo-v0.1`.

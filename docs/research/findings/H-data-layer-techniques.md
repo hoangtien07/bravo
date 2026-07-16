@@ -1,6 +1,6 @@
 # Findings H — Tầng số liệu: NL2SQL an toàn, Semantic Layer, Table-RAG (deep-dive kỹ thuật)
 
-> Lấp khoảng trống "how" của [ADR-0004](../adr/0004-llm-never-computes-numbers.md) (LLM không tính số) & [ADR-0005](../adr/0005-no-free-form-sql.md) (không SQL tự do). Agent đọc nguồn gốc arXiv/ACL + tài liệu sản phẩm, 2026-06-08. Phân biệt [FACT]/[suy luận]/KXM.
+> Lấp khoảng trống "how" của [ADR-0004](../../adr/0004-llm-never-computes-numbers.md) (LLM không tính số) & [ADR-0005](../../adr/0005-no-free-form-sql.md) (không SQL tự do). Agent đọc nguồn gốc arXiv/ACL + tài liệu sản phẩm, 2026-06-08. Phân biệt [FACT]/[suy luận]/KXM.
 
 ## 0. Kết luận: cả 2 ADR được hậu thuẫn mạnh
 - **ADR-0005 (metric layer)** là **cách duy nhất hiện có** đạt độ chính xác ~100% *trong phạm vi đã model* + chống fan-out theo cấu trúc.

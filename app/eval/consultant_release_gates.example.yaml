@@ -1,0 +1,34 @@
+schema_version: consultant-release-gates/v1
+# This is a template, not approval. Keep it redaction-safe: link evidence IDs or internal
+# document paths, never customer conversations, credentials, logs, or provider responses.
+gates:
+  - gate_id: sme_quality_calibration
+    required: true
+    status: pending
+    owner: null
+    evidence_refs: []
+  - gate_id: workflow_owner_and_version_mapping
+    required: true
+    status: pending
+    owner: null
+    evidence_refs: []
+  - gate_id: verified_schema_and_kedb_coverage
+    required: true
+    status: pending
+    owner: null
+    evidence_refs: []
+  - gate_id: memory_retention_and_data_boundary
+    required: true
+    status: pending
+    owner: null
+    evidence_refs: []
+  - gate_id: canary_slo_and_on_call
+    required: true
+    status: pending
+    owner: null
+    evidence_refs: []
+  - gate_id: external_expert_provider
+    required: false
+    status: not_applicable
+    owner: null
+    evidence_refs: []

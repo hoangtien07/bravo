@@ -84,6 +84,20 @@ class Settings(BaseSettings):
     # Demo: allow non-sensitive tasks (KB user-guide Q&A) to use the cloud LLM.
     demo_allow_cloud_answers: bool = False
 
+    # Consultant Intelligence Layer. External-expert egress remains separately disabled.
+    consultant_enabled: bool = False
+    consultant_external_expert_enabled: bool = False
+    consultant_rollout_percent: int = 100
+    consultant_config_version: str = "consultant/v1"
+    # Gap curation is the only scheduled Consultant job. It creates review-required internal
+    # briefs; it never calls an external provider or activates knowledge.
+    consultant_curation_enabled: bool = False
+    consultant_curation_max_gaps: int = 100
+    # Task-state expiry is separate from generic chat history/archival retention. It is disabled
+    # until a data owner approves a duration and erasure/backup semantics.
+    consultant_state_retention_enabled: bool = False
+    consultant_state_retention_days: int = 0
+
     # Q9 vision OCR for scanned PDFs (ADR-0019 lifts the ADR-0009 OCR descope under cloud-only).
     # Needs pypdfium2 (optional dep) + a vision-capable cloud model. Numbers transcribed from a
     # scan stay quote-level (evidence_level=derived_summary) — never fed to the number verify-gate.
@@ -234,6 +248,14 @@ class Settings(BaseSettings):
             raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
         if not 0 <= self.agent_runtime_canary_percent <= 100:
             raise RuntimeError("[boot-guard] agent_runtime_canary_percent must be 0..100.")
+        if not 0 <= self.consultant_rollout_percent <= 100:
+            raise RuntimeError("[boot-guard] consultant_rollout_percent must be 0..100.")
+        if not 1 <= self.consultant_curation_max_gaps <= 1000:
+            raise RuntimeError("[boot-guard] consultant_curation_max_gaps must be 1..1000.")
+        if self.consultant_state_retention_enabled and not 1 <= self.consultant_state_retention_days <= 3650:
+            raise RuntimeError(
+                "[boot-guard] consultant_state_retention_days must be 1..3650 when retention is enabled."
+            )
         if self.computer_use_max_steps < 1 or self.computer_use_max_steps > 50:
             raise RuntimeError("[boot-guard] computer_use_max_steps must be 1..50.")
         if self.env not in {"staging", "production", "prod"}:

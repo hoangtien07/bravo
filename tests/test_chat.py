@@ -133,6 +133,24 @@ def test_sse_sequence_persist_and_multiturn(monkeypatch):
     _run(monkeypatch, body)
 
 
+def test_consultant_structured_feedback_is_idempotent_and_transcript_free(monkeypatch):
+    async def body(c):
+        cid = str(uuid.uuid4())
+        # The endpoint accepts caller-owned feedback independently of whether a workflow has
+        # already matched; it persists only typed state metadata, not this answer text.
+        first = await c.post(f"/api/consultant/state/{cid}/feedback", json={"kind": "wrong_goal"})
+        assert first.status_code == 404  # no owned conversation yet
+        await _stream(c, cid, "Làm sao lên BCTC?")
+        response = await c.post(f"/api/consultant/state/{cid}/feedback", json={"kind": "wrong_goal"})
+        assert response.status_code == 200
+        assert response.json() == {"created": True, "kind": "wrong_goal",
+                                   "promotion": "review_required_only"}
+        duplicate = await c.post(f"/api/consultant/state/{cid}/feedback", json={"kind": "wrong_goal"})
+        assert duplicate.status_code == 200 and duplicate.json()["created"] is False
+
+    _run(monkeypatch, body)
+
+
 def test_rename_share_and_rls(monkeypatch):
     async def body(c):
         cid = str(uuid.uuid4())

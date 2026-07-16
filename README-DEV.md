@@ -1,6 +1,10 @@
 # BRAVO AI Copilot — Developer Guide
 
-Hiện thực theo [docs/PLAN.md](docs/PLAN.md). Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector (modular monolith — [ADR-0007](docs/adr/0007-code-strategy.md)).
+> **Freshness:** setup reference for the existing platform. Read
+> [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md) before assuming current phase, test status, or
+> active architecture work. `docs/PLAN.md` is now a historical implementation plan.
+
+Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector (modular monolith — [ADR-0007](docs/adr/0007-code-strategy.md)).
 
 ## Chạy nhanh (dev)
 ```bash

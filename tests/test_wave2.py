@@ -8,7 +8,7 @@ from app.config import Settings
 
 def _prod(**kw) -> Settings:
     base = dict(env="production", jwt_secret="x" * 20, mcp_token_pepper="y" * 20,
-                cloud_enabled=False, allow_self_approval=False)
+                cloud_enabled=False, allow_self_approval=False, egress_policy="hybrid")
     base.update(kw)
     return Settings(**base)
 

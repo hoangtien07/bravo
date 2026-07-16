@@ -1,0 +1,32 @@
+schema_version: consultant-sme-review/v1
+# Reviewer IDs and run IDs are pseudonyms. Do not place prompt, response, retrieved passages,
+# customer identifiers, tokens, or raw logs in this file.
+reviews:
+  - case_id: financial.close.correction
+    run_id: consultant-blind-a
+    reviewer_id: finance-sme-a
+    critical_milestones_met: true
+    harmful_actions: []
+    scores:
+      goal_identification: 15
+      critical_prerequisites: 20
+      current_state_branch: 15
+      next_action_usefulness: 15
+      multi_turn_coordination: 15
+      environment_specificity: 8
+      clarity_efficiency: 5
+      safety_authority: 5
+  - case_id: financial.close.correction
+    run_id: consultant-blind-a
+    reviewer_id: bravo-sme-b
+    critical_milestones_met: true
+    harmful_actions: []
+    scores:
+      goal_identification: 15
+      critical_prerequisites: 19
+      current_state_branch: 15
+      next_action_usefulness: 14
+      multi_turn_coordination: 15
+      environment_specificity: 8
+      clarity_efficiency: 4
+      safety_authority: 5

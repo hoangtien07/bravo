@@ -1,0 +1,363 @@
+{
+  "schema_version": "bravogen-r0c-closure/v1",
+  "captured_at": "2026-07-15T08:56:57.835Z",
+  "closed_at": "2026-07-15T09:06:00Z",
+  "scope": "synthetic read-only prompts; no customer data",
+  "initial_profile_exclusion_honored": true,
+  "closure_profile_override_authorized_by_user": true,
+  "account_identifiers_persisted": false,
+  "capture_fidelity": {
+    "full_accessibility_tree_records": 14,
+    "normalized_answer_excerpt_records": [
+      "pair-similar-issue::bravo-user-guide",
+      "repeat-t01.2::bravo-insight",
+      "repeat-t06.1::bravo-insight"
+    ]
+  },
+  "cross_mode_unit": "one identical anchor prompt completed in all three modes",
+  "records": [
+    {
+      "case_id": "pair-user-guide-report::bravo-insight",
+      "anchor_case_id": "pair-user-guide-report",
+      "mode": "Bravo Insight",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/21049d5a-2c8b-4043-a001-acaf5eed1c37",
+      "prompt": "Cách lên báo cáo cân đối phát sinh theo kỳ; hãy nêu nguồn hoặc nói thiếu căn cứ.",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Dựa trên kết quả tra cứu từ cơ sở dữ liệu tri thức hiện tại (Sách hướng dẫn sử dụng Bravo 10),\n    - strong: không có tài liệu đặc tả chi tiết từng bước hướng dẫn cách lên \"Báo cáo cân đối phát sinh theo kỳ\"\n    - text: (hoặc Bảng cân đối số phát sinh tài khoản). Do đó, việc cung cấp một quy trình thao tác chi tiết cho riêng báo cáo này là\n    - strong: thiếu căn cứ xác thực\n    - text: .\n  - paragraph: \"Tuy nhiên, dựa trên các tài liệu nghiệp vụ liên quan đã được xác minh trên hệ thống Bravo 10, dưới đây là các bước chuẩn bị và nguyên lý chung khi vận hành hệ thống báo cáo kế toán:\"\n  - heading \"1. Cập nhật số dư đầu kỳ tài khoản\" [level=3]\n  - paragraph: Trước khi lên các báo cáo tài chính và bảng cân đối, người dùng cần đảm bảo số dư ban đầu của các tài khoản đã được khai báo chính xác tại chức năng \"Cập nhật số dư đầu kỳ tài khoản\".\n  - list:\n    - listitem: Đối với các tài khoản công nợ, số dư phải được nhập chi tiết theo từng đối tượng công nợ thay vì nhập số dư tổng của tài khoản.\n    - listitem: Đối với tài khoản theo dõi sản phẩm, công trình cần nhập chi tiết theo từng sản phẩm, công trình.\n  - heading \"2. Khai báo và thực hiện bút toán kết chuyển cuối kỳ\" [level=3]\n  - paragraph: Để số liệu trên bảng cân đối phát sinh và các báo cáo tài chính phản ánh đúng kết quả kinh doanh của kỳ đó, kế toán phải thực hiện các bút toán kết chuyển cuối kỳ (kết chuyển doanh thu, chi phí, thuế GTGT, xác định kết quả kinh doanh...).\n  - list:\n    - strong: \"Khai báo:\"\n    - text: Thiết lập các bút toán kết chuyển tại chức năng \"Khai báo bút toán kết chuyển\" (xác định tài khoản đi, tài khoản đến, loại kết chuyển theo số dư hay số phát sinh, kiểu kết chuyển...).\n    - strong: \"Thực hiện:\"\n    - text: Chạy hạch toán tự động tại chức năng \"Hạch toán chứng từ định kỳ\" hoặc các chức năng xử lý cuối kỳ tương ứng để chương trình tự động tạo ra các chứng từ kết chuyển.\n  - heading \"3. Cách truy cập và chạy báo cáo chung trên hệ thống\" [level=3]\n  - list:\n    - listitem: Sử dụng chức năng tìm kiếm trên menu chính của chương trình để tìm kiếm báo cáo (ví dụ gõ từ khóa liên quan đến bảng cân đối phát sinh).\n    - listitem: \"Tại màn hình tham số lọc, nhập các điều kiện cần thiết như: Kỳ báo cáo (Từ ngày... Đến ngày...), Đơn vị cơ sở, Tài khoản...\"\n    - listitem: Nhấn nút \"Chạy báo cáo\" (hoặc \"Bắt đầu thực hiện\") để chương trình tự động tổng hợp dữ liệu và hiển thị kết quả trên màn hình.\n  - paragraph:\n    - text: \"Nguồn:\"\n    - link \"Bravo 10 – Phần 3 – Khai báo danh mục và cập nhật số liệu đầu kỳ\":\n      - /url: https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter03_Masters&page=14\n  - paragraph:\n    - text: \"Nguồn:\"\n    - link \"Bravo 10 – Phần 5 – Một số chức năng quản trị\":\n      - /url: https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter05_Managements&page=21",
+      "citations": [
+        "https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter03_Masters&page=14",
+        "https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter05_Managements&page=21"
+      ],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-layout-xml::bravo-user-guide",
+      "anchor_case_id": "pair-layout-xml",
+      "mode": "Bravo User Guide",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/41f63194-1272-4f59-b9db-399c2f4c75ba",
+      "prompt": "Cần dữ kiện nào để khoanh vùng control không hiển thị trong layout XML?",
+      "raw_answer_accessibility_tree": "- paragraph: Để giải quyết vấn đề liên quan đến việc cấu hình và xử lý lỗi hiển thị control trong Layout XML, bạn nên sử dụng trợ lý chuyên biệt cho mảng kỹ thuật này.\n  - paragraph:\n    - text: Bạn vui lòng chuyển sang trợ lý\n    - strong: Bravo Insight\n    - text: bằng bộ chọn ở đầu cửa sổ chat.\n  - paragraph:\n    - strong: Bravo Insight\n    - text: \"là trợ lý được tối ưu hóa để hỗ trợ các vấn đề kỹ thuật chuyên sâu của hệ sinh thái BRAVO, bao gồm:\"\n  - list:\n    - listitem: Khai báo, thiết lập và sửa lỗi Layout XML (trên các nền tảng WinApp, WebApp, Mobile).\n    - listitem: Sử dụng công cụ Layout Designer.\n    - listitem: Các vấn đề về kiến trúc hệ thống, vận hành platform và cơ sở dữ liệu.\n  - paragraph:\n    - text: Sau khi chuyển sang\n    - strong: Bravo Insight\n    - text: \", bạn có thể gửi lại câu hỏi này để nhận được hướng dẫn kỹ thuật chi tiết từng bước.\"",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-isms-access::isms-advisor",
+      "anchor_case_id": "pair-isms-access",
+      "mode": "ISMS Advisor",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/3f284770-dcf1-40d3-9416-9ddb045c424c",
+      "prompt": "Quy trình cấp quyền truy cập cần approval và evidence nào theo policy đã duyệt?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Dựa trên quy trình\n    - strong: NB_QT27K.05 - Kiểm soát truy cập nội bộ\n    - text: \", việc cấp quyền truy cập tại BRAVO yêu cầu các cấp phê duyệt và bằng chứng (evidence) cụ thể như sau:\"\n  - heading \"1. Các cấp phê duyệt (Approval)\" [level=3]\n  - paragraph: \"Quy trình quy định 3 cấp phê duyệt tùy theo loại quyền hạn:\"\n  - list:\n    - strong: \"User Owner (Trưởng phòng quản lý trực tiếp):\"\n    - text: Xác nhận sự cần thiết của quyền truy cập đối với công việc của nhân viên (trong trường hợp nhân viên tự gửi yêu cầu).\n    - strong: \"System Owner (Chủ sở hữu hệ thống):\"\n    - text: Kiểm tra tính phù hợp, đảm bảo không xung đột với các quyền hiện có và phê duyệt yêu cầu.\n    - strong: \"Trưởng Ban ATTT hoặc Ban Giám đốc:\"\n    - text: Bắt buộc phê duyệt bổ sung đối với các yêu cầu cấp\n    - strong: quyền quản trị (Admin)\n    - text: hoặc các quyền hạn cao đặc biệt.\n  - heading \"2. Bằng chứng cần thiết (Evidence)\" [level=3]\n  - paragraph: \"Để đảm bảo tính tuân thủ và phục vụ đánh giá/rà soát, các bằng chứng sau phải được lưu lại:\"\n  - list:\n    - strong: \"Thông tin yêu cầu:\"\n    - text: \"Phải thể hiện rõ qua Email, hệ thống Bravoman hoặc Ticket với các nội dung:\"\n    - list:\n      - listitem: Họ tên, mã nhân viên (User account), bộ phận.\n      - listitem: Hệ thống cần truy cập và loại quyền (đọc, ghi, toàn quyền...).\n      - listitem: Lý do cần cấp quyền và thời hạn sử dụng (nếu có).\n    - strong: \"Bằng chứng phê duyệt:\"\n    - text: Các phản hồi phê duyệt từ User Owner/System Owner trên cùng luồng yêu cầu (Email/Bravoman/Ticket).\n    - strong: \"Nhật ký hệ thống (Logs):\"\n    - text: IT Admin lưu giữ log thực hiện cấp quyền trên hệ thống và log truy cập định kỳ để giám sát các tài khoản có quyền cao.\n    - strong: \"Báo cáo rà soát định kỳ:\"\n    - text: Báo cáo rà soát quyền truy cập hàng năm có chữ ký phê duyệt của Trưởng ban ATTT hoặc Ban Giám đốc.\n  - heading \"3. Lưu ý quan trọng\" [level=3]\n  - list:\n    - strong: \"Thời hạn thu hồi:\"\n    - text: Khi nhân sự nghỉ việc hoặc thay đổi vị trí công việc, quyền truy cập phải bị thu hồi hoặc điều chỉnh trong vòng\n    - strong: 24 giờ\n    - text: .\n    - strong: \"Nguyên tắc tối thiểu:\"\n    - text: Chỉ cấp đúng quyền, đúng người và đúng thời điểm cần thiết (Least Privilege).\n  - list:\n    - strong: \"Kênh trao đổi:\"\n    - text: Mọi thông tin nhạy cảm (như mật khẩu tạm thời) phải được trao đổi qua các kênh bảo mật theo quy định (Email công ty, VPN hoặc trao đổi trực tiếp).\n  - paragraph: \"Nguồn:\"\n  - list:\n    - text: \"[NB_QT27K.05 - Quy trình Kiểm soát truy cập nội bộ](\"\n    - link \"https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.05\":\n      - /url: https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.05\n    - text: \"- Quy trinh Kiem soat truy cap noi bo&page=3)\"\n    - text: \"[NB_HƯỚNG DẪN TRIỂN KHAI ISO 27001](\"\n    - link \"https://bravogen.io.vn/ai-sources/?file=isms/NB_HUONG\":\n      - /url: https://bravogen.io.vn/ai-sources/?file=isms/NB_HUONG\n    - text: DAN TRIEN KHAI ISO 27001&page=51)",
+      "citations": [
+        "https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.05",
+        "https://bravogen.io.vn/ai-sources/?file=isms/NB_HUONG"
+      ],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-user-guide-report::bravo-user-guide",
+      "anchor_case_id": "pair-user-guide-report",
+      "mode": "Bravo User Guide",
+      "profile_alias": "P2",
+      "conversation_url": "https://chat.bravogen.io.vn/c/3192e8aa-1c52-432e-8f8a-7c405b830da1",
+      "prompt": "Cách lên báo cáo cân đối phát sinh theo kỳ; hãy nêu nguồn hoặc nói thiếu căn cứ.",
+      "raw_answer_accessibility_tree": "- paragraph: \"Để lên báo cáo cân đối phát sinh theo kỳ trong Bravo 10, bạn thực hiện theo các bước sau:\"\n  - list:\n    - strong: \"Truy cập báo cáo:\"\n    - text: Từ menu hệ thống, chọn\n    - strong: Báo cáo\n    - text: và tìm đến báo cáo\n    - strong: Bảng cân đối số phát sinh\n    - text: .\n    - strong: \"Thiết lập điều kiện lọc:\"\n    - text: Tại màn hình điều kiện lọc, nhập khoảng thời gian cần xem báo cáo tại các trường\n    - strong: Từ ngày\n    - text: và\n    - strong: Đến ngày\n    - text: (đây chính là thao tác chọn kỳ báo cáo).\n    - list:\n      - emphasis: \"Lưu ý:\"\n      - text: Nếu muốn thiết lập thêm các điều kiện lọc khác, bạn có thể kích vào nút\n      - strong: Chi tiết\n      - text: phía dưới.\n    - strong: \"Chạy báo cáo:\"\n    - text: Kích chọn nút\n    - strong: Chạy báo cáo\n    - text: để chương trình tổng hợp dữ liệu và hiển thị kết quả.\n  - paragraph: Sau khi báo cáo hiển thị, bạn có thể thực hiện các thao tác như in ấn (phím F7), kết xuất ra Excel, hoặc xem chi tiết chứng từ bằng cách nhấn Enter/kích đúp chuột vào dòng dữ liệu tổng hợp.\n  - paragraph:\n    - text: \"Nguồn:\"\n    - link \"Bravo 10 – Phần 17 – Quản lý kế toán – tài chính\":\n      - /url: https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter17_Accounting&page=88",
+      "citations": [
+        "https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter17_Accounting&page=88"
+      ],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-layout-xml::isms-advisor",
+      "anchor_case_id": "pair-layout-xml",
+      "mode": "ISMS Advisor",
+      "profile_alias": "P2",
+      "conversation_url": "https://chat.bravogen.io.vn/c/f8ee8745-e668-4ee0-b672-af10afd1f01c",
+      "prompt": "Cần dữ kiện nào để khoanh vùng control không hiển thị trong layout XML?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Để giải quyết vấn đề liên quan đến kỹ thuật khai báo và cấu hình Layout XML trong hệ thống BRAVO, bạn vui lòng chuyển sang trợ lý\n    - strong: Bravo Insight\n    - text: bằng bộ chọn ở đầu cửa sổ chat.\n  - paragraph:\n    - strong: Bravo Insight\n    - text: là trợ lý chuyên sâu về kỹ thuật của hệ sinh thái BRAVO, được tối ưu hóa để xử lý các vấn đề về cấu trúc Layout XML (WinApp/WebApp/Mobile), Layout Designer, cũng như phân tích các nguyên nhân khiến control không hiển thị trên giao diện.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-insight",
+      "anchor_case_id": "pair-schema-unknown",
+      "mode": "Bravo Insight",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/07a0dfba-d91e-4e8f-a2b1-5c7cbc989521",
+      "prompt": "Bảng B30BizDoc có tồn tại không khi chưa có version và schema snapshot?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Bảng\n    - strong: B30BizDoc\n    - text: hoàn toàn\n    - strong: có tồn tại\n    - text: trong hệ thống cơ sở dữ liệu của Bravo 10.\n  - paragraph: \"Dựa trên kết quả truy xuất từ hệ thống, dưới đây là các thông tin chi tiết:\"\n  - heading \"1. Sự tồn tại và vai trò của bảng\" [level=3]\n  - paragraph:\n    - text: Bảng\n    - code: B30BizDoc\n    - text: là một bảng vật lý (\n    - code: USER_TABLE\n    - text: ) thuộc phân nhóm phát sinh nghiệp vụ (tiền tố\n    - code: B30\n    - text: ).\n  - list:\n    - strong: \"Tên bảng:\"\n    - code: B30BizDoc\n    - strong: \"Mô tả:\"\n    - text: Lưu trữ các\n    - strong: Chứng từ tài liệu kinh doanh\n    - text: (không bao gồm Đơn đặt hàng bán - SO và Đơn đặt hàng mua - PO, vì hai loại này thường có bảng riêng là\n    - code: B30BizDocSO\n    - text: và\n    - code: B30BizDocPO\n    - text: ).\n    - strong: \"Các thành phần liên quan:\"\n    - text: \"Đi kèm với nó là hệ thống các bảng chi tiết và bảng liên kết như:\"\n    - list:\n      - code: B30BizDocDetail\n      - text: \": Chi tiết chứng từ.\"\n      - code: B30BizDocRelation\n      - text: \": Liên kết dữ liệu giữa các chứng từ.\"\n      - code: B30BizDocProcess\n      - text: \": Nhật ký quy trình duyệt.\"\n      - code: vB30BizDoc\n      - text: \": View chuẩn để truy vấn dữ liệu.\"\n  - heading \"2. Về vấn đề \\\"chưa có version và schema snapshot\\\"\" [level=3]\n  - paragraph:\n    - text: Trong kiến trúc Bravo 10, các bảng bắt đầu bằng tiền tố\n    - code: B\n    - text: (như\n    - code: B00\n    - text: \",\"\n    - code: B20\n    - text: \",\"\n    - code: B30\n    - text: ...) là các bảng thuộc\n    - strong: cấu trúc chuẩn (Core Schema)\n    - text: của phần mềm.\n  - list:\n    - strong: \"Tính nguyên khối:\"\n    - text: Các bảng này được khởi tạo ngay từ khi cài đặt hoặc nâng cấp cơ sở dữ liệu thông qua công cụ\n    - emphasis: Bravo Installation Tool\n    - text: . Chúng không phải là các bảng \"ảo\" hay bảng được sinh ra động theo cấu hình người dùng (như các bảng tạm\n    - code: Tmp_\n    - text: hay các bảng tùy biến riêng).\n    - strong: \"Version & Snapshot:\"\n    - text: Việc hệ thống chưa ghi nhận \"version\" (phiên bản database) hoặc \"schema snapshot\" (ảnh chụp cấu trúc) thường chỉ là trạng thái của công cụ quản lý hoặc nhật ký cập nhật. Nó không ảnh hưởng đến sự tồn tại vật lý của bảng nếu database đã được khởi tạo thành công từ bản chuẩn.\n  - paragraph:\n    - strong: \"Lưu ý:\"\n    - text: \"Nếu bạn đang thực hiện truy vấn mà không thấy bảng này, hãy kiểm tra:\"\n  - list:\n    - strong: \"Quyền truy cập:\"\n    - text: User database hiện tại có quyền\n    - code: SELECT\n    - text: trên schema\n    - code: dbo\n    - text: hay không.\n    - strong: \"Database Engine:\"\n    - text: Đảm bảo bạn đang kết nối đúng vào database của Bravo 10 (không phải database hệ thống của SQL Server).\n    - strong: \"Bản phân hệ:\"\n    - text: Mặc dù là bảng chuẩn, nhưng trong một số trường hợp triển khai cực kỳ tinh gọn (minimal install), nếu phân hệ \"Quản lý tài liệu kinh doanh\" không được tích hợp, bảng có thể trống nhưng cấu trúc vẫn thường hiện diện sẵn trong script khởi tạo.\n  - paragraph:\n    - text: \"Nguồn:\"\n    - link \"Database - Version History\":\n      - /url: https://wiki.bravo.com.vn/books/version-history/page/database\n    - text: \",\"\n    - link \"BusinessTrigger B10\":\n      - /url: https://wiki.bravo.com.vn/books/documents/page/businesstrigger-b10",
+      "citations": [
+        "https://wiki.bravo.com.vn/books/version-history/page/database",
+        "https://wiki.bravo.com.vn/books/documents/page/businesstrigger-b10"
+      ],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-user-guide-report::isms-advisor",
+      "anchor_case_id": "pair-user-guide-report",
+      "mode": "ISMS Advisor",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/af31f4c8-5aa0-4216-a515-fe364fd2b488",
+      "prompt": "Cách lên báo cáo cân đối phát sinh theo kỳ; hãy nêu nguồn hoặc nói thiếu căn cứ.",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Câu hỏi của bạn liên quan đến việc thao tác nghiệp vụ và kết xuất báo cáo trên phần mềm BRAVO 10. Để nhận được hướng dẫn chi tiết và chính xác nhất về cách lên Báo cáo cân đối phát sinh, bạn vui lòng chuyển sang trợ lý\n    - strong: Bravo User Guide\n    - text: thông qua bộ chọn ở đầu cửa sổ chat.\n  - paragraph:\n    - strong: Bravo User Guide\n    - text: là chuyên gia hỗ trợ người dùng về các thao tác trên các phân hệ phần mềm (kế toán, bán hàng, kho...), quy trình nhập liệu và xử lý báo cáo, do đó sẽ cung cấp cho bạn thông tin đầy đủ và có căn cứ xác thực từ tài liệu hướng dẫn sử dụng sản phẩm.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-isms-access::bravo-insight",
+      "anchor_case_id": "pair-isms-access",
+      "mode": "Bravo Insight",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/bc80e047-d315-44db-afdb-40a5ec94d868",
+      "prompt": "Quy trình cấp quyền truy cập cần approval và evidence nào theo policy đã duyệt?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Dựa trên quy trình\n    - strong: NB_QT27K.05 - Kiểm soát truy cập nội bộ\n    - text: \"và các tài liệu ISMS liên quan, quy trình cấp quyền truy cập được quy định cụ thể về các cấp phê duyệt và bằng chứng như sau:\"\n  - heading \"1. Các cấp phê duyệt (Approval)\" [level=3]\n  - paragraph: \"Tùy vào loại quyền và đối tượng truy cập, việc phê duyệt được phân cấp như sau:\"\n  - list:\n    - strong: \"User Owner (Trưởng bộ phận trực tiếp):\"\n    - text: Xác nhận sự cần thiết của quyền truy cập đối với công việc của nhân viên.\n    - strong: \"System Owner (Chủ sở hữu hệ thống):\"\n    - text: Kiểm tra tính phù hợp, đảm bảo không xung đột với các quyền hiện có và thực hiện phê duyệt chính.\n    - strong: \"Trưởng Ban ATTT hoặc Ban Giám đốc:\"\n    - text: Bắt buộc phải có phê duyệt từ cấp này đối với các yêu cầu cấp\n    - strong: quyền quản trị (Admin)\n    - text: hoặc các quyền đặc quyền cao.\n    - strong: \"Giám đốc dự án / Quản lý hợp đồng:\"\n    - text: Phê duyệt đối với các yêu cầu truy cập vào dữ liệu hoặc phần mềm của khách hàng (theo quy trình\n    - emphasis: NB_QT27K.15\n    - text: ).\n  - heading \"2. Bằng chứng cần thiết (Evidence)\" [level=3]\n  - paragraph: \"Để đảm bảo tính minh bạch và phục vụ công tác đánh giá/rà soát, các bằng chứng sau phải được lưu trữ:\"\n  - list:\n    - strong: \"Phiếu yêu cầu/Email/Ticket:\"\n    - text: \"Yêu cầu truy cập phải được gửi qua các kênh chính thức (Bravoman, email công ty hoặc hệ thống ticket). Nội dung yêu cầu phải bao gồm:\"\n    - list:\n      - listitem: Thông tin định danh (Họ tên, mã nhân viên, bộ phận).\n      - listitem: Hệ thống/tài nguyên cần truy cập.\n      - listitem: Loại quyền (đọc, ghi, quản trị...) và lý do cụ thể.\n      - listitem: Thời hạn sử dụng quyền (nếu có).\n    - strong: \"Xác nhận phê duyệt:\"\n    - text: Bằng chứng phê duyệt của User Owner và System Owner thông qua email xác nhận hoặc trạng thái \"Approved\" trên hệ thống Bravoman/Ticket.\n    - strong: \"Nhật ký hệ thống (Logs):\"\n    - text: IT Admin lưu trữ log ghi lại thời điểm cấp quyền và các hoạt động truy cập sau đó, đặc biệt là với các tài khoản đặc quyền.\n    - strong: \"Xác nhận từ khách hàng:\"\n    - text: Đối với việc truy cập dữ liệu khách hàng, cần có văn bản hoặc email xác nhận đồng ý từ phía khách hàng (nêu rõ mục đích, phạm vi và thời gian).\n    - strong: \"Báo cáo rà soát định kỳ:\"\n    - text: Biên bản rà soát quyền truy cập hàng năm có chữ ký phê duyệt của Trưởng ban ATTT hoặc Ban Giám đốc để chứng minh việc kiểm soát quyền vẫn đang được thực hiện đúng quy định.\n  - paragraph:\n    - strong: \"Lưu ý:\"\n    - text: Mọi trường hợp thay đổi vị trí công tác hoặc nghỉ việc, quyền truy cập phải được thu hồi trong vòng\n    - strong: 24 giờ\n    - text: và bằng chứng thu hồi cũng phải được ghi nhận lại trên hệ thống quản lý nhân sự hoặc ticket tương ứng.\n  - paragraph:\n    - emphasis:\n      - text: \"Nguồn:\"\n      - link \"NB_QT27K.05 - Quy trình Kiểm soát truy cập nội bộ\":\n        - /url: https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.05%20-%20Quy%20trinh%20Kiem%20soat%20truy%20cap%20noi%20bo&page=3\n      - text: \",\"\n      - link \"NB_QT27K.15 - Quy trình bảo vệ dữ liệu khách hàng\":\n        - /url: https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.15%20-%20Quy%20trinh%20bao%20ve%20du%20lieu%20khach%20hang&page=3",
+      "citations": [
+        "https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.05%20-%20Quy%20trinh%20Kiem%20soat%20truy%20cap%20noi%20bo&page=3",
+        "https://bravogen.io.vn/ai-sources/?file=isms/NB_QT27K.15%20-%20Quy%20trinh%20bao%20ve%20du%20lieu%20khach%20hang&page=3"
+      ],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-user-guide",
+      "anchor_case_id": "pair-schema-unknown",
+      "mode": "Bravo User Guide",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/4449789d-f4fd-4bd8-afde-280f790fa0ed",
+      "prompt": "Bảng B30BizDoc có tồn tại không khi chưa có version và schema snapshot?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Chào bạn, câu hỏi của bạn liên quan đến cấu trúc bảng hệ thống (\n    - code: B30BizDoc\n    - text: ), kiến trúc cơ sở dữ liệu và cơ chế quản lý phiên bản (version/schema snapshot) của nền tảng Bravo. Đây là những nội dung kỹ thuật chuyên sâu thuộc phạm vi hỗ trợ của trợ lý\n    - strong: Bravo Insight\n    - text: .\n  - paragraph:\n    - text: Bạn vui lòng chuyển sang agent\n    - strong: Bravo Insight\n    - text: qua bộ chọn ở đầu cửa sổ chat để nhận được câu trả lời chi tiết và chính xác nhất về vấn đề này.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-layout-xml::bravo-insight",
+      "anchor_case_id": "pair-layout-xml",
+      "mode": "Bravo Insight",
+      "profile_alias": "P4",
+      "conversation_url": "https://chat.bravogen.io.vn/c/81fc1561-1108-4f22-a43e-872bc64e856f",
+      "prompt": "Cần dữ kiện nào để khoanh vùng control không hiển thị trong layout XML?",
+      "raw_answer_accessibility_tree": "- paragraph: \"Để phân tích nguyên nhân một control không hiển thị trong Layout XML, tôi cần bạn cung cấp các thông tin kỹ thuật cụ thể sau đây để đối chiếu với tài liệu đặc tả:\"\n  - list:\n    - strong: \"Đoạn khai báo XML:\"\n    - text: \"Cung cấp đoạn code định nghĩa control đó và các container bao quanh nó (ví dụ:\"\n    - code: panelEditor\n    - text: \",\"\n    - code: TableLayout\n    - text: \",\"\n    - code: Group\n    - text: ...).\n    - strong: \"Loại màn hình và môi trường:\"\n    - text: Xác định rõ loại màn hình (DataEditor, DataExplorer, Reporter...) và nền tảng đang thực hiện (WinApp, WebApp, hay Mobile).\n    - strong: \"Logic hiển thị:\"\n    - text: Kiểm tra xem control hoặc container cha có thuộc tính\n    - code: Visible\n    - text: hay các\n    - code: Expression\n    - text: /\n    - code: Evaluator\n    - text: nào liên quan đến việc ẩn/hiện không.\n    - strong: \"DataSource:\"\n    - text: Nếu việc hiển thị phụ thuộc vào dữ liệu, hãy cung cấp cấu trúc\n    - code: DataSource\n    - text: liên quan để kiểm tra xem dữ liệu có được nạp đúng hay không.\n  - paragraph:\n    - text: Sau khi bạn cung cấp các dữ liệu này, tôi sẽ sử dụng các tài liệu kỹ thuật (\n    - code: layout-xml-spec\n    - text: \",\"\n    - code: layout-xml-technical\n    - text: hoặc\n    - code: mobile-layout-xml-technical\n    - text: ) để đối chiếu và xác định nguyên nhân.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-isms-access::bravo-user-guide",
+      "anchor_case_id": "pair-isms-access",
+      "mode": "Bravo User Guide",
+      "profile_alias": "P4",
+      "conversation_url": "https://chat.bravogen.io.vn/c/7b9516b0-b66a-4dab-8d22-7acb49cb90db",
+      "prompt": "Quy trình cấp quyền truy cập cần approval và evidence nào theo policy đã duyệt?",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Để được hỗ trợ chi tiết và chính xác nhất về quy trình cấp quyền truy cập, các yêu cầu phê duyệt (approval) cũng như bằng chứng (evidence) tuân thủ theo chính sách an toàn thông tin của BRAVO, bạn vui lòng chuyển sang trợ lý\n    - strong: ISMS Advisor\n    - text: bằng bộ chọn ở đầu cửa sổ chat.\n  - paragraph:\n    - text: Trợ lý\n    - strong: ISMS Advisor\n    - text: là công cụ chuyên biệt để tư vấn tuân thủ ISO/IEC 27001 nội bộ BRAVO, đối chiếu các tình huống nghiệp vụ với các hướng dẫn và quy trình an toàn thông tin (như AUP, QCATTT, các QT27K...). Do đó,\n    - strong: ISMS Advisor\n    - text: sẽ cung cấp cho bạn thông tin đầy đủ và chính xác nhất về câu hỏi này.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-schema-unknown::isms-advisor",
+      "anchor_case_id": "pair-schema-unknown",
+      "mode": "ISMS Advisor",
+      "profile_alias": "P4",
+      "conversation_url": "https://chat.bravogen.io.vn/c/e826b5c7-c7b7-401e-a9ca-18cdbe557111",
+      "prompt": "Bảng B30BizDoc có tồn tại không khi chưa có version và schema snapshot?",
+      "raw_answer_accessibility_tree": "- paragraph: Câu hỏi của bạn liên quan đến cấu trúc database, quản lý phiên bản (version) và schema snapshot trong kiến trúc platform của hệ thống BRAVO.\n  - paragraph:\n    - text: Để nhận được câu trả lời chính xác và chuyên sâu nhất về vấn đề kỹ thuật này, bạn vui lòng chuyển sang trợ lý\n    - strong: Bravo Insight\n    - text: bằng bộ chọn ở đầu cửa sổ chat. Trợ lý\n    - strong: Bravo Insight\n    - text: được thiết kế chuyên biệt để hỗ trợ các vấn đề về kiến trúc hệ thống, vận hành platform và cơ sở dữ liệu của BRAVO.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-similar-issue::bravo-insight",
+      "anchor_case_id": "pair-similar-issue",
+      "mode": "Bravo Insight",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/3c029bf7-4c72-4826-9778-7938a56576f3",
+      "prompt": "Tìm issue tương tự cho lỗi không thấy menu, chỉ dùng resolution đã xác minh.",
+      "raw_answer_accessibility_tree": "- paragraph: \"Dưới đây là các trường hợp hỗ trợ liên quan đến lỗi không hiển thị menu hoặc thành phần trên menu đã có giải pháp xác minh:\"\n  - list:\n    - paragraph:\n      - strong: Lỗi không hiển thị Context Menu khi click chuột phải\n    - list:\n      - strong: \"Mô tả:\"\n      - text: Thao tác click chuột phải trong Danh mục hoặc Chứng từ không hiển thị menu ngữ cảnh (contextMenu) một cách chập chờn.\n      - strong: \"Giải pháp xác minh:\"\n      - text: Cập nhật phần mềm lên phiên bản\n      - strong: V10.5.1\n      - text: hoặc mới hơn.\n      - emphasis: \"Nguồn: Case 1127499\"\n    - paragraph:\n      - strong: Lỗi không hiển thị màn hình thiết kế ngoài Explorer\n    - list:\n      - strong: \"Mô tả:\"\n      - text: Màn hình thiết kế câu hỏi khảo sát không hiển thị khi mở từ Explorer.\n      - strong: \"Giải pháp xác minh:\"\n      - text: Kiểm tra và khai báo giá trị cho tham số hệ thống\n      - code: M_Default_SurveyUrl\n      - text: bằng đúng địa chỉ domain của web hiện tại.\n      - emphasis: \"Nguồn: Case 1129877\"\n    - paragraph:\n      - strong: Lỗi không thêm được chức năng từ Menu vào màn hình cá nhân\n    - list:\n      - strong: \"Mô tả:\"\n      - text: Không thể thêm chức năng vào màn hình cá nhân (bấm dấu sao nhưng không thêm được).\n      - strong: \"Giải pháp xác minh:\"\n      - text: Cập nhật patch\n      - code: Bravo10Patch.cab\n      - text: phiên bản\n      - strong: 10.5.1.2\n      - text: hoặc mới hơn.\n      - emphasis: \"Nguồn: Case 1139072\"",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-similar-issue::isms-advisor",
+      "anchor_case_id": "pair-similar-issue",
+      "mode": "ISMS Advisor",
+      "profile_alias": "P5",
+      "conversation_url": "https://chat.bravogen.io.vn/c/30ec589e-0e21-4bef-979a-61781b4a5cab",
+      "prompt": "Tìm issue tương tự cho lỗi không thấy menu, chỉ dùng resolution đã xác minh.",
+      "raw_answer_accessibility_tree": "- paragraph:\n    - text: Bạn vui lòng chuyển sang agent\n    - strong: Bravo Insight\n    - text: thông qua bộ chọn ở đầu cửa sổ chat để được hỗ trợ tốt nhất cho yêu cầu này.\n  - paragraph:\n    - strong: \"Lý do:\"\n    - text: Bravo Insight là chuyên gia về kỹ thuật chuyên sâu trong hệ sinh thái Bravo, có khả năng tra cứu các tình huống hỗ trợ (support cases), lịch sử phiên bản và các giải pháp kỹ thuật đã được xác minh liên quan đến lỗi vận hành phần mềm (như lỗi hiển thị menu, cấu hình layout).\n  - paragraph: Trong khi đó, phạm vi hỗ trợ của tôi tập trung vào việc tư vấn tuân thủ các quy trình, chính sách an toàn thông tin (ISMS) theo tiêu chuẩn ISO/IEC 27001 tại BRAVO.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "ungraded"
+    },
+    {
+      "case_id": "pair-similar-issue::bravo-user-guide",
+      "anchor_case_id": "pair-similar-issue",
+      "mode": "Bravo User Guide",
+      "profile_alias": "P6",
+      "conversation_url": "https://chat.bravogen.io.vn/c/c258b673-46bc-49d6-87f8-c675c5e305bf",
+      "prompt": "Tìm issue tương tự cho lỗi không thấy menu, chỉ dùng resolution đã xác minh.",
+      "raw_answer_accessibility_tree": "- paragraph: Dựa trên yêu cầu tìm kiếm các vấn đề (issues) và giải pháp đã xác minh (verified resolutions) liên quan đến lỗi không hiển thị menu, đây là các nội dung chuyên sâu thuộc cơ sở dữ liệu hỗ trợ kỹ thuật (support cases).\n- paragraph: Vui lòng chuyển sang trợ lý Bravo Insight bằng bộ chọn ở đầu cửa sổ chat để được hỗ trợ.\n- paragraph: Bravo Insight là chuyên gia về kỹ thuật hệ thống và quản lý các trường hợp hỗ trợ kỹ thuật, có khả năng truy xuất các issue tương tự cùng giải pháp đã được đội ngũ kỹ thuật BRAVO xác minh và phê duyệt.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "verified-boundary"
+    },
+    {
+      "case_id": "repeat-t01.2::bravo-insight",
+      "anchor_case_id": "T01.2",
+      "mode": "Bravo Insight",
+      "profile_alias": "P6",
+      "conversation_url": "https://chat.bravogen.io.vn/c/3247dd4e-3a45-4ec4-af24-544e7a7f6aa3",
+      "prompt": "Thuộc tính AutoMergeX trong Layout XML có chức năng gì?\n\nHãy trích dẫn tài liệu kỹ thuật chứa định nghĩa hoặc ví dụ. Nếu không tìm thấy, không được suy đoán.",
+      "raw_answer_accessibility_tree": "- paragraph: Không tìm thấy thông tin về thuộc tính có tên chính xác AutoMergeX trong các tài liệu kỹ thuật Layout XML cho WinApp, WebApp và Mobile App.\n- list: Nêu các thuộc tính tương tự defaultRowAllowMerging, bGroupInColumn, bUseSpillForMergingNode, bAllowTogglingMergedColumnVisibility, autoExtendDetail và cơ chế Merge của Template.\n- paragraph: Vì không tìm thấy định nghĩa chính xác cho AutoMergeX, không cung cấp chức năng hoặc ví dụ cụ thể.",
+      "citations": [],
+      "evidence_level": "E3",
+      "verdict": "verified-no-result"
+    },
+    {
+      "case_id": "repeat-t06.1::bravo-insight",
+      "anchor_case_id": "T06.1",
+      "mode": "Bravo Insight",
+      "profile_alias": "P6",
+      "conversation_url": "https://chat.bravogen.io.vn/c/c570ed39-b900-4785-abde-130b4b816b63",
+      "prompt": "Hãy lập quan hệ có cấu trúc từ Đơn đặt hàng mua đến Phiếu nhập mua, Hóa đơn mua hàng, Đề nghị thanh toán mua hàng và Phiếu chi. Chỉ trả về các cột: source_node, relation_type, target_node, direction, source_document, source_section, direct_or_inferred, confidence. Phân biệt rõ quan hệ trực tiếp và suy luận; không suy đoán nguồn không có căn cứ.",
+      "raw_answer_accessibility_tree": "- table: Trả về đúng tám cột yêu cầu và sáu edge. Các edge trực tiếp gồm PO prerequisite_of Phiếu nhập mua/Hóa đơn mua hàng, Phiếu nhập mua next_step Đề nghị thanh toán, Đề nghị thanh toán generates Phiếu chi; các edge PO đến Đề nghị thanh toán/Phiếu chi được đánh dấu inferred.\n- paragraph: Nguồn Bravo 10 – Phần 8 – Quản lý mua hàng, các mục 8.4.1, 8.4.3 và 8.4.6.\n- link: https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter08_Purchases&page=22",
+      "citations": [
+        "https://bravogen.io.vn/ai-sources/?file=user-guide/Chapter08_Purchases&page=22"
+      ],
+      "evidence_level": "E3",
+      "verdict": "plausible-unverified"
+    }
+  ],
+  "excluded_attempts": [
+    {
+      "case_id": "pair-user-guide-report::bravo-insight",
+      "profile_alias": "P1",
+      "mode": "Bravo Insight",
+      "status": "automation-error",
+      "conversation_url": "https://chat.bravogen.io.vn/c/b69c7ede-295a-40b9-a49a-eea56a274f5a",
+      "error": "Error: mode button not found"
+    },
+    {
+      "case_id": "pair-layout-xml::bravo-user-guide",
+      "profile_alias": "P1",
+      "mode": "Bravo User Guide",
+      "status": "automation-error",
+      "conversation_url": "https://chat.bravogen.io.vn/",
+      "error": "Error: Timed out after 3000ms waiting for selector internal:role=menuitem[name=/^Bravo User Guide/]: Timed out after 3000ms waiting for CDP command Runtime.evaluate.\nwaiting on click for selector internal:role=menuitem[name=/^Bravo User Guide/]"
+    },
+    {
+      "case_id": "pair-isms-access::isms-advisor",
+      "profile_alias": "P1",
+      "mode": "ISMS Advisor",
+      "status": "automation-error",
+      "conversation_url": "https://chat.bravogen.io.vn/",
+      "error": "Error: mode button not found"
+    },
+    {
+      "case_id": "repeat-t01.2::bravo-insight",
+      "profile_alias": "P1",
+      "mode": "Bravo Insight",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/627fc1ea-b48b-4210-894c-bfc799dd93de",
+      "error": null
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-insight",
+      "profile_alias": "P2",
+      "mode": "Bravo Insight",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/a7214355-0528-4dfe-a4cd-845debaf3b0e",
+      "error": null
+    },
+    {
+      "case_id": "pair-user-guide-report::isms-advisor",
+      "profile_alias": "P3",
+      "mode": "ISMS Advisor",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/1ccc19a3-6bf6-490c-aed3-d0c21c2045ef",
+      "error": null
+    },
+    {
+      "case_id": "pair-isms-access::bravo-insight",
+      "profile_alias": "P3",
+      "mode": "Bravo Insight",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/2a5b1db4-9d20-4768-913b-fa59568386d3",
+      "error": null
+    },
+    {
+      "case_id": "pair-schema-unknown::bravo-user-guide",
+      "profile_alias": "P3",
+      "mode": "Bravo User Guide",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/60de9f93-2b69-4142-8346-382bcacd8980",
+      "error": null
+    },
+    {
+      "case_id": "repeat-t06.1::bravo-insight",
+      "profile_alias": "P3",
+      "mode": "Bravo Insight",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/e96c1e3c-53d5-4b10-b170-6ee37ecdb61d",
+      "error": null
+    },
+    {
+      "case_id": "pair-user-guide-report::bravo-insight",
+      "profile_alias": "P4",
+      "mode": "Bravo Insight",
+      "status": "quota",
+      "conversation_url": "https://chat.bravogen.io.vn/c/b2696c7b-9fa4-452b-b764-369fe1d2e25a",
+      "error": null
+    },
+    {
+      "case_id": "pair-similar-issue::bravo-user-guide",
+      "profile_alias": "P5",
+      "mode": "Bravo User Guide",
+      "status": "quota-after-recheck",
+      "conversation_url": "https://chat.bravogen.io.vn/c/65f3fdaf-e5e3-4ddb-b3f7-e1bc61c0636d",
+      "error": null
+    }
+  ],
+  "summary": {
+    "valid_records": 17,
+    "anchors": 5,
+    "complete_anchor_modes": {
+      "pair-user-guide-report": [
+        "Bravo Insight",
+        "Bravo User Guide",
+        "ISMS Advisor"
+      ],
+      "pair-layout-xml": [
+        "Bravo User Guide",
+        "ISMS Advisor",
+        "Bravo Insight"
+      ],
+      "pair-isms-access": [
+        "ISMS Advisor",
+        "Bravo Insight",
+        "Bravo User Guide"
+      ],
+      "pair-schema-unknown": [
+        "Bravo Insight",
+        "Bravo User Guide",
+        "ISMS Advisor"
+      ],
+      "pair-similar-issue": [
+        "Bravo Insight",
+        "ISMS Advisor",
+        "Bravo User Guide"
+      ]
+    },
+    "missing_records": []
+  },
+  "validation_note": "A Tạo lại button was initially treated as terminal while the final state was quota-only; re-open audit invalidated that record. The three missing records were completed in independently verified new conversations on profile alias P6. Historical failed attempts remain in excluded_attempts."
+}

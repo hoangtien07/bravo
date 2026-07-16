@@ -1,0 +1,131 @@
+goals:
+  - goal_type: financial_statements_ready
+    title: Prepare financial statements
+    success_milestones: [scope_known, posting_checked, reconciliation_checked, closing_complete, report_validated]
+  - goal_type: ap_invoice_ready
+    title: Process purchase invoice
+    success_milestones: [invoice_checked, accounting_posted, tax_checked]
+  - goal_type: report_discrepancy_resolved
+    title: Resolve report discrepancy
+    success_milestones: [scope_known, discrepancy_reproduced, cause_isolated, resolution_verified]
+  - goal_type: ar_collection_ready
+    title: Process sales and collection
+    success_milestones: [document_checked, receivable_posted, collection_matched]
+  - goal_type: inventory_close_ready
+    title: Close inventory
+    success_milestones: [movements_checked, cost_calculated, inventory_reconciled]
+  - goal_type: fixed_asset_close_ready
+    title: Close fixed assets
+    success_milestones: [asset_changes_checked, depreciation_posted, reconciliation_checked]
+  - goal_type: costing_ready
+    title: Calculate costing
+    success_milestones: [inputs_checked, allocation_checked, costing_calculated]
+  - goal_type: technical_configuration
+    title: Configure BRAVO technical artifact
+    success_milestones: [environment_known, design_reviewed, draft_validated]
+  - goal_type: schema_grounding
+    title: Ground schema fact
+    success_milestones: [version_known, snapshot_checked]
+  - goal_type: incident_diagnosis
+    title: Diagnose incident
+    success_milestones: [symptom_scoped, evidence_collected, cause_isolated]
+workflows:
+  - id: financial_close
+    title: Month-end close and financial statements
+    goal_type: financial_statements_ready
+    triggers: ["báo cáo tài chính", "bctc", "kết chuyển", "khóa sổ"]
+    nodes:
+      - id: scope_known
+        title: Confirm reporting period and scope
+        retrieval_needs: [{kind: business, required: false, query_hint: "financial close scope"}]
+      - id: posting_checked
+        title: Check posting completeness
+        prerequisite_ids: [scope_known]
+        completion_signals: [posting_checked]
+        retrieval_needs: [{kind: business, required: true, query_hint: "posting completeness"}]
+      - id: reconciliation_checked
+        title: Reconcile balances and subledgers
+        prerequisite_ids: [posting_checked]
+        completion_signals: [reconciliation_checked]
+        retrieval_needs: [{kind: business, required: true, query_hint: "reconcile balances"}]
+      - id: closing_complete
+        title: Run required period-end allocations and closing
+        prerequisite_ids: [reconciliation_checked]
+        completion_signals: [closing_complete]
+        retrieval_needs: [{kind: bravo_action, required: true, query_hint: "BRAVO closing period"}]
+      - id: report_validated
+        title: Generate and validate financial statements
+        prerequisite_ids: [closing_complete]
+        retrieval_needs: [{kind: bravo_action, required: true, query_hint: "BRAVO financial report"}]
+  - id: ap_invoice
+    title: Purchase invoice to tax and general ledger
+    goal_type: ap_invoice_ready
+    triggers: ["hóa đơn đầu vào", "hóa đơn mua", "ap", "chứng từ mua"]
+    nodes:
+      - id: invoice_checked
+        title: Check supplier, invoice, goods/service and tax evidence
+        retrieval_needs: [{kind: business, required: true, query_hint: "purchase invoice validation"}]
+      - id: accounting_posted
+        title: Post the approved accounting document
+        prerequisite_ids: [invoice_checked]
+        completion_signals: [posting_checked]
+        retrieval_needs: [{kind: bravo_action, required: true, query_hint: "BRAVO purchase voucher"}]
+      - id: tax_checked
+        title: Check VAT treatment and reconciliation
+        prerequisite_ids: [accounting_posted]
+        retrieval_needs: [{kind: business, required: true, query_hint: "input VAT reconciliation"}]
+  - id: report_discrepancy
+    title: Diagnose a discrepancy between reports
+    goal_type: report_discrepancy_resolved
+    triggers: ["lệch báo cáo", "chênh lệch báo cáo", "sai báo cáo"]
+    nodes:
+      - id: scope_known
+        title: Identify reports, period, filters and amount of discrepancy
+      - id: discrepancy_reproduced
+        title: Reproduce with the same parameters
+        prerequisite_ids: [scope_known]
+        retrieval_needs: [{kind: bravo_action, required: true, query_hint: "report parameters"}]
+      - id: cause_isolated
+        title: Compare source transactions, mapping and posting state
+        prerequisite_ids: [discrepancy_reproduced]
+        retrieval_needs: [{kind: similar_issue, required: true, query_hint: "report discrepancy issue"}]
+      - id: resolution_verified
+        title: Verify correction in both reports
+        prerequisite_ids: [cause_isolated]
+  - id: ar_collection
+    title: Sales receivable and collection
+    goal_type: ar_collection_ready
+    triggers: ["công nợ phải thu", "thu tiền", "hóa đơn bán"]
+    nodes: [{id: document_checked, title: Check sales document}, {id: receivable_posted, title: Post receivable, prerequisite_ids: [document_checked]}, {id: collection_matched, title: Match collection, prerequisite_ids: [receivable_posted]}]
+  - id: inventory_close
+    title: Inventory close
+    goal_type: inventory_close_ready
+    triggers: ["tồn kho", "xuất kho", "nhập kho"]
+    nodes: [{id: movements_checked, title: Check inventory movements}, {id: cost_calculated, title: Calculate cost, prerequisite_ids: [movements_checked]}, {id: inventory_reconciled, title: Reconcile inventory, prerequisite_ids: [cost_calculated]}]
+  - id: fixed_asset_close
+    title: Fixed asset close
+    goal_type: fixed_asset_close_ready
+    triggers: ["tài sản cố định", "khấu hao"]
+    nodes: [{id: asset_changes_checked, title: Check asset changes}, {id: depreciation_posted, title: Post depreciation, prerequisite_ids: [asset_changes_checked]}, {id: reconciliation_checked, title: Reconcile assets, prerequisite_ids: [depreciation_posted]}]
+  - id: costing
+    title: Product costing
+    goal_type: costing_ready
+    triggers: ["giá thành", "tính giá thành"]
+    nodes: [{id: inputs_checked, title: Check cost inputs}, {id: allocation_checked, title: Check allocation, prerequisite_ids: [inputs_checked]}, {id: costing_calculated, title: Run costing, prerequisite_ids: [allocation_checked]}]
+  - id: technical_configuration
+    title: XML Layout DataSource Template configuration
+    goal_type: technical_configuration
+    triggers: ["layout xml", "datasource", "b00fieldlist", "b00filelist", "b00lookup", "template"]
+    profile: implementation
+    nodes: [{id: environment_known, title: Confirm version and target environment, retrieval_needs: [{kind: schema, required: true, query_hint: "configuration version"}]}, {id: design_reviewed, title: Review comparable approved configuration, prerequisite_ids: [environment_known]}, {id: draft_validated, title: Validate draft without production execution, prerequisite_ids: [design_reviewed], risk: U3}]
+  - id: schema_grounding
+    title: Schema and database grounding
+    goal_type: schema_grounding
+    triggers: ["bảng nào", "trường nào", "database", "schema", "view"]
+    profile: implementation
+    nodes: [{id: version_known, title: Confirm BRAVO version and environment}, {id: snapshot_checked, title: Read authorized schema snapshot, prerequisite_ids: [version_known], retrieval_needs: [{kind: schema, required: true, query_hint: "schema snapshot"}], risk: U2}]
+  - id: incident_diagnosis
+    title: Troubleshoot BRAVO issue
+    goal_type: incident_diagnosis
+    triggers: ["lỗi", "error", "log", "không hiển thị", "không chạy"]
+    nodes: [{id: symptom_scoped, title: Scope symptom, version and environment}, {id: evidence_collected, title: Collect log and configuration evidence, prerequisite_ids: [symptom_scoped]}, {id: cause_isolated, title: Compare similar verified issues, prerequisite_ids: [evidence_collected], retrieval_needs: [{kind: similar_issue, required: true, query_hint: "verified issue"}]}]

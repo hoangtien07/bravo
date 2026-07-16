@@ -54,6 +54,8 @@ class _FakeClient:
 
 @pytest.mark.asyncio
 async def test_chat_stream_yields_real_deltas_and_usage(monkeypatch):
+    # The fake client is local; assert this historical stream contract under hybrid policy.
+    monkeypatch.setattr(router._settings, "egress_policy", "hybrid")
     monkeypatch.setattr(router, "_local", _FakeClient())
     deltas, done = [], None
     async for ev in router.chat_stream([{"role": "user", "content": "hi"}], db=None):

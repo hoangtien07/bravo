@@ -37,6 +37,7 @@ class _FakeDB:
 @pytest.mark.asyncio
 async def test_sensitive_context_forces_local(monkeypatch):
     """A context item tagged sensitive (payroll) -> classify_context -> backend LOCAL."""
+    monkeypatch.setattr(router._settings, "egress_policy", "hybrid")
     monkeypatch.setattr(router, "_local", _FakeClient())
     sens = type("X", (), {"department_ids": [], "knowledge_type": "payroll"})()
     text, d = await router.chat([{"role": "user", "content": "x"}], context=[sens], db=None)

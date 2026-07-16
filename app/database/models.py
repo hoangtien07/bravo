@@ -237,7 +237,11 @@ class Artifact(Base):
 
 # --- Agent memory (lean MemGPT pattern — findings/J; rewritten from letta patterns) ---
 class MemoryBlock(Base):
-    """Core memory: in-context, agent-editable blocks (label -> value)."""
+    """Core memory: in-context, agent-editable blocks (label -> value).
+
+    ``updated_at`` is lifecycle metadata only: the opt-in Consultant task-state retention job
+    uses it for its narrowly scoped label, never as authorization to purge generic memory.
+    """
     __tablename__ = "memory_blocks"
     __table_args__ = (UniqueConstraint("session_id", "label", name="uq_block_session_label"),)
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
@@ -245,6 +249,9 @@ class MemoryBlock(Base):
     label: Mapped[str] = mapped_column(String(100))
     value: Mapped[str] = mapped_column(Text, default="")
     char_limit: Mapped[int] = mapped_column(Integer, default=4000)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class ConversationMessage(Base):
@@ -362,4 +369,76 @@ class ToolCallAttempt(Base):
     args_hash: Mapped[str] = mapped_column(String(64))
     status: Mapped[str] = mapped_column(String(20))  # drafted|executed|failed
     summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- Consultant Intelligence (phases 2/4) ---
+class ConsultantGapEvent(Base):
+    """A privacy-minimised, durable record of a knowledge/workflow gap.
+
+    The raw user question is intentionally not stored here.  Curation jobs operate on
+    typed goal/node/reason signatures and require review before any knowledge is active.
+    """
+    __tablename__ = "consultant_gap_events"
+    __table_args__ = (UniqueConstraint("session_id", "signature", "status",
+                                       name="uq_consultant_gap_session_signature_status"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    session_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    employee_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    goal_type: Mapped[str] = mapped_column(String(100), index=True)
+    workflow_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    node_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    reason: Mapped[str] = mapped_column(String(60), index=True)
+    risk: Mapped[str] = mapped_column(String(8), default="U1")
+    signature: Mapped[str] = mapped_column(String(64), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="open", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeCandidate(Base):
+    """Review-only candidate knowledge produced from typed gap clusters."""
+    __tablename__ = "knowledge_candidates"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    artifact_type: Mapped[str] = mapped_column(String(60))
+    status: Mapped[str] = mapped_column(String(40), default="review_required", index=True)
+    content: Mapped[dict] = mapped_column(JSONB, default=dict)
+    gap_count: Mapped[int] = mapped_column(Integer, default=1)
+    reviewer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+# --- Version-aware evidence stores (Phase 3) ---
+class SchemaSnapshot(Base):
+    """Authorized, read-only schema metadata; never a live ERP connection string."""
+    __tablename__ = "schema_snapshots"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    bravo_version: Mapped[str] = mapped_column(String(80), index=True)
+    environment: Mapped[str] = mapped_column(String(120), index=True)
+    status: Mapped[str] = mapped_column(String(30), default="candidate", index=True)
+    source_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), unique=True)
+    payload: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnownError(Base):
+    """KEDB entry with explicit applicability and verification state."""
+    __tablename__ = "known_errors"
+    __table_args__ = (UniqueConstraint("case_key", name="uq_known_error_case_key"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    case_key: Mapped[str] = mapped_column(String(120), index=True)
+    title: Mapped[str] = mapped_column(String(500))
+    symptom: Mapped[str] = mapped_column(Text)
+    probable_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    bravo_version: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    environment: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(30), default="candidate", index=True)
+    supersedes_case_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    source_refs: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
+    verified_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

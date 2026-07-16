@@ -84,3 +84,31 @@ def route_query(query: str) -> KnowledgeRoute:
         playbook_modes=(),
         reason="intent" if intent.has_hints else "unscoped",
     )
+
+
+_PROFILE_ROUTES: dict[str, tuple[tuple[str, ...], str, tuple[str, ...]]] = {
+    # Product profiles are policy bundles: they narrow the source surface before retrieval.
+    # They are not model selectors and cannot change RLS, tool permission, or action approval.
+    "bravo_user_guide": (("user_guide", "mindmap", "basic_rule"), "end_user_guidance",
+                          ("end_user_guidance",)),
+    "implementation": (("technical_manual", "kqpt_ptnv", "report_template", "basic_rule"),
+                       "implementation", ("implementation_support", "technical_impact")),
+    # The UI must not expose this until approved ISMS/policy sources exist. Keeping the route
+    # fail-closed protects the API surface from silently searching unrelated BRAVO material.
+    "isms": (("legal_standard",), "governance", ("governance_audit",)),
+}
+
+
+def route_for_profile(query: str, profile: str = "auto") -> KnowledgeRoute:
+    """Apply an explicit product profile before retrieval, otherwise use deterministic routing."""
+    if profile == "auto":
+        return route_query(query)
+    source_types, lifecycle_stage, playbook_modes = _PROFILE_ROUTES.get(profile, _PROFILE_ROUTES["bravo_user_guide"])
+    intent = infer_query_intent(query)
+    return KnowledgeRoute(
+        source_types=source_types,
+        modules=intent.modules,
+        lifecycle_stage=lifecycle_stage,
+        playbook_modes=playbook_modes,
+        reason=f"profile:{profile}",
+    )

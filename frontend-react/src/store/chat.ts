@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { streamChat } from "@/api/sse";
 import { api } from "@/api/client";
 import { uploadAttachment, deleteAttachment, getAttachment } from "@/api/workspace";
-import type { AgentStep, ChatMessage, SourceItem, StagedAttachment } from "@/api/types";
+import type { AgentStep, ChatMessage, ConsultantFeedbackKind, ConsultantProfile, ConsultantState, SourceItem, StagedAttachment } from "@/api/types";
 
 function uuid() {
   return crypto.randomUUID();
@@ -21,6 +21,8 @@ interface ChatState {
   staged: StagedAttachment[];
   runMode: "auto" | "deep_research";
   pinnedSources: SourceItem[];   // P4-lite: workspace docs ghim vào ngữ cảnh hội thoại
+  consultantState: ConsultantState | null;
+  consultantProfile: ConsultantProfile;
   newConversation: () => string;
   setConversation: (id: string, messages: ChatMessage[]) => void;
   addMessage: (m: ChatMessage) => void;
@@ -29,6 +31,9 @@ interface ChatState {
   pinSource: (s: SourceItem) => void;
   unpinSource: (id: string) => void;
   setRunMode: (mode: "auto" | "deep_research") => void;
+  refreshConsultantState: (conversationId?: string | null) => Promise<void>;
+  submitConsultantFeedback: (kind: ConsultantFeedbackKind) => Promise<boolean>;
+  setConsultantProfile: (profile: ConsultantProfile) => void;
   send: (question: string, onDone?: () => void) => Promise<void>;
   stop: () => void;
 }
@@ -42,19 +47,45 @@ export const useChat = create<ChatState>((set, get) => ({
   staged: [],
   runMode: "auto",
   pinnedSources: [],
+  consultantState: null,
+  consultantProfile: "auto",
 
   pinSource: (s) => set((st) => st.pinnedSources.some((x) => x.id === s.id)
     ? st : { pinnedSources: [...st.pinnedSources, s] }),
   unpinSource: (id) => set((st) => ({ pinnedSources: st.pinnedSources.filter((x) => x.id !== id) })),
   setRunMode: (runMode) => set({ runMode }),
+  refreshConsultantState: async (requestedId) => {
+    const id = requestedId ?? get().conversationId;
+    if (!id) {
+      set({ consultantState: null });
+      return;
+    }
+    try {
+      const state = await api<ConsultantState>(`/api/consultant/state/${id}`);
+      // A slow request for the previous conversation must never overwrite the current strip.
+      if (get().conversationId === id) set({ consultantState: state });
+    } catch {
+      // The workflow strip is observational only; safe chat must continue if it is unavailable.
+      if (get().conversationId === id) set({ consultantState: null });
+    }
+  },
+  submitConsultantFeedback: async (kind) => {
+    const id = get().conversationId;
+    if (!id) return false;
+    const result = await api<{ created: boolean }>(`/api/consultant/state/${id}/feedback`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind }),
+    });
+    return result.created;
+  },
+  setConsultantProfile: (consultantProfile) => set({ consultantProfile }),
 
   newConversation: () => {
     const id = uuid();
-    set({ conversationId: id, messages: [], staged: [], pinnedSources: [], activeRunId: null });
+    set({ conversationId: id, messages: [], staged: [], pinnedSources: [], activeRunId: null, consultantState: null });
     return id;
   },
 
-  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [], pinnedSources: [], activeRunId: null }),
+  setConversation: (id, messages) => set({ conversationId: id, messages, staged: [], pinnedSources: [], activeRunId: null, consultantState: null }),
 
   addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
 
@@ -155,6 +186,7 @@ export const useChat = create<ChatState>((set, get) => ({
     const sentAttachments = ready.map((a) => ({ filename: a.name, kind: a.kind }));
     const sourceIds = get().pinnedSources.map((s) => s.id);   // P4-lite: pinned workspace docs
     const mode = get().runMode;
+    const consultantProfile = get().consultantProfile;
 
     let cid = get().conversationId;
     if (!cid) cid = get().newConversation();
@@ -262,13 +294,15 @@ export const useChat = create<ChatState>((set, get) => ({
       ac.signal,
       attachmentIds,
       sourceIds,
-      mode
+      mode,
+      consultantProfile,
     );
     // Do not clear state owned by a newer send. `stop` also clears this state
     // immediately, while the backend receives the durable cancellation request.
     if (get().abort === ac) {
       set({ sending: false, abort: null, activeRunId: null });
     }
+    void get().refreshConsultantState(cid);
     onDone?.();
   },
 }));

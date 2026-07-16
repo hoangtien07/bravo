@@ -60,6 +60,10 @@ class ChatIn(BaseModel):
 
     mode: Literal["auto", "deep_research"] = "auto"
     web_access: Literal["off", "auto", "on"] = "off"
+    # Product/evaluation override only changes the consultant scaffold. It cannot override RLS,
+    # tool permissions, egress policy, or approval policy.
+    consultant_mode: Literal["auto", "off", "on"] = "auto"
+    consultant_profile: Literal["auto", "bravo_user_guide", "implementation", "isms"] = "auto"
 
 
 def _merge_pinned_source_ids(requested: list[uuid.UUID], attachments: list[dict]) -> list[uuid.UUID]:
@@ -233,6 +237,8 @@ async def chat_stream(request: Request, conversation_id: uuid.UUID, body: ChatIn
     session.pinned_source_ids = _merge_pinned_source_ids(body.source_ids, attachments)
     session.run_mode = body.mode
     session.web_access = body.web_access
+    session.consultant_mode = body.consultant_mode
+    session.consultant_profile = body.consultant_profile
 
     lock = _conv_lock(conversation_id)
 

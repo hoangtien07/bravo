@@ -28,7 +28,7 @@ beforeEach(() => {
   // jsdom lacks object-URL APIs used for image previews.
   (globalThis.URL as any).createObjectURL = vi.fn(() => "blob:x");
   (globalThis.URL as any).revokeObjectURL = vi.fn();
-  useChat.setState({ conversationId: null, messages: [], sending: false, abort: null, staged: [] });
+  useChat.setState({ conversationId: null, messages: [], sending: false, abort: null, staged: [], consultantProfile: "auto" });
   (streamChat as any).mockClear();
 });
 
@@ -57,5 +57,11 @@ describe("chat store — P0a attachment fail-loud", () => {
     await useChat.getState().send("câu hỏi");
     const attachmentIds = (streamChat as any).mock.calls[0][4];
     expect(attachmentIds).toEqual(["att-b.png"]); // pending one excluded, ready one kept
+  });
+
+  it("forwards the selected product profile separately from execution depth", async () => {
+    useChat.getState().setConsultantProfile("implementation");
+    await useChat.getState().send("Tạo B00Lookup");
+    expect((streamChat as any).mock.calls[0][7]).toBe("implementation");
   });
 });

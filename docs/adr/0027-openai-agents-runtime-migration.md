@@ -1,5 +1,8 @@
 # 0027. Di trú runtime sang OpenAI Agents SDK theo canary
 
+> Canonical index alias: **ADR-0027b**. A historical filename-number collision also produced
+> ADR-0027a; see [ADR index](README.md).
+
 **Trạng thái:** Accepted  
 **Ngày:** 2026-07-13
 

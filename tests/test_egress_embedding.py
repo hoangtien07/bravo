@@ -12,6 +12,8 @@ from app.rag import embedding
 
 def test_sensitive_content_refused_on_cloud(monkeypatch):
     monkeypatch.setattr(embedding._settings, "embedding_provider", "openai_compatible")
+    # This test covers the hybrid fail-closed branch; cloud_only has its own explicit test below.
+    monkeypatch.setattr(embedding._settings, "egress_policy", "hybrid")
     with pytest.raises(RuntimeError, match="egress-guard"):
         embedding.embed(["bảng lương nhân viên tháng 6"], sensitive=True)
     with pytest.raises(RuntimeError, match="egress-guard"):

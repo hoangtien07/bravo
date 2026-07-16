@@ -1,5 +1,9 @@
 # ROADMAP — BRAVO AI Copilot
 
+> **Status: LEGACY DIRECTIONAL ROADMAP.** Keep as product history/reference. Current phase and
+> architecture gates are in [PROJECT-STATE.md](PROJECT-STATE.md) and
+> [../plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md](../plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md).
+
 > Lộ trình theo giai đoạn, ánh xạ tới giá trị & rủi ro trong [VISION.md](VISION.md). Đây là kế hoạch *định hướng*, không phải cam kết lịch — mốc thời gian chốt khi có nguồn lực & xác nhận từ BRAVO (xem VISION §8).
 
 ## Nguyên tắc lộ trình

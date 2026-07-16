@@ -1,6 +1,10 @@
 # CLAUDE.md — BRAVO AI Copilot
 
 > File này được Claude đọc mỗi phiên làm việc. Giữ ngắn gọn, súc tích. Chi tiết nằm trong `docs/`.
+>
+> **Current-state rule (2026-07-16):** read [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md)
+> before relying on phase, branch, test-count, or readiness claims later in this file. The product
+> invariants remain applicable; older progress snapshots do not override current code/evidence.
 
 ## 1. Dự án là gì
 
@@ -9,7 +13,9 @@ Biến hệ sinh thái **BRAVO ERP** (nền tảng .NET + SQL Server) từ hệ 
 
 Khách hàng: nội bộ BRAVO (helpdesk, cán bộ triển khai) ở giai đoạn MVP; bán add-on cho khách doanh nghiệp ở giai đoạn sau.
 
-**Tài liệu nguồn của sự thật:** [docs/VISION.md](docs/VISION.md) (mục tiêu đã tinh chỉnh) và [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+**Nguồn hiện hành:** [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md) owns current status;
+[docs/VISION.md](docs/VISION.md) owns long-lived intent; [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+is the existing-platform reference and must be checked against code.
 
 ## 2. Bốn nguyên tắc bất biến (NON-NEGOTIABLE)
 

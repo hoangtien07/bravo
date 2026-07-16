@@ -1,5 +1,10 @@
 # BRAVO Consultant Intelligence v2 — master decision pack
 
+> **Status: SUPERSEDED RESEARCH PROPOSAL.** Its implementation experiment remains evidence, but
+> the current conversation benchmark and two-track boundary are owned by
+> [../../../plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md](../../../plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md)
+> and [../../../plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md](../../../plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md).
+
 **Ngày chốt:** 2026-07-14  
 **Trạng thái:** proposed; sẵn sàng bắt đầu Phase 0 sau khi product owner và chuyên gia nghiệp vụ duyệt 10 workflow ưu tiên  
 **Phạm vi:** chất lượng hiểu mục tiêu, suy luận nghiệp vụ BRAVO 10, hội thoại nhiều lượt, retrieval theo kế hoạch, học từ khoảng trống  
@@ -159,4 +164,3 @@ Phase 0 là bắt buộc. Phase 1 và phần schema state của Phase 2 có th�
 3. Lấy 30–50 hội thoại đã khử dữ liệu nhạy cảm, bao gồm correction và failure thật.
 4. Đóng băng một baseline model/config trong 2 tuần để đo kiến trúc thay vì nhiễu model.
 5. Không thay prompt production diện rộng trước khi baseline hoàn tất.
-

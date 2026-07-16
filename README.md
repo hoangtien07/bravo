@@ -1,5 +1,10 @@
 # BRAVO AI Copilot
 
+> **Current-state entrypoint:** read [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md) before using
+> progress/test counts below. The worktree is currently dirty and historical green-test counts
+> have not been revalidated by the 2026-07-16 documentation cleanup. AI reviewers should follow
+> [docs/AI-REVIEW-MANIFEST.md](docs/AI-REVIEW-MANIFEST.md).
+
 > **Enterprise Knowledge & Financial Analytics Hub** — biến BRAVO ERP thành một hệ thống mở thông minh, có khả năng tương tác bằng ngôn ngữ tự nhiên và tự động hoá phân tích, với bảo mật phân quyền cấp phòng ban và sàn vận hành offline 100% (hybrid cloud tuỳ chọn, có kiểm soát).
 
 **Trạng thái:** 🟢 Đang build (Phase 1–2). Lõi đã chạy E2E: RAG có RLS + trích dẫn · agent loop ràng buộc + verify-gate số · **money-engine AP** (hoá đơn điện tử XML → bút toán nháp TT99) · **nền tảng chat** (React SPA + SSE streaming + lịch sử hội thoại). ~140 test xanh.

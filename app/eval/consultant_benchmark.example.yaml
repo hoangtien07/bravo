@@ -1,0 +1,136 @@
+schema_version: consultant-benchmark/v1
+# Every scenario has four deterministic structural variants in the offline report.
+# They exercise alternate wording/state injection in later model runs; they are not a substitute
+# for SME-judged real conversations.
+default_structural_variants: 4
+cases:
+  - case_id: financial.close.correction
+    turns:
+      - user: "Làm sao để lên báo cáo tài chính?"
+        expected: {workflow: financial_close, current_node: scope_known}
+      - user: "Tôi đã hạch toán hết, nhưng chưa kết chuyển. Là tháng 5 năm 2026 chứ không phải tháng 6."
+        expected: {workflow: financial_close, current_node: reconciliation_checked, facts: {period: "2026-05", posting_checked: true, closing_incomplete: false}}
+  - case_id: financial.close.ready
+    turns:
+      - user: "Khóa sổ tháng 05/2026, đã hạch toán và đã đối chiếu."
+        expected: {workflow: financial_close, current_node: closing_complete, facts: {period: "2026-05", posting_checked: true, reconciliation_checked: true}}
+  - case_id: ap.invoice
+    turns:
+      - user: "Hướng dẫn xử lý hóa đơn đầu vào tháng 5"
+        expected: {workflow: ap_invoice, current_node: invoice_checked, facts: {period: "unknown-05"}}
+  - case_id: report.discrepancy
+    turns:
+      - user: "Báo cáo doanh thu bị lệch báo cáo công nợ"
+        expected: {workflow: report_discrepancy, current_node: scope_known}
+  - case_id: technical.layout
+    turns:
+      - user: "Tạo Layout XML và DataSource cho BRAVO 10"
+        expected: {workflow: technical_configuration, current_node: environment_known, facts: {bravo_version: "10"}}
+  - case_id: schema.version
+    turns:
+      - user: "Bảng nào chứa chứng từ trên database BRAVO 10?"
+        expected: {workflow: schema_grounding, current_node: version_known, facts: {bravo_version: "10"}}
+  - case_id: incident
+    turns:
+      - user: "Lỗi không hiển thị chứng từ, cần xem log"
+        expected: {workflow: incident_diagnosis, current_node: symptom_scoped}
+  - case_id: ar.collection
+    turns:
+      - user: "Hạch toán công nợ phải thu và thu tiền"
+        expected: {workflow: ar_collection, current_node: document_checked}
+  - case_id: inventory.close
+    turns:
+      - user: "Làm sao chốt tồn kho cuối tháng?"
+        expected: {workflow: inventory_close, current_node: movements_checked}
+  - case_id: fixed.asset
+    turns:
+      - user: "Tính khấu hao tài sản cố định"
+        expected: {workflow: fixed_asset_close, current_node: asset_changes_checked}
+  - case_id: costing
+    turns:
+      - user: "Tính giá thành sản phẩm"
+        expected: {workflow: costing, current_node: inputs_checked}
+  - case_id: pause.resume
+    turns:
+      - user: "Làm sao để lên BCTC?"
+        expected: {workflow: financial_close, status: active}
+      - user: "Dừng lại"
+        expected: {workflow: financial_close, status: paused}
+      - user: "Tiếp tục, kỳ 2026-05"
+        expected: {workflow: financial_close, status: active, facts: {period: "2026-05"}}
+  - case_id: financial.close.period-first
+    turns:
+      - user: "BCTC kỳ 2026-04 cần chuẩn bị những gì?"
+        expected: {workflow: financial_close, current_node: posting_checked, facts: {period: "2026-04"}}
+  - case_id: financial.close.unclosed
+    turns:
+      - user: "Đã hạch toán tháng 4 nhưng chưa kết chuyển, có lên báo cáo tài chính được không?"
+        expected: {workflow: financial_close, current_node: reconciliation_checked, facts: {period: "unknown-04", posting_checked: true, closing_incomplete: false}}
+  - case_id: financial.close.version
+    turns:
+      - user: "BRAVO 10.2: khóa sổ tháng 2026-03"
+        expected: {workflow: financial_close, current_node: posting_checked, facts: {period: "2026-03", bravo_version: "10.2"}}
+  - case_id: ap.invoice.version
+    turns:
+      - user: "BRAVO 10 xử lý chứng từ mua đầu vào như thế nào?"
+        expected: {workflow: ap_invoice, current_node: invoice_checked, facts: {bravo_version: "10"}}
+  - case_id: ap.invoice.tax
+    turns:
+      - user: "Hóa đơn mua có cần kiểm tra thuế trước khi hạch toán không?"
+        expected: {workflow: ap_invoice, current_node: invoice_checked}
+  - case_id: ar.document
+    turns:
+      - user: "Hóa đơn bán và công nợ phải thu đang cần đối chiếu"
+        expected: {workflow: ar_collection, current_node: document_checked}
+  - case_id: inventory.cost
+    turns:
+      - user: "Sau khi nhập xuất kho cần tính giá thành tồn kho thế nào?"
+        expected: {workflow: inventory_close, current_node: movements_checked}
+  - case_id: fixed.asset.depreciation
+    turns:
+      - user: "Khấu hao tài sản cố định cuối tháng bị thiếu"
+        expected: {workflow: fixed_asset_close, current_node: asset_changes_checked}
+  - case_id: costing.preconditions
+    turns:
+      - user: "Chưa đủ chi phí đầu vào thì có tính giá thành được không?"
+        expected: {workflow: costing, current_node: inputs_checked}
+  - case_id: discrepancy.parameters
+    turns:
+      - user: "Số liệu chênh lệch báo cáo cần khoanh vùng theo tham số nào?"
+        expected: {workflow: report_discrepancy, current_node: scope_known}
+  - case_id: discrepancy.stop-resume
+    turns:
+      - user: "Báo cáo bị sai báo cáo công nợ"
+        expected: {workflow: report_discrepancy, status: active}
+      - user: "Dừng lại"
+        expected: {workflow: report_discrepancy, status: paused}
+      - user: "Tiếp tục kiểm tra"
+        expected: {workflow: report_discrepancy, status: active}
+  - case_id: technical.b00lookup
+    turns:
+      - user: "Cần tạo B00Lookup cho BRAVO 10"
+        expected: {workflow: technical_configuration, current_node: environment_known, facts: {bravo_version: "10"}}
+  - case_id: technical.template
+    turns:
+      - user: "Thiết kế Template và DataSource mới"
+        expected: {workflow: technical_configuration, current_node: environment_known}
+  - case_id: schema.table-field
+    turns:
+      - user: "Trường nào trong schema BRAVO 10 dùng để liên kết chứng từ?"
+        expected: {workflow: schema_grounding, current_node: version_known, facts: {bravo_version: "10"}}
+  - case_id: schema.view
+    turns:
+      - user: "View database BRAVO 10 có tồn tại cho báo cáo không?"
+        expected: {workflow: schema_grounding, current_node: version_known, facts: {bravo_version: "10"}}
+  - case_id: incident.ui
+    turns:
+      - user: "Lỗi UI không hiển thị khi mở chứng từ"
+        expected: {workflow: incident_diagnosis, current_node: symptom_scoped}
+  - case_id: incident.integration
+    turns:
+      - user: "Lỗi tích hợp trả về error, cần xem log"
+        expected: {workflow: incident_diagnosis, current_node: symptom_scoped}
+  - case_id: unknown.goal
+    turns:
+      - user: "Tôi cần xử lý một yêu cầu chưa rõ chức năng"
+        expected: {current_node: null}

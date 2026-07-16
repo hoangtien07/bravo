@@ -1,5 +1,9 @@
 # BRAVO AI Continuation Notes
 
+> **Status: ARCHIVED SUPERSEDED SNAPSHOT.** This corpus-cleanup checkpoint no longer owns current
+> project progress. See [PROJECT-STATE.md](../../PROJECT-STATE.md). The archive decision is recorded
+> in [MARKDOWN-CLEANUP-ACTIONS.md](../../documentation/MARKDOWN-CLEANUP-ACTIONS.md).
+
 > Checkpoint hiện tại sau khi rà lại nguy cơ over-engineering của mindmap kỹ thuật.
 
 ## Cơ chế tìm tài liệu hiện tại

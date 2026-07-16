@@ -1,5 +1,8 @@
 # Council Review 2026-07-12 — "Chatbot hiểu phần mềm": đối chứng BravoGen & định hướng
 
+> **Status: HISTORICAL REVIEW EVIDENCE (2026-07-12).** Retained as diagnosis input; current
+> two-track design and gates are in [PROJECT-STATE.md](PROJECT-STATE.md) and `plan-rebuild/04–07`.
+
 > Bối cảnh: chủ dự án đối chứng bravo-local với chatbot production **chat.bravogen.io.vn**
 > (LibreChat + Google Gemini, RAG trên cùng bộ tài liệu BRAVO 10) và kết luận câu trả lời của ta
 > "không đáng xem, tự bịa, không hiểu phần mềm". Hội đồng rà soát nguyên nhân + định hướng.

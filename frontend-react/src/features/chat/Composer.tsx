@@ -23,7 +23,7 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const { pinnedSources, pinSource, unpinSource, runMode, setRunMode } = useChat();
+  const { pinnedSources, pinSource, unpinSource, runMode, setRunMode, consultantProfile, setConsultantProfile } = useChat();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sources, setSources] = useState<SourceItem[]>([]);
   const openPicker = async () => {
@@ -120,15 +120,27 @@ export function Composer({ onSend, sending, onStop, staged, onAttach, onRemoveAt
       )}
       <div className="mx-auto max-w-3xl flex items-end gap-2">
         <select
+          value={consultantProfile}
+          onChange={(e) => setConsultantProfile(e.target.value as "auto" | "bravo_user_guide" | "implementation")}
+          disabled={sending}
+          className="h-10 max-w-36 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+          aria-label="Phạm vi tư vấn"
+          title="Chọn phạm vi tri thức; không thay đổi quyền công cụ hoặc quyền dữ liệu"
+        >
+          <option value="auto">Tự động</option>
+          <option value="bravo_user_guide">Hướng dẫn BRAVO</option>
+          <option value="implementation">Triển khai & kỹ thuật</option>
+        </select>
+        <select
           value={runMode}
           onChange={(e) => setRunMode(e.target.value as "auto" | "deep_research")}
           disabled={sending}
           className="h-10 rounded-md border border-border bg-background px-2 text-xs text-foreground"
-          aria-label="Chế độ xử lý"
+          aria-label="Độ sâu xử lý"
           title="Tự động chọn chiến lược, hoặc Nghiên cứu sâu cho câu hỏi đa nguồn"
         >
-          <option value="auto">Tự động</option>
-          <option value="deep_research">Nghiên cứu sâu</option>
+          <option value="auto">Thường</option>
+          <option value="deep_research">Sâu</option>
         </select>
         <input
           ref={fileRef}

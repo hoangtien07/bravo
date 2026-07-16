@@ -9,6 +9,7 @@ import { useBravoRuntime } from "@/runtime/bravoRuntime";
 import type { BravoMeta } from "@/runtime/convertMessage";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
+import { ConsultantWorkflowStrip } from "./ConsultantWorkflowStrip";
 import type { ChatMessage } from "@/api/types";
 
 // Handlers shared with the message components rendered inside <ThreadPrimitive.Messages>.
@@ -48,7 +49,8 @@ export function AuiChatView() {
   const { id } = useParams();
   const nav = useNavigate();
   const { conversationId, messages, sending, send, stop, setConversation, newConversation,
-          staged, attach, removeAttachment, addMessage } = useChat();
+          staged, attach, removeAttachment, addMessage, consultantState, refreshConsultantState,
+          submitConsultantFeedback } = useChat();
   const runtime = useBravoRuntime();
   const [cites, setCites] = useState<string[] | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -57,9 +59,9 @@ export function AuiChatView() {
 
   useEffect(() => {
     if (!id) { newConversation(); return; }
-    if (id === conversationId) return;
+    if (id === conversationId) { void refreshConsultantState(id); return; }
     api<{ id: string; title: string; messages: ChatMessage[] }>(`/api/conversations/${id}`)
-      .then((d) => setConversation(id, d.messages)).catch(() => nav("/"));
+      .then((d) => { setConversation(id, d.messages); void useChat.getState().refreshConsultantState(id); }).catch(() => nav("/"));
   }, [id]);
 
   useEffect(() => {
@@ -164,6 +166,7 @@ export function AuiChatView() {
             <h1 className="font-semibold tracking-tight">BRAVO AI Copilot <span className="text-xs text-muted-foreground">· beta</span></h1>
             {id && <Button variant="ghost" size="sm" onClick={share}><Share2 className="h-4 w-4" /> Chia sẻ</Button>}
           </header>
+          <ConsultantWorkflowStrip state={consultantState} onFeedback={submitConsultantFeedback} />
           <div ref={scrollRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto px-4 py-4">
             <ThreadPrimitive.Root>
               <div className="mx-auto max-w-3xl space-y-4">

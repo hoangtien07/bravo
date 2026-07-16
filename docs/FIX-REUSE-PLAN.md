@@ -1,5 +1,9 @@
 # FIX-REUSE-PLAN — sửa "worst of both worlds" (tái dùng thư viện proven thật sự)
 
+> **Status: HISTORICAL REMEDIATION PLAN / REFERENCE.** It does not decide the current reasoning
+> core or Engineering Workbench. See [PROJECT-STATE.md](PROJECT-STATE.md) and
+> [../plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md](../plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md).
+
 > **Phê bình đang sửa (council):** bravo *vừa* tái tạo phiên bản mỏng *vừa* **CHƯA cài cả thư viện proven** (Docling, sentence-transformers) → nhận cái dở của cả hai; lớp glue invariant tự viết thì **chưa chứng minh ở runtime**.
 > **Nguyên tắc sửa (phân biệt cho đúng — [ADR-0013](adr/0013-reuse-vs-rewrite-and-topology.md)):**
 > - Phần **LIBRARY proven** (Docling, sentence-transformers/bge-m3, ViRanker, rank-bm25) → **CÀI + DÙNG THẬT** (đây là chỗ "đừng tái tạo bánh xe"). Lỗi hiện tại = khai trong deps nhưng chưa cài/chưa chạy.

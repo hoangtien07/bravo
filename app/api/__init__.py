@@ -13,6 +13,7 @@ from app.api import (
     routes_auth,
     routes_conversations,
     routes_connectors,
+    routes_consultant,
     routes_drafts,
     routes_frontier,
     routes_graph,
@@ -33,6 +34,7 @@ router.include_router(routes_ask.router, tags=["knowledge"])
 router.include_router(routes_agent.router, tags=["agent"])
 router.include_router(routes_conversations.router, tags=["chat"])
 router.include_router(routes_connectors.router, tags=["connectors"])
+router.include_router(routes_consultant.router, tags=["consultant"])
 router.include_router(routes_frontier.router, tags=["frontier"])
 router.include_router(routes_runs.router, tags=["agent-runs"])
 router.include_router(routes_artifacts.router, tags=["artifacts"])

@@ -1,5 +1,9 @@
 # PLAN — Kế hoạch triển khai chi tiết (task-level)
 
+> **Status: HISTORICAL IMPLEMENTATION PLAN.** Retained for traceability and inbound links; it does
+> not own current project progress. See [PROJECT-STATE.md](PROJECT-STATE.md) and
+> [../plan-rebuild/](../plan-rebuild/) for the active architecture-decision work.
+
 > Biến [ROADMAP.md](ROADMAP.md) thành các task code cụ thể, bám [ADR](adr/) + [research/findings](research/findings/SUMMARY.md). Cập nhật tiến độ bằng `[x]`. Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector (modular monolith — [ADR-0007](adr/0007-code-strategy.md)).
 
 ## Nguyên tắc thực thi

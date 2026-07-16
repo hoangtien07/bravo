@@ -6,12 +6,13 @@ import { Button } from "@/components/ui";
 import { useChat } from "@/store/chat";
 import { MessageBubble } from "./MessageBubble";
 import { Composer } from "./Composer";
+import { ConsultantWorkflowStrip } from "./ConsultantWorkflowStrip";
 import type { ChatMessage } from "@/api/types";
 
 export function ChatView() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { conversationId, messages, sending, send, stop, setConversation, newConversation, addMessage, staged, attach, removeAttachment } = useChat();
+  const { conversationId, messages, sending, send, stop, setConversation, newConversation, addMessage, staged, attach, removeAttachment, consultantState, refreshConsultantState, submitConsultantFeedback } = useChat();
   const [cites, setCites] = useState<string[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -26,9 +27,15 @@ export function ChatView() {
       newConversation();
       return;
     }
-    if (id === conversationId) return;
+    if (id === conversationId) {
+      void refreshConsultantState(id);
+      return;
+    }
     api<{ id: string; title: string; messages: ChatMessage[] }>(`/api/conversations/${id}`)
-      .then((d) => setConversation(id, d.messages))
+      .then((d) => {
+        setConversation(id, d.messages);
+        void useChat.getState().refreshConsultantState(id);
+      })
       .catch(() => nav("/"));
   }, [id]);
 
@@ -174,6 +181,7 @@ export function ChatView() {
           <h1 className="font-semibold tracking-tight">BRAVO AI Copilot</h1>
           {id && <Button variant="ghost" size="sm" onClick={share}><Share2 className="h-4 w-4" /> Chia sẻ</Button>}
         </header>
+        <ConsultantWorkflowStrip state={consultantState} onFeedback={submitConsultantFeedback} />
         <div ref={scrollRef} onScroll={onScroll} className="relative flex-1 overflow-y-auto px-4 py-4">
           <div className="mx-auto max-w-3xl space-y-4">
             {!messages.length && (

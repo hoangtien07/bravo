@@ -1,5 +1,8 @@
 # 0027. Feedback mở rộng: comment + category (report-to-IT)
 
+> Canonical index alias: **ADR-0027a**. A historical filename-number collision also produced
+> ADR-0027b; see [ADR index](README.md).
+
 - **Trạng thái:** Accepted (2026-07-13)
 - **Liên quan:** [ADR-0024](0024-sse-protocol-v2.md).
 

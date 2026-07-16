@@ -1,4 +1,7 @@
 # VISION — BRAVO AI Copilot
+
+> **Role:** long-lived product vision, not current implementation status. Current verified limits,
+> active decision tracks, and next gates are owned by [PROJECT-STATE.md](PROJECT-STATE.md).
 ### Enterprise Knowledge & Financial Analytics Hub
 
 > Tài liệu này tinh chỉnh và hoàn thiện mục tiêu dự án sau khi nghiên cứu ba hệ mã nguồn tham chiếu (arkon, docsgpt, letta). Nó là **nguồn sự thật** về *vì sao* và *cái gì* của dự án. *Như thế nào* nằm ở [ARCHITECTURE.md](ARCHITECTURE.md).

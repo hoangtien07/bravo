@@ -40,6 +40,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agent.memory import MemoryStore
 from app.agent.bravo_playbooks import load_playbooks, render_playbook_hint
 from app.agent.turn_contract import classify_turn, render_turn_contract
+from app.consultant import ConsultantService
+from app.consultant.critic import review as review_consultant_answer
+from app.consultant.rollout import is_assigned as consultant_is_assigned
 from app.agent.tools import REGISTRY, call_tool, filter_tools_by_permission, register
 from app.agent_runtime import OpenAIAgentsRuntime, RuntimeUnavailable
 from app.config import get_settings
@@ -47,7 +50,7 @@ from app.data_layer.grounding import verify_numbers
 from app.data_layer.semantic import MetricResult
 from app.llm import router as llm
 from app.rag import retriever
-from app.rag.knowledge_router import route_query
+from app.rag.knowledge_router import route_for_profile
 from app.security.rls import Identity, frame_untrusted
 
 _settings = get_settings()
@@ -845,7 +848,8 @@ class AgentSession:
                 tokens_used=getattr(self, "_tokens_used", 0),
                 checkpoint_state={
                     "created_draft": getattr(self, "_created_draft", False),
-                    "routed_cloud": getattr(self, "_routed_cloud", False)})
+                    "routed_cloud": getattr(self, "_routed_cloud", False),
+                    "consultant": getattr(self, "_consultant_trace", {})})
         except Exception:
             pass
 
@@ -1034,6 +1038,23 @@ class AgentSession:
             core_text = ""   # core-memory là bổ trợ, không được làm hỏng lượt chat
         identity_text = await self._identity_block()   # S7a: danh tính người hỏi (best-effort)
 
+        self._consultant_turn = None
+        self._consultant_trace = {}
+        consultant_mode = getattr(self, "consultant_mode", "auto")
+        use_consultant = (
+            _settings.consultant_enabled and (consultant_mode == "on" or
+            (consultant_mode == "auto" and consultant_is_assigned(
+                self.session_id, self.identity.employee_id, _settings.consultant_rollout_percent))
+        )) and consultant_mode != "off"
+        if use_consultant:
+            try:
+                self._consultant_service = ConsultantService(self.db, self.identity, self.session_id)
+                self._consultant_turn = await self._consultant_service.prepare(
+                    user_message, getattr(self, "consultant_profile", "auto"))
+                self._consultant_turn.manifest.config_version = _settings.consultant_config_version
+                self._consultant_trace = self._consultant_turn.manifest.model_dump(mode="json")
+            except Exception:
+                _log.warning("consultant state unavailable; continuing legacy-safe path", exc_info=True)
         recall = await self._safe_history()                 # lịch sử (CÓ NÉN) TRƯỚC câu hiện tại
         att_names = [a.get("filename", "?") for a in (attachments or [])]
         self._attachment_context = [
@@ -1056,10 +1077,20 @@ class AgentSession:
             self._user_message_id = last[0].id
 
         queries = await self._plan_queries(recall, user_message)
+        # Phase 3: retrieval follows the active workflow node as well as the user's wording.
+        # The original question remains first, so a weak card can never erase user intent.
+        if self._consultant_turn is not None and self._consultant_turn.workflow is not None:
+            node = next((n for n in self._consultant_turn.workflow.nodes
+                         if n.id == self._consultant_turn.state.current_node), None)
+            for need in (node.retrieval_needs if node else []):
+                if need.query_hint and need.query_hint not in queries:
+                    queries.append(need.query_hint)
+            queries = queries[:4]
         # Route the corpus BEFORE retrieval.  The previous implementation only added lifecycle
         # preferences to the prompt after a full-corpus search, allowing high-volume BA/technical
         # material to displace the user-guide evidence needed for an end-user question.
-        route = route_query(user_message)
+        profile = self._consultant_turn.frame.profile if self._consultant_turn is not None else "auto"
+        route = route_for_profile(user_message, profile)
         self._knowledge_route = route
         try:   # M3: a hung pgvector query must not stall the turn past its deadline
             chunks = await asyncio.wait_for(
@@ -1075,6 +1106,12 @@ class AgentSession:
             seen = {getattr(c, "chunk_id", None) for c in pinned}
             chunks = pinned + [c for c in chunks if getattr(c, "chunk_id", None) not in seen]
             chunks = chunks[:14]
+        if self._consultant_turn is not None:
+            try:
+                await self._consultant_service.record_retrieval_outcome(self._consultant_turn, len(chunks))
+                self._consultant_trace = self._consultant_turn.manifest.model_dump(mode="json")
+            except Exception:
+                _log.warning("consultant gap telemetry unavailable", exc_info=True)
 
         labels = await self._source_labels(chunks)
         blocks: list[str] = []
@@ -1151,6 +1188,8 @@ class AgentSession:
             *([{"role": "system", "content": core_text}] if core_text else []),
             *([{"role": "system", "content": identity_text}] if identity_text else []),
             {"role": "system", "content": turn_contract},
+            *([{"role": "system", "content": self._consultant_turn.prompt_block}]
+              if self._consultant_turn is not None else []),
             {"role": "system", "content": f"TOOL khả dụng:\n{tools_desc or '(không có)'}"},
             *([{"role": "system", "content": playbook_hint}] if playbook_hint else []),
             *recall,  # multi-turn: lịch sử (đã DATA-frame) NẰM TRƯỚC câu hỏi
@@ -1453,7 +1492,7 @@ class AgentSession:
             yield {"type": "done", "grounded": grounded, "citations": cites,
                    "routed_cloud": True, "session_id": str(self.session_id),
                    **self._msg_ids(mid)}
-        except Exception as exc:  # The fallback wrapper handles RuntimeUnavailable before this run.
+        except Exception:  # The fallback wrapper handles RuntimeUnavailable before this run.
             _log.exception("OpenAI Agents runtime failed")
             await self._close_run("failed")
             yield {"type": "error",
@@ -1666,6 +1705,11 @@ class AgentSession:
         else:
             safe, unmatched = self._normalize_answer(answer), []
             citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
+        critic = review_consultant_answer(safe, getattr(self, "_consultant_turn", None))
+        safe = critic.answer
+        if critic.tags:
+            self._consultant_trace = {**getattr(self, "_consultant_trace", {}),
+                                      "critic_tags": list(critic.tags)}
         await self._safe_recall_add("assistant", safe)
         if getattr(self, "run_mode", "auto") == "deep_research":
             await self._set_research_plan([
