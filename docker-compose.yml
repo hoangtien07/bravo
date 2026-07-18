@@ -1,24 +1,31 @@
-# BRAVO AI Copilot — local/dev stack (modular monolith + infra services, ADR-0007).
+# BRAVO AI Copilot — base stack (modular monolith + infra services, ADR-0007).
 # On-prem target: this same compose runs air-gapped (no external calls in product path).
+#
+# SECURITY (P0.1): postgres/redis/api publish NO host ports here — they are reachable only
+# on the internal compose network. Host access is a DEV convenience added by the auto-loaded
+# `docker-compose.override.yml` (bound to 127.0.0.1). Production is launched EXPLICITLY with
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# which does NOT auto-load the override, so only Caddy (80/443) is ever host-facing.
+# Credentials come from the environment; the `:-bravo` fallback is a dev-only default.
 services:
   postgres:
     image: pgvector/pgvector:pg16
     environment:
-      POSTGRES_USER: bravo
-      POSTGRES_PASSWORD: bravo
-      POSTGRES_DB: bravo
-    ports: ["5432:5432"]
+      POSTGRES_USER: ${POSTGRES_USER:-bravo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bravo}
+      POSTGRES_DB: ${POSTGRES_DB:-bravo}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bravo"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bravo}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    # REDIS_ARGS lets prod inject `--requirepass <secret>`; dev leaves it empty (localhost-only).
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
 
   api:
     build: .
@@ -31,7 +38,6 @@ services:
       UPLOAD_ROOT: /app/data/uploads
       PRIVATE_DATA_ROOT: /app/data/private
       DATA_RUNTIME_POLICY: /app/file_system/bravo_data_runtime_policy.yaml
-    ports: ["8000:8000"]
     volumes:
       - ./file_system:/app/file_system:ro
       - uploads:/app/data/uploads

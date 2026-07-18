@@ -1,15 +1,20 @@
-# Production/demo OVERLAY — adds Caddy (auto-HTTPS) + removes public DB/API ports.
-# Use:  docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-# Only Caddy is internet-facing (80/443); Postgres/Redis/API stay on the internal network.
+# Production/demo OVERLAY — adds Caddy (auto-HTTPS). Launch EXPLICITLY:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Because this is an explicit -f invocation, docker-compose.override.yml is NOT auto-loaded,
+# so postgres/redis/api inherit the base (no host ports) and only Caddy (80/443) is host-facing.
+# P0.1: DB/Redis host-port exposure is prevented STRUCTURALLY (base has no ports), not by the old
+# `ports: []` trick — a list cannot clear a base port under Compose merge semantics.
+#
+# REQUIRED before deploy (fail-closed via app boot-guard for ENV=production):
+#   POSTGRES_PASSWORD, REDIS_PASSWORD (strong, from a secret store — never the dev default).
 services:
   postgres:
-    ports: []          # NOT exposed to the internet (was 5432 for local dev)
     restart: unless-stopped
   redis:
-    ports: []
+    # Enforce Redis auth in prod; REDIS_PASSWORD must be set (and mirrored into REDIS_URL).
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD for production}"]
     restart: unless-stopped
   api:
-    ports: []          # reached only by Caddy via the compose network (api:8000)
     environment:
       ENV: production
       APP_ROOT: /app

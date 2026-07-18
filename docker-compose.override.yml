@@ -1,0 +1,16 @@
+# DEV convenience overlay — auto-loaded by `docker compose up` (no -f flags).
+#
+# Publishes DB/Redis/API to the HOST for local development and the test suite, but bound to
+# 127.0.0.1 ONLY (never 0.0.0.0), so they are not reachable from the LAN even on a dev box.
+#
+# Production does NOT use this file: it is launched explicitly with
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# and Docker only auto-loads the override for the flag-less `docker compose up`. That is the
+# whole point of the split — prod cannot accidentally inherit a published database port.
+services:
+  postgres:
+    ports: ["127.0.0.1:5432:5432"]
+  redis:
+    ports: ["127.0.0.1:6379:6379"]
+  api:
+    ports: ["127.0.0.1:8000:8000"]
