@@ -46,6 +46,13 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "postgresql+asyncpg://bravo:bravo@localhost:5432/bravo"
+    # P0.6 DB backstop (defense-in-depth for invariant #1). When True, each request session sets
+    # per-identity GUCs (bravo.employee_id / bravo.dept_ids / ...) so the native Postgres RLS
+    # policies from migration 0017 filter rows even if an app-level .where() is ever forgotten.
+    # Default False: the policies ship ready-to-arm but RLS is not enabled until an operator runs
+    # the cutover (dedicated non-owner LOGIN role + ENABLE/FORCE ROW LEVEL SECURITY) — see
+    # docs/SECURITY-DB-BACKSTOP.md. Arming without a role cutover would be a no-op for the owner.
+    native_rls_enabled: bool = False
 
     # Auth / security (SECURITY-RLS.md)
     jwt_secret: str = "change-me"

@@ -59,7 +59,14 @@ async def get_current_identity(
     emp = await db.get(Employee, employee_id)
     if emp is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
-    return await _employee_to_identity(emp)
+    identity = await _employee_to_identity(emp)
+    # P0.6: when the native RLS backstop is armed, stamp this request's transaction with the
+    # per-identity GUCs the 0017 policies filter on. No-op by default (layer #1 WHERE clauses
+    # remain the enforced path); this is defense-in-depth once an operator arms native RLS.
+    if _settings.native_rls_enabled:
+        from app.security.native_rls import apply_rls_gucs
+        await apply_rls_gucs(db, identity)
+    return identity
 
 
 def require_permission(permission: str):
