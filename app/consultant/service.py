@@ -12,7 +12,7 @@ import unicodedata
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.consultant.catalog import match_workflow
@@ -68,6 +68,10 @@ def _period(question: str, previous_period: str | None = None) -> str | None:
     return None
 
 
+class ConsultantStateConflict(RuntimeError):
+    """Raised when a compare-and-set task-state write loses to a concurrent turn (P0.4)."""
+
+
 @dataclass(frozen=True)
 class PreparedConsultantTurn:
     frame: GoalFrame
@@ -100,25 +104,74 @@ class ConsultantService:
         try:
             return TaskState.model_validate_json(row.value)
         except Exception:
+            # P0.4: corrupt/schema-drifted task state is an explicit recovery event, not a silent
+            # empty task. Record it (audit) and recover to a fresh epoch so the turn can proceed,
+            # but never mask the loss.
+            await self._record_state_event("consultant.state_corrupt_recovered",
+                                           {"label": self._LABEL})
             return TaskState()
 
-    async def save_state(self, state: TaskState) -> None:
+    async def save_state(self, state: TaskState, expected_revision: int | None = None) -> None:
+        """Persist task state. When `expected_revision` is given, the write is a compare-and-set:
+        it overwrites only if the stored row still carries that revision, so a concurrent turn
+        (e.g. two requests on the same conversation via the lock-free /agent/ask path) cannot
+        silently clobber a newer state. A mismatch raises ConsultantStateConflict."""
         from sqlalchemy.dialects.postgresql import insert
         from app.database.models import MemoryBlock
         payload = state.model_dump_json()
-        stmt = insert(MemoryBlock).values(session_id=self.session_id, label=self._LABEL, value=payload).on_conflict_do_update(
-            constraint="uq_block_session_label", set_={"value": payload, "updated_at": func.now()})
-        await self.db.execute(stmt)
+        stmt = insert(MemoryBlock).values(
+            session_id=self.session_id, label=self._LABEL, value=payload)
+        set_ = {"value": payload, "updated_at": func.now()}
+        if expected_revision is None:
+            stmt = stmt.on_conflict_do_update(constraint="uq_block_session_label", set_=set_)
+        else:
+            stmt = stmt.on_conflict_do_update(
+                constraint="uq_block_session_label", set_=set_,
+                where=text("(memory_blocks.value::jsonb->>'revision')::int = :exp").bindparams(
+                    exp=int(expected_revision)))
+        result = await self.db.execute(stmt)
         await self.db.commit()
+        if expected_revision is not None and (result.rowcount or 0) == 0:
+            raise ConsultantStateConflict(
+                f"task state changed concurrently (expected revision {expected_revision})")
+
+    async def _record_state_event(self, action: str, detail: dict) -> None:
+        """Best-effort audit of a state lifecycle event; must never crash the turn."""
+        try:
+            from app.database.models import AuditLog
+            self.db.add(AuditLog(actor_id=self.identity.employee_id, action=action, detail=detail))
+            await self.db.commit()
+        except Exception:
+            try:
+                await self.db.rollback()
+            except Exception:
+                pass
+
+    async def _commit_reconciled(self, question: str) -> tuple[TaskState, WorkflowCard | None]:
+        """Load -> reconcile -> CAS-save the task state, rebasing once on a concurrent write.
+
+        The compare-and-set (save_state with expected_revision) makes the state transition atomic
+        against another turn on the same conversation. On conflict we reload the winner's state and
+        reconcile again; a second conflict propagates (the loop falls back to the legacy-safe path)."""
+        last_exc: ConsultantStateConflict | None = None
+        for _attempt in range(2):
+            old = await self.load_state()
+            workflow = match_workflow(question)
+            # Keep the prior workflow for a short correction/continuation, not a reclassification.
+            if workflow is None and old.workflow_id:
+                from app.consultant.catalog import load_catalog
+                workflow = load_catalog()[1].get(old.workflow_id)
+            state = self._reconcile(old, question, workflow)
+            try:
+                await self.save_state(state, expected_revision=old.revision)
+                return state, workflow
+            except ConsultantStateConflict as exc:
+                last_exc = exc
+                continue
+        raise last_exc  # type: ignore[misc]
 
     async def prepare(self, question: str, requested_profile: str = "auto") -> PreparedConsultantTurn:
-        old = await self.load_state()
-        workflow = match_workflow(question)
-        # Keep the prior workflow for a short correction/continuation rather than reclassifying it.
-        if workflow is None and old.workflow_id:
-            from app.consultant.catalog import load_catalog
-            workflow = load_catalog()[1].get(old.workflow_id)
-        state = self._reconcile(old, question, workflow)
+        state, workflow = await self._commit_reconciled(question)
         goal_type = workflow.goal_type if workflow else "unknown"
         environment = EnvironmentProfile(
             bravo_version=str(state.facts.get("bravo_version") or "") or None,
@@ -163,7 +216,7 @@ class ConsultantService:
                 evidence_hints.append("No verified KEDB resolution matched. Gather log/version/configuration "
                                       "evidence before proposing a fix.")
         evidence_hint = "\n".join(evidence_hints)
-        await self.save_state(state)
+        # State was already CAS-committed in _commit_reconciled; manifest/evidence do not mutate it.
         return PreparedConsultantTurn(frame, state, workflow, manifest,
                                      self._prompt(frame, state, workflow, evidence_hint), evidence_hint)
 
