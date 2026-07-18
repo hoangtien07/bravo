@@ -9,6 +9,9 @@
 *.pem
 *.key
 
+# Private operational data (per-deploy master data; must never be committed — PROJECT-STATE.md)
+file_system/Data/
+
 # Python
 __pycache__/
 *.py[cod]
