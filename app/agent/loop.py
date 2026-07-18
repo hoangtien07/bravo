@@ -790,8 +790,12 @@ class AgentSession:
         tail = streamer.finalize()
         if tail:
             yield {"type": "answer", "delta": tail}
-        final = self._normalize_answer(streamer.full)
-        cites, grounded = _prune_citations(final, citations)
+        # P0.3: run the shared final guard. The body was already streamed live, so surface the
+        # critic warning (if any) as a trailing delta and persist the full guarded text.
+        final, grounded, _unmatched, cites, notice = self._guard_final(
+            streamer.full, [], citations)
+        if notice:
+            yield {"type": "answer", "delta": "\n\n" + notice}
         if getattr(self, "run_mode", "auto") == "deep_research":
             steps = ["Đã xác định phạm vi và nguồn được phép",
                      "Đã truy hồi và đối chiếu bằng chứng",
@@ -1305,13 +1309,11 @@ class AgentSession:
 
     async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
         if engine_values:
-            # (a) tài chính: buffered verify-gate, phát nguyên khối đã kiểm chứng. Phát `status`
-            # để lượt KHÔNG token-stream này không trông như bị treo trên UI (P1).
+            # (a) tài chính: buffered — shared guard (verify-gate + critic + citations) TRƯỚC,
+            # phát nguyên khối đã kiểm chứng. `status` để lượt không-stream không trông treo (P1).
             yield {"type": "status", "text": "Đang kiểm tra số liệu..."}
-            verdict = verify_numbers(answer, engine_values)
-            safe = answer if verdict.grounded else verdict.safe_answer
-            grounded, unmatched = verdict.grounded, verdict.unmatched
-            cites = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
+            safe, grounded, unmatched, cites, _notice = self._guard_final(
+                answer, engine_values, citations)
             if getattr(self, "run_mode", "auto") == "deep_research":
                 steps = ["Đã xác định phạm vi và nguồn được phép",
                          "Đã truy hồi và đối chiếu bằng chứng",
@@ -1348,13 +1350,16 @@ class AgentSession:
                 final = "".join(parts).strip()
             except Exception:
                 final = ""
-        if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
-            final = self._normalize_answer(answer)
+        streamed_live = bool(final)  # compose-stream already sent the body token-by-token
+        # P0.3: shared guard (citation hygiene + critic; no engine_values here). When the body was
+        # emitted as one block, send the full guarded text; when streamed live, send only the
+        # critic notice as a trailing delta (the body cannot be un-sent).
+        final, grounded, _unmatched, cites, notice = self._guard_final(
+            final or answer, [], citations)
+        if not streamed_live:
             yield {"type": "answer", "delta": final}
-        else:
-            # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
-            final = self._normalize_answer(final)
-        cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
+        elif notice:
+            yield {"type": "answer", "delta": "\n\n" + notice}
         if getattr(self, "run_mode", "auto") == "deep_research":
             steps = ["Đã xác định phạm vi và nguồn được phép",
                      "Đã truy hồi và đối chiếu bằng chứng",
@@ -1686,30 +1691,45 @@ class AgentSession:
                    "session_id": str(self.session_id), **self._msg_ids(None)}
 
     # --- terminal helpers ---------------------------------------------------------
-    async def _finish_answer(self, answer: str, engine_values: list[MetricResult],
-                             citations: list[str]) -> dict:
-        """Verify-gate (WP-B, invariant #3) — applied to FINANCIAL numbers only.
+    def _guard_final(self, answer: str, engine_values: list[MetricResult],
+                     citations: list[str]) -> tuple[str, bool, list, list, str]:
+        """SINGLE final-answer guard for EVERY terminal — sync and SSE (P0.3).
 
-        The number-mask gate is a FINANCIAL-ANALYTICS control: it runs only when the agent
-        actually consulted the metric engine this turn (engine_values present) — then EVERY
-        number in the answer must trace to an engine value (strict, invariant #3). A pure
-        KB/narrative answer (no engine values) is NOT number-gated: its prose numbers (list
-        steps, 'Điều 5', years, amounts quoted from the cited document) are not engine claims.
-        Such an answer is grounded iff it was produced from retrieved context (has citations).
+        Order: (1) number verify-gate (invariant #3) on financial turns only — every number
+        must trace to an engine value or it is masked; a pure KB/narrative answer is not
+        number-gated. (2) citation hygiene. (3) the deterministic Consultant critic
+        (prerequisite / execution-claim guards). Previously the critic ran ONLY on the sync
+        `_finish_answer` path, so the SSE terminals silently bypassed it — this centralises it.
+
+        Returns (safe, grounded, unmatched, citations, notice) where `safe` is the full guarded
+        text (prefix + body) for persistence/buffered emit, and `notice` is the critic prefix
+        alone — non-empty only when the body was already streamed live, so a streaming terminal
+        can surface the warning as a trailing delta without re-sending the body.
         """
         if engine_values:
             verdict = verify_numbers(answer, engine_values)
-            safe = verdict.safe_answer if not verdict.grounded else answer
+            body = answer if verdict.grounded else verdict.safe_answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
-            citations = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
+            citations = _prune_citations(body, citations)[0]  # hygiene: chỉ nguồn thực trích
         else:
-            safe, unmatched = self._normalize_answer(answer), []
-            citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
-        critic = review_consultant_answer(safe, getattr(self, "_consultant_turn", None))
+            body, unmatched = self._normalize_answer(answer), []
+            citations, grounded = _prune_citations(body, citations)  # abstain -> 0 nguồn, not grounded
+        critic = review_consultant_answer(body, getattr(self, "_consultant_turn", None))
         safe = critic.answer
+        notice = ""
         if critic.tags:
             self._consultant_trace = {**getattr(self, "_consultant_trace", {}),
                                       "critic_tags": list(critic.tags)}
+            # The critic prepends its warning; expose it alone for already-streamed terminals.
+            if safe.endswith(body) and len(safe) > len(body):
+                notice = safe[:len(safe) - len(body)].strip()
+        return safe, grounded, unmatched, citations, notice
+
+    async def _finish_answer(self, answer: str, engine_values: list[MetricResult],
+                             citations: list[str]) -> dict:
+        """Sync terminal — runs the shared final-answer guard (verify-gate + critic + citations)."""
+        safe, grounded, unmatched, citations, _notice = self._guard_final(
+            answer, engine_values, citations)
         await self._safe_recall_add("assistant", safe)
         if getattr(self, "run_mode", "auto") == "deep_research":
             await self._set_research_plan([
