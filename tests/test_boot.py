@@ -44,5 +44,25 @@ def test_boot_guard_blocks_cloud_without_key():
                  cloud_enabled=True, cloud_api_key="", cloud_base_url="").validate_boot()
 
 
+_STRONG_DB = "postgresql+asyncpg://bravo:S3cret-Str0ng@db:5432/bravo"
+_STRONG_REDIS = "redis://:S3cret-Str0ng@redis:6379/0"
+
+
 def test_boot_guard_passes_with_strong_secrets():
-    Settings(env="production", jwt_secret="a" * 40, mcp_token_pepper="b" * 40).validate_boot()
+    Settings(env="production", jwt_secret="a" * 40, mcp_token_pepper="b" * 40,
+             database_url=_STRONG_DB, redis_url=_STRONG_REDIS).validate_boot()
+
+
+def test_boot_guard_blocks_default_postgres_creds_in_prod():
+    """P0.5: a prod DATABASE_URL still using the dev default bravo:bravo is fail-closed."""
+    with pytest.raises(RuntimeError, match="bravo:bravo"):
+        Settings(env="production", jwt_secret="a" * 40, mcp_token_pepper="b" * 40,
+                 database_url="postgresql+asyncpg://bravo:bravo@db:5432/bravo",
+                 redis_url=_STRONG_REDIS).validate_boot()
+
+
+def test_boot_guard_blocks_unauthenticated_redis_in_prod():
+    """P0.5: Redis carries the arq job queue; an unauthenticated URL is fail-closed in prod."""
+    with pytest.raises(RuntimeError, match="REDIS_URL"):
+        Settings(env="production", jwt_secret="a" * 40, mcp_token_pepper="b" * 40,
+                 database_url=_STRONG_DB, redis_url="redis://redis:6379/0").validate_boot()

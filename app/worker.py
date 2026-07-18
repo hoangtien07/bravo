@@ -73,9 +73,17 @@ async def consultant_state_retention_task(ctx) -> dict[str, int | str]:
     return {"status": "purged_task_state_only", "deleted": int(result.rowcount or 0)}
 
 
+async def _on_startup(ctx) -> None:
+    """P0.5: the worker performs egress-relevant work (cloud embedding during ingest), so it must
+    pass the SAME fail-closed boot-guard as the API — previously only app.main called it, leaving
+    the worker able to boot with default creds / misconfigured egress."""
+    get_settings().validate_boot()
+
+
 class WorkerSettings:
     functions = [ingest_task, attachment_extract_task, consultant_gap_curation_task,
                  consultant_state_retention_task]
+    on_startup = _on_startup
     # ARQ runs this on the hour. The config gate defaults to disabled, so merely starting the
     # worker does not create candidates until an owner explicitly enables internal curation.
     cron_jobs = [cron(consultant_gap_curation_task, minute=0),

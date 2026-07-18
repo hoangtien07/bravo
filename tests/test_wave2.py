@@ -8,7 +8,10 @@ from app.config import Settings
 
 def _prod(**kw) -> Settings:
     base = dict(env="production", jwt_secret="x" * 20, mcp_token_pepper="y" * 20,
-                cloud_enabled=False, allow_self_approval=False, egress_policy="hybrid")
+                cloud_enabled=False, allow_self_approval=False, egress_policy="hybrid",
+                # P0.5: non-default DB/Redis creds so these tests exercise the OTHER guards.
+                database_url="postgresql+asyncpg://bravo:S3cret-Str0ng@db:5432/bravo",
+                redis_url="redis://:S3cret-Str0ng@redis:6379/0")
     base.update(kw)
     return Settings(**base)
 

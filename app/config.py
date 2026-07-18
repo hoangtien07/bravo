@@ -10,6 +10,17 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _redis_url_has_auth(url: str) -> bool:
+    """True if a redis URL carries a password (redis://[user]:pass@host...). Used by the prod
+    boot-guard to reject an unauthenticated Redis carrying the job queue."""
+    try:
+        from urllib.parse import urlparse
+
+        return bool(urlparse(url).password)
+    except Exception:
+        return False
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", populate_by_name=True)
 
@@ -271,6 +282,18 @@ class Settings(BaseSettings):
         if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
             raise RuntimeError(
                 "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
+            )
+        # P0.1/P0.5: reject the dev default Postgres credential and an unauthenticated Redis in
+        # prod (a published/reachable service with default creds is a data-exfil path).
+        if "://bravo:bravo@" in self.database_url:
+            raise RuntimeError(
+                "[boot-guard] DATABASE_URL còn dùng credential mặc định bravo:bravo ở env="
+                f"{self.env}. Đặt POSTGRES_PASSWORD mạnh và cập nhật DATABASE_URL (fail-closed)."
+            )
+        if not _redis_url_has_auth(self.redis_url):
+            raise RuntimeError(
+                "[boot-guard] REDIS_URL không có mật khẩu ở env="
+                f"{self.env}. Đặt REDIS_PASSWORD và dùng redis://:<pass>@host:port/db (fail-closed)."
             )
         # Cloud-only (ADR-0019): there is NO local backend to fall back to, so the cloud path
         # must be fully configured or the app cannot answer at all -> fail-closed at boot.
