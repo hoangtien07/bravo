@@ -266,6 +266,17 @@ class Settings(BaseSettings):
             raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
         if not 0 <= self.agent_runtime_canary_percent <= 100:
             raise RuntimeError("[boot-guard] agent_runtime_canary_percent must be 0..100.")
+        # P0.7: the OpenAI Agents SDK canary is PARKED. It builds its provider directly and bypasses
+        # the model-router's per-context sensitivity classification + audit-then-egress path, and
+        # runs no verify-gate/critic — so RLS-retrieved chunks could egress uncontrolled. Fail-closed
+        # until it is brought under the shared final-answer guard + router egress (V2 P3). Supersedes
+        # the enable-by-canary intent of ADR-0027b; re-enable only when that wiring exists.
+        if self.agent_runtime != "legacy" or self.agent_runtime_canary_percent > 0:
+            raise RuntimeError(
+                "[boot-guard] agent_runtime canary is parked (P0.7): it bypasses router "
+                "egress-audit + verify-gate/critic. Keep agent_runtime=legacy and "
+                "agent_runtime_canary_percent=0 until the guard wiring lands (V2 P3)."
+            )
         if not 0 <= self.consultant_rollout_percent <= 100:
             raise RuntimeError("[boot-guard] consultant_rollout_percent must be 0..100.")
         if not 1 <= self.consultant_curation_max_gaps <= 1000:

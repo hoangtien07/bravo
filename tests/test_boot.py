@@ -61,6 +61,17 @@ def test_boot_guard_blocks_default_postgres_creds_in_prod():
                  redis_url=_STRONG_REDIS).validate_boot()
 
 
+@pytest.mark.parametrize("kw", [
+    {"agent_runtime": "openai"},
+    {"agent_runtime": "canary"},
+    {"agent_runtime_canary_percent": 5},
+])
+def test_boot_guard_parks_sdk_canary(kw):
+    """P0.7: enabling the egress-bypassing SDK canary is fail-closed in every env."""
+    with pytest.raises(RuntimeError, match="canary is parked"):
+        Settings(env="local", jwt_secret="change-me", **kw).validate_boot()
+
+
 def test_boot_guard_blocks_unauthenticated_redis_in_prod():
     """P0.5: Redis carries the arq job queue; an unauthenticated URL is fail-closed in prod."""
     with pytest.raises(RuntimeError, match="REDIS_URL"):
