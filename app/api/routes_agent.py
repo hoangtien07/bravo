@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent import conversations as conv_svc
 from app.agent.loop import AgentSession
 from app.database import get_db
+from app.ratelimit import chat_limit, limiter
 from app.security.auth import require_permission
 from app.security.rls import Identity
 
@@ -41,12 +43,25 @@ class AgentAskResponse(BaseModel):
 
 
 @router.post("/agent/ask", response_model=AgentAskResponse)
+@limiter.limit(chat_limit)
 async def agent_ask(
+    request: Request,
     req: AgentAskRequest,
     identity: Identity = Depends(require_permission("doc:read")),
     db: AsyncSession = Depends(get_db),
 ) -> AgentAskResponse:
-    session = AgentSession(db, identity, session_id=req.session_id)
+    # P0.2 — conversation-owner authorization (invariant #1). A client-supplied session_id must
+    # belong to the caller before ANY memory read, state mutation, or model call. Mirrors the SSE
+    # chat path (routes_conversations.chat_stream); previously this endpoint trusted session_id
+    # blindly, allowing cross-user memory read/write via a guessed conversation UUID.
+    session_id = req.session_id or uuid.uuid4()
+    try:
+        await conv_svc.ensure_conversation(
+            db, session_id, identity.employee_id, first_question=req.question)
+    except PermissionError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+
+    session = AgentSession(db, identity, session_id=session_id)
     out = await session.step(req.question)
     return AgentAskResponse(
         answer=out.get("answer", ""),
