@@ -17,8 +17,11 @@ $COMPOSE run --rm api alembic upgrade head
 echo "==> Seed demo users/departments (RLS) — 5 tài khoản phủ mọi vai + token MCP demo"
 $COMPOSE run --rm api python -m scripts.seed_demo
 
-echo "==> Ingest corpus THẬT (pypdf cho PDF text, Docling cho .docx/bảng) — embedding bge-m3 local"
+echo "==> Ingest corpus THẬT (pypdf cho PDF text, Docling cho .docx/bảng)"
 $COMPOSE run --rm api python -m scripts.ingest_userguide ./file_system
+
+echo "==> Backfill chunk sensitivity (reactivate reranker — chunk thiếu flag làm rerank bị skip)"
+$COMPOSE run --rm api python scripts/backfill_chunk_sensitivity.py --apply
 
 echo "==> Seed dữ liệu mẫu (bút toán nháp chờ duyệt) — để màn hình không rỗng khi test"
 $COMPOSE run --rm api python -m scripts.seed_content
