@@ -83,10 +83,39 @@ def _questions_from_fixture(path: str | Path) -> list[str]:
     return out
 
 
+async def _questions_from_feedback(limit: int = 50) -> list[str]:
+    """D4: the questions behind disliked answers — re-run the flagged cases through the arms
+    before/after a fix to prove the fix worked and didn't regress."""
+    from sqlalchemy import desc, select
+
+    from app.database import async_session_factory
+    from app.database.models import ConversationMessage
+
+    async with async_session_factory() as db:
+        disliked = list((await db.execute(
+            select(ConversationMessage)
+            .where(ConversationMessage.feedback == "dislike",
+                   ConversationMessage.role == "assistant")
+            .order_by(desc(ConversationMessage.created_at)).limit(limit))).scalars().all())
+        out: list[str] = []
+        for m in disliked:
+            q = (await db.execute(
+                select(ConversationMessage.content)
+                .where(ConversationMessage.session_id == m.session_id,
+                       ConversationMessage.role == "user",
+                       ConversationMessage.created_at < m.created_at)
+                .order_by(desc(ConversationMessage.created_at)).limit(1))).scalar_one_or_none()
+            if q:
+                out.append(q)
+        return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("fixture", nargs="?", default="app/eval/consultant_benchmark.example.yaml")
     parser.add_argument("--username", required=True)
+    parser.add_argument("--from-feedback", action="store_true",
+                        help="Use the questions behind disliked answers instead of a fixture (D4).")
     parser.add_argument("--max-questions", type=int)
     parser.add_argument("--out")
     args = parser.parse_args()
@@ -102,7 +131,10 @@ def main() -> int:
 
         engine = create_async_engine(get_settings().database_url, poolclass=NullPool)
         factory = async_sessionmaker(engine, expire_on_commit=False)
-        questions = _questions_from_fixture(args.fixture)[:args.max_questions]
+        if args.from_feedback:
+            questions = (await _questions_from_feedback(args.max_questions or 50))
+        else:
+            questions = _questions_from_fixture(args.fixture)[:args.max_questions]
         try:
             async with factory() as db:
                 emp = (await db.execute(select(Employee).where(
