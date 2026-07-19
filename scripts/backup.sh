@@ -30,8 +30,23 @@ else
   echo "[backup] (bỏ qua uploads: không thấy host dir lẫn volume $UPLOAD_VOL)"
 fi
 
+# Private operational data (D1: named volume 'private_data', PRIVATE_DATA_ROOT). Durable master
+# data that is NOT re-scp-able like the corpus -> must be backed up.
+PRIVATE_VOL="${PRIVATE_VOLUME:-bravo_private_data}"
+if [ -d data/private ] && [ -n "$(ls -A data/private 2>/dev/null)" ]; then
+  echo "[backup] tar data/private (host) -> $DEST/private_$TS.tgz"
+  tar czf "$DEST/private_$TS.tgz" data/private
+elif command -v docker >/dev/null && docker volume inspect "$PRIVATE_VOL" >/dev/null 2>&1; then
+  echo "[backup] tar docker volume $PRIVATE_VOL -> $DEST/private_$TS.tgz"
+  docker run --rm -v "$PRIVATE_VOL":/vol -v "$(cd "$DEST" && pwd)":/out busybox \
+    tar czf "/out/private_$TS.tgz" -C /vol .
+else
+  echo "[backup] (bỏ qua private_data: không thấy host dir lẫn volume $PRIVATE_VOL)"
+fi
+
 # Giữ 14 bản gần nhất (retention).
 ls -1t "$DEST"/db_*.dump 2>/dev/null | tail -n +15 | xargs -r rm -f
 ls -1t "$DEST"/uploads_*.tgz 2>/dev/null | tail -n +15 | xargs -r rm -f
+ls -1t "$DEST"/private_*.tgz 2>/dev/null | tail -n +15 | xargs -r rm -f
 
 echo "[backup] xong: $DEST/db_$TS.dump"

@@ -45,23 +45,22 @@ chmod +x deploy/bootstrap.sh && ./deploy/bootstrap.sh
 Sửa `deploy/Caddyfile`: đổi `demo.example.com` → tên miền của bạn.
 
 ## 3. Secrets & cấu hình `.env` cho production (BẮT BUỘC)
-```ini
-ENV=production
-# Sinh ngẫu nhiên — KHÔNG để "change-me" (production sẽ refuse boot nếu còn mặc định):
-JWT_SECRET=<openssl rand -hex 32>
-MCP_TOKEN_PEPPER=<openssl rand -hex 32>
-DATABASE_URL=postgresql+asyncpg://bravo:bravo@postgres:5432/bravo   # 'postgres' = service name
-REDIS_URL=redis://redis:6379/0
-# Embedding: LOCAL bge-m3 trên VM (bước chủ quyền — không egress embedding)
-EMBEDDING_PROVIDER=local
-EMBEDDING_MODEL=BAAI/bge-m3
-# LLM: cloud (key của bạn), CHỈ cho corpus không nhạy của demo
-CLOUD_ENABLED=true
-CLOUD_BASE_URL=<endpoint OpenAI-compatible>
-CLOUD_MODEL=<model>
-CLOUD_API_KEY=<key>           # KHÔNG commit; chỉ nằm trong .env trên VM
-DEMO_ALLOW_CLOUD_ANSWERS=true
+
+> ⚠️ **Boot-guard P0.5 fail-closed:** ở `ENV=production`, app **từ chối boot** nếu `DATABASE_URL`
+> còn `bravo:bravo`, `REDIS_URL` không có mật khẩu, hoặc `JWT_SECRET`/`MCP_TOKEN_PEPPER` mặc định.
+> **Đừng sao chép creds mẫu.** Dùng script sinh secrets:
+
+```bash
+./deploy/gen-secrets.sh          # sinh .env với JWT/pepper/Postgres/Redis ngẫu nhiên (chmod 600)
+nano .env                        # điền các giá trị <FILL: ...> (CLOUD_* + CLOUD_EMBEDDING_*)
+# Xác nhận boot-guard sẽ pass TRƯỚC khi bootstrap:
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm api \
+  python -c "from app.config import get_settings; get_settings().validate_boot(); print('boot-guard OK')"
 ```
+
+Ghi chú: embedding preset là **cloud** (`openai_compatible`, 1536-dim) — không cần GPU; nội dung
+corpus đi qua API embedding (chấp nhận cho pilot cloud-only). Muốn giữ corpus không rời máy thì đổi
+`EMBEDDING_PROVIDER=local` + `EMBEDDING_MODEL=BAAI/bge-m3` + `EMBEDDING_DIM=1024` (cần re-ingest).
 
 ## 4. Checklist cứng trước khi mở public (council security)
 - [ ] Đổi `JWT_SECRET` + `MCP_TOKEN_PEPPER` (≥32 byte ngẫu nhiên). Demo data nhạy=0 nhưng vẫn phải đổi.

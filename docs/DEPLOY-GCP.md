@@ -140,38 +140,25 @@ Mọi thứ "sống" (nháp bút toán, audit log, hội thoại, memory, chunk+
 
 ## 4. Cấu hình `.env` production
 
+> ⚠️ **Boot-guard P0.5 (fail-closed):** ở `ENV=production` app **từ chối boot** nếu `DATABASE_URL`
+> còn `bravo:bravo`, `REDIS_URL` thiếu mật khẩu, `JWT_SECRET`/`MCP_TOKEN_PEPPER` mặc định,
+> `allow_self_approval=true`, hoặc `cloud_only` thiếu bất kỳ `CLOUD_*`. Đừng chép creds mẫu tay.
+
+Sinh secrets mạnh + `.env` production bằng script (nguồn sự thật duy nhất):
 ```bash
-cp .env.example .env && nano .env
+./deploy/gen-secrets.sh              # JWT/pepper/POSTGRES_PASSWORD/REDIS_PASSWORD ngẫu nhiên (chmod 600)
+nano .env                            # điền <FILL: ...> = CLOUD_* (chat) + CLOUD_EMBEDDING_* (embedding)
 ```
+Script đặt sẵn (khớp boot-guard): `ENV=production`, `POSTGRES_PASSWORD` + `DATABASE_URL` đồng bộ,
+`REDIS_PASSWORD` + `REDIS_URL` có auth (`redis://:PASS@redis:6379/0`), `EGRESS_POLICY=cloud_only`,
+`RERANK_ENABLED=true`, `CONSULTANT_ENABLED=true`. Embedding preset = **cloud** (`openai_compatible`,
+1536-dim; corpus text egress — chấp nhận cho pilot). Muốn giữ corpus không rời máy: đổi
+`EMBEDDING_PROVIDER=local` + `bge-m3` + `EMBEDDING_DIM=1024` (cần re-ingest, chậm CPU).
 
-Bắt buộc (boot-guard sẽ **từ chối khởi động** prod nếu còn mặc định/yếu):
-```ini
-ENV=production
-JWT_SECRET=<openssl rand -hex 32>
-MCP_TOKEN_PEPPER=<openssl rand -hex 32>
-DATABASE_URL=postgresql+asyncpg://bravo:bravo@postgres:5432/bravo   # 'postgres' = service name trong compose
-REDIS_URL=redis://redis:6379/0
-ALLOW_SELF_APPROVAL=false            # boot-guard cấm =true ở prod (maker-checker)
-
-# Embedding LOCAL bge-m3 (bước chủ quyền — KHÔNG egress embedding). DIM phải khớp DB.
-EMBEDDING_PROVIDER=local
-EMBEDDING_MODEL=BAAI/bge-m3
-EMBEDDING_DIM=1024
-
-# LLM cloud-only cho demo: khai báo tường minh để ảnh đi đúng model vision và mọi egress được audit.
-# Chỉ bật khi đã phê duyệt việc corpus/tệp người dùng rời hạ tầng.
-EGRESS_POLICY=cloud_only
-CLOUD_ENABLED=true
-CLOUD_BASE_URL=<endpoint OpenAI-compatible>
-CLOUD_MODEL=<model>
-CLOUD_API_KEY=<key>                  # chỉ nằm trong .env trên VM, KHÔNG commit
-CLOUD_VISION=true
-DEMO_ALLOW_CLOUD_ANSWERS=true
-STREAM_COMPOSE_ANSWER=true           # streaming token thật (W1.4)
-
-# Wave 2 — xem §7
-RATE_LIMIT_PER_MINUTE=30
-METRICS_ENABLED=true
+Xác nhận boot-guard TRƯỚC khi bootstrap:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm api \
+  python -c "from app.config import get_settings; get_settings().validate_boot(); print('boot-guard OK')"
 ```
 
 > **Quản lý secret tốt hơn (khuyến nghị pilot):** đưa secret vào **GCP Secret Manager**, kéo lúc
