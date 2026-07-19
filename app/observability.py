@@ -26,6 +26,11 @@ try:
     TOOL_CALLS = Counter("bravo_tool_calls_total", "Số lần gọi tool", ["tool", "status"])
     # F9: lượt truy hồi TRẢ VỀ RỖNG (lỗ corpus) — tín hiệu để đội corpus-ops bổ sung tài liệu.
     RETRIEVAL_ZERO_HITS = Counter("bravo_retrieval_zero_hits_total", "Số lượt truy hồi 0 kết quả")
+    # D2: chất lượng câu trả lời — đo trên dashboard thay vì grep log. outcome=grounded|abstain;
+    # ungrounded_numbers = số lần free-text number gate mask một con số bịa (invariant #3).
+    ANSWER_OUTCOMES = Counter("bravo_answer_outcomes_total", "Kết cục câu trả lời", ["outcome"])
+    UNGROUNDED_NUMBERS = Counter(
+        "bravo_ungrounded_numbers_total", "Số con số bị mask vì không truy được nguồn")
     AGENT_TURN_SECONDS = Histogram("bravo_agent_turn_seconds", "Thời lượng một lượt agent")
     # Q7: thời gian tới TOKEN ĐẦU TIÊN (request -> event 'answer' đầu). Cổng chất lượng: p95 < 3s.
     FIRST_TOKEN_SECONDS = Histogram(
@@ -48,6 +53,18 @@ def record_llm(backend: str, prompt_tokens: int = 0, completion_tokens: int = 0)
 def record_tool(tool: str, status: str) -> None:
     if _PROM and _settings.metrics_enabled:
         TOOL_CALLS.labels(tool=tool, status=status).inc()
+
+
+def record_answer(outcome: str, ungrounded_numbers: int = 0) -> None:
+    """D2: record a final-answer outcome (grounded|abstain) + count masked ungrounded numbers.
+    Best-effort; never raises."""
+    if _PROM and _settings.metrics_enabled:
+        try:
+            ANSWER_OUTCOMES.labels(outcome=outcome).inc()
+            if ungrounded_numbers:
+                UNGROUNDED_NUMBERS.inc(ungrounded_numbers)
+        except Exception:
+            pass
 
 
 def record_first_token(seconds: float) -> None:

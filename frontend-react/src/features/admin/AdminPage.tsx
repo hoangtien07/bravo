@@ -15,6 +15,10 @@ interface AdminUser {
 }
 interface Dept { id: string; name: string; sensitive: boolean; }
 interface UsageRow { employee_id: string; email: string | null; turns: number; tokens: number; est_cost: number; }
+interface FeedbackRow {
+  message_id: string; session_id: string; question: string; answer: string;
+  feedback: string | null; category: string | null; comment: string | null;
+}
 
 // Quản trị tối thiểu (W1.8): tạo user + phòng ban + reset mật khẩu — không cần chạy script.
 export function AdminPage() {
@@ -24,6 +28,7 @@ export function AdminPage() {
   const [depts, setDepts] = useState<Dept[]>([]);
   const [perms, setPerms] = useState<string[]>([]);
   const [usage, setUsage] = useState<UsageRow[]>([]);
+  const [feedback, setFeedback] = useState<FeedbackRow[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
 
   // form tạo user
@@ -36,6 +41,7 @@ export function AdminPage() {
     api<Dept[]>("/api/admin/departments").then(setDepts).catch(() => {});
     api<string[]>("/api/admin/permissions").then(setPerms).catch(() => {});
     api<UsageRow[]>("/api/admin/usage?days=7").then(setUsage).catch(() => {});
+    api<FeedbackRow[]>("/api/admin/feedback?only_disliked=true&limit=100").then(setFeedback).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -170,6 +176,37 @@ export function AdminPage() {
             </table>
           </Card>
         )}
+
+        {/* Feedback (D2) — câu trả lời bị người dùng flag, để triage cải thiện chất lượng */}
+        <Card className="p-0 overflow-hidden">
+          <div className="px-3 py-2 text-sm font-medium border-b border-border">
+            Phản hồi chất lượng — câu bị đánh dấu ({feedback.length})
+          </div>
+          {feedback.length === 0 ? (
+            <div className="px-3 py-3 text-sm text-muted-foreground">
+              Chưa có câu trả lời nào bị đánh dấu. Người dùng bấm 👎 hoặc "báo lỗi cho IT" trên câu trả lời.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b border-border">
+                  <th className="px-3 py-2">Câu hỏi</th><th>Trả lời (rút gọn)</th>
+                  <th>Loại</th><th className="pr-3">Ghi chú</th>
+                </tr>
+              </thead>
+              <tbody>
+                {feedback.map((f) => (
+                  <tr key={f.message_id} className="border-b border-border align-top">
+                    <td className="px-3 py-2 max-w-[18rem]">{f.question || "—"}</td>
+                    <td className="py-2 text-xs text-muted-foreground max-w-[24rem]">{f.answer}</td>
+                    <td className="py-2 text-xs">{f.category || "—"}</td>
+                    <td className="py-2 pr-3 text-xs">{f.comment || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
 
         {/* Danh sách user */}
         <Card className="p-0 overflow-hidden">

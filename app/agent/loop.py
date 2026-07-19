@@ -1738,6 +1738,11 @@ class AgentSession:
             # The critic prepends its warning; expose it alone for already-streamed terminals.
             if safe.endswith(body) and len(safe) > len(body):
                 notice = safe[:len(safe) - len(body)].strip()
+        try:  # D2: quality metric (best-effort) — grounded/abstain rate + masked-number count.
+            from app.observability import record_answer
+            record_answer("grounded" if grounded else "abstain", len(unmatched or []))
+        except Exception:
+            pass
         return safe, grounded, unmatched, citations, notice
 
     async def _finish_answer(self, answer: str, engine_values: list[MetricResult],

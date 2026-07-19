@@ -243,3 +243,49 @@ async def usage(days: int = 7, _: Identity = Depends(require_admin),
         out.append(UsageRow(employee_id=eid, email=emails.get(eid), turns=int(turns),
                             tokens=tok, est_cost=round(tok / 1_000_000 * blended, 4)))
     return out
+
+
+class FeedbackRow(BaseModel):
+    message_id: uuid.UUID
+    session_id: uuid.UUID
+    created_at: object | None = None
+    question: str
+    answer: str
+    feedback: str | None = None
+    category: str | None = None
+    comment: str | None = None
+
+
+@router.get("/admin/feedback", response_model=list[FeedbackRow])
+async def feedback(limit: int = 100, only_disliked: bool = True,
+                   _: Identity = Depends(require_admin),
+                   db: AsyncSession = Depends(get_db)) -> list[FeedbackRow]:
+    """D2 — flagged chat answers for the dogfood triage loop (mirrors scripts/export_feedback.py
+    over HTTP). Each row = a flagged assistant turn + the user question that preceded it +
+    comment/category. This is the read path that turns 'team flags → maintainer sees it' from an
+    SSH/DB chore into the Admin UI. Truncates answer to keep the list light."""
+    from sqlalchemy import desc
+
+    from app.database.models import ConversationMessage
+
+    stmt = select(ConversationMessage).where(ConversationMessage.role == "assistant")
+    if only_disliked:
+        stmt = stmt.where(ConversationMessage.feedback == "dislike")
+    else:
+        stmt = stmt.where(ConversationMessage.feedback.isnot(None))
+    stmt = stmt.order_by(desc(ConversationMessage.created_at)).limit(max(1, min(limit, 500)))
+    msgs = list((await db.execute(stmt)).scalars().all())
+
+    out: list[FeedbackRow] = []
+    for m in msgs:
+        q = (await db.execute(
+            select(ConversationMessage.content)
+            .where(ConversationMessage.session_id == m.session_id,
+                   ConversationMessage.role == "user",
+                   ConversationMessage.created_at < m.created_at)
+            .order_by(desc(ConversationMessage.created_at)).limit(1))).scalar_one_or_none()
+        out.append(FeedbackRow(
+            message_id=m.id, session_id=m.session_id, created_at=m.created_at,
+            question=(q or "")[:500], answer=(m.content or "")[:800],
+            feedback=m.feedback, category=m.feedback_category, comment=m.feedback_comment))
+    return out
