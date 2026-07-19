@@ -1,0 +1,3 @@
+display_name: Agentic Engineering Workflow
+short_description: Turn complex software work into aligned, testable vertical slices.
+default_prompt: Use this skill to clarify, decompose, implement, verify, and review this software change.
