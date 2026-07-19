@@ -37,6 +37,12 @@ def _has_any(text: str, needles: tuple[str, ...]) -> bool:
 
 
 _MODULE_HINTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # Chương "Cập nhật chứng từ" (Documents) tài liệu HÓA cách NHẬP LIỆU từng loại phiếu.
+    # Câu "nhập phiếu chi/thu ..." nặng từ giao dịch (thanh toán/hóa đơn/NCC) nên vốn khớp
+    # các chương accounting/purchase/sale, đẩy trang §4.2 xuống rank ~47. Hint 'documents' kéo
+    # module=documents (nơi mô tả THAO TÁC nhập phiếu) lên ngang nghiệp vụ đi kèm.
+    ("documents", ("phieu chi", "phieu thu", "bao co", "bao no", "phieu ke toan",
+                   "uy nhiem chi", "chung tu")),
     ("purchase", ("mua hang", "nha cung cap", "ncc", "phieu nhap mua", "nhap khau",
                   "don dat hang mua", "po", "rfq", "bao gia ncc", "cong no phai tra")),
     ("sale", ("ban hang", "don hang ban", "bao gia khach", "hoa don ban", "doanh thu")),

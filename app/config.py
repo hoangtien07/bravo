@@ -127,6 +127,10 @@ class Settings(BaseSettings):
     #   provider "llm"      -> listwise rerank via the cloud chat model (demo)
     rerank_enabled: bool = False
     rerank_provider: str = "viranker"
+    # Rerank candidate pool: chunk đúng có thể nằm ngoài top-40 fused (đo: trang "Phiếu chi"
+    # §4.2 xếp hạng 47 khi câu hỏi nặng từ giao dịch khớp các chương khác) -> reranker không
+    # với tới. Nới pool để chunk-đúng-rank-thấp vẫn vào diện rerank. 80 ~ +cost listwise nhỏ.
+    rerank_pool_size: int = 80
     # Structured output cho bước decide của agent (W1.3): json_object (cloud) / guided_json
     # (vLLM). Tắt -> chỉ dựa prompt + parser fallback. Bật mặc định (giảm output hỏng).
     structured_output: bool = True

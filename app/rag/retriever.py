@@ -285,11 +285,12 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
         return await _maybe_expand(db, identity, fused[:top_n])
 
     from app.config import get_settings
-    provider = get_settings().rerank_provider
+    _rs = get_settings()
+    provider = _rs.rerank_provider
 
     if provider == "llm":
         # Listwise rerank top candidates via the cloud chat model (demo).
-        pool = fused[:40]   # pool rộng hơn -> tăng recall (chương đúng lọt vào diện rerank)
+        pool = fused[:getattr(_rs, "rerank_pool_size", 80)]   # pool rộng -> chunk-đúng-rank-thấp vào diện rerank
         # Do not send mixed or unknown-sensitivity candidate sets to cloud rerank.
         if any(r.is_sensitive for r in pool):
             # Skip ÂM THẦM là bẫy vận hành (council #1): 1 chunk legacy thiếu flag làm mất
