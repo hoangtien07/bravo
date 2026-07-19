@@ -41,3 +41,18 @@ def test_strip_markers_removes_short_engine_label_but_keeps_citations():
     out = ni.strip_markers(a)
     assert "MONEY-ENGINE" not in out
     assert "[3]" in out  # citation tag preserved
+
+
+def test_mask_replaces_only_ungrounded_money():
+    allowed = ni.allowed_from("số tiền 54,500,000", "", "")
+    masked, ung = ni.mask("Trước thuế 49,050,000; tổng 54,500,000.", allowed)
+    assert ung == [49_050_000]
+    assert ni.MASK in masked          # the invented figure is masked
+    assert "54,500,000" in masked      # the grounded figure survives
+    assert "49,050,000" not in masked
+
+
+def test_mask_noop_when_all_grounded():
+    allowed = ni.allowed_from("", "Tổng 59,950,000 và 54,500,000", "")
+    masked, ung = ni.mask("Tổng 59,950,000, tiền hàng 54,500,000.", allowed)
+    assert ung == [] and masked == "Tổng 59,950,000, tiền hàng 54,500,000."

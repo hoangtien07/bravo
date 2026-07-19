@@ -52,3 +52,23 @@ def violations(answer: str, allowed: set[int]) -> list[int]:
 def strip_markers(text: str) -> str:
     """Remove internal seed markers the model echoed into the user-facing answer."""
     return _MARKER_RE.sub("", text or "")
+
+
+MASK = "[số chưa kiểm chứng]"
+
+
+def mask(text: str, allowed: set[int]) -> tuple[str, list[int]]:
+    """Replace every money-scale figure NOT in `allowed` with the standard placeholder.
+
+    Mirrors the engine verify-gate (grounding.verify_numbers) for the free-text chat path:
+    an ungrounded money figure is removed from the user-facing answer, not merely flagged.
+    Returns (masked_text, sorted_ungrounded_figures). Non-money tokens (account codes, years,
+    percentages, page refs) are never touched — see _MONEY_RE / _MONEY_FLOOR."""
+    ung = violations(text or "", allowed)
+    if not ung:
+        return text or "", []
+
+    def _sub(m: "re.Match[str]") -> str:
+        return MASK if _norm(m.group(0)) in set(ung) else m.group(0)
+
+    return _MONEY_RE.sub(_sub, text or ""), ung

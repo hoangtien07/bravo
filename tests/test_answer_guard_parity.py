@@ -45,6 +45,24 @@ def test_guard_applies_critic_prefix_sync():
     assert notice and "khóa sổ" in notice, "notice must expose the critic prefix for streamers"
 
 
+def test_guard_masks_ungrounded_money_on_knowledge_turn():
+    """D0.2: a money figure not in the question/context is masked on the real chat guard path."""
+    from app.agent.loop import AgentSession
+    from app.rag.number_integrity import MASK
+
+    s = object.__new__(AgentSession)
+    s._consultant_turn = None
+    s._turn_contract = None
+    s._turn_question = "số tiền 54,500,000 chịu thuế 10%"
+    s._turn_context_text = "Hướng dẫn nhập phiếu chi."
+    # model invents a pre-tax figure 49,050,000 not present in question/context
+    safe, grounded, unmatched, cites, notice = s._guard_final(
+        "Trước thuế 49,050,000; tổng 54,500,000.", [], [])
+    assert 49_050_000 in unmatched
+    assert MASK in safe and "49,050,000" not in safe
+    assert "54,500,000" in safe          # the figure the user supplied survives
+
+
 def test_finalize_streamed_answer_surfaces_critic_notice():
     """The default knowledge terminal streams the body live, then must emit the critic notice."""
     s = _session()

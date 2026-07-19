@@ -1199,6 +1199,10 @@ class AgentSession:
             *recall,  # multi-turn: lịch sử (đã DATA-frame) NẰM TRƯỚC câu hỏi
             {"role": "user", "content": user_content},
         ]
+        # D0.2: trusted-number context for the free-text number gate in _guard_final — a money
+        # figure in a knowledge answer must trace to the question or the retrieved chunks.
+        self._turn_question = user_message
+        self._turn_context_text = "\n".join(getattr(c, "content", "") or "" for c in chunks)
         return messages, chunks, citations
 
     async def step(self, user_message: str, attachments: list[dict] | None = None) -> dict:
@@ -1712,7 +1716,18 @@ class AgentSession:
             grounded, unmatched = verdict.grounded, verdict.unmatched
             citations = _prune_citations(body, citations)[0]  # hygiene: chỉ nguồn thực trích
         else:
-            body, unmatched = self._normalize_answer(answer), []
+            # D0.2: free-text number gate (invariant #3 on the KNOWLEDGE chat path). A money figure
+            # the model wrote that does not trace to the question or the retrieved context is masked
+            # — the engine verify-gate above only covers tool-produced numbers; this closes the
+            # chunk-derived / self-computed money leak for the real SSE chat, not just /ask.
+            from app.rag import number_integrity
+            body = number_integrity.strip_markers(self._normalize_answer(answer))
+            allowed = number_integrity.allowed_from(
+                getattr(self, "_turn_question", ""), getattr(self, "_turn_context_text", ""))
+            body, unmatched = number_integrity.mask(body, allowed)
+            if unmatched:
+                self._consultant_trace = {**getattr(self, "_consultant_trace", {}),
+                                          "ungrounded_numbers": unmatched}
             citations, grounded = _prune_citations(body, citations)  # abstain -> 0 nguồn, not grounded
         critic = review_consultant_answer(body, getattr(self, "_consultant_turn", None))
         safe = critic.answer
