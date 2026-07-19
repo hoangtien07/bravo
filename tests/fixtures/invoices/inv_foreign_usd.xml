@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DEMO - ẩn danh, KHÔNG phải hoá đơn thật. Ca: hoá đơn NGOẠI TỆ (USD) -> phải bị chặn cứng. -->
+<HDon>
+  <DLHDon>
+    <TTChung>
+      <KHMSHDon>1</KHMSHDon>
+      <KHHDon>C26TAA</KHHDon>
+      <SHDon>0000999</SHDon>
+      <NLap>2026-01-15</NLap>
+      <DVTTe>USD</DVTTe>
+    </TTChung>
+    <NDHDon>
+      <NBan><Ten>CÔNG TY DEMO A</Ten><MST>0100100008</MST></NBan>
+      <NMua><Ten>CÔNG TY DEMO B</Ten><MST>0300120019</MST></NMua>
+      <DSHHDVu>
+        <HHDVu>
+          <STT>1</STT><THHDVu>Hàng hóa nhập khẩu Y</THHDVu><DVTinh>Cái</DVTinh>
+          <SLuong>10</SLuong><DGia>100</DGia><ThTien>1000</ThTien>
+          <TSuat>10%</TSuat><TThue>100</TThue>
+        </HHDVu>
+      </DSHHDVu>
+      <TToan>
+        <TgTCThue>1000</TgTCThue>
+        <TgTThue>100</TgTThue>
+        <TgTTTBSo>1100</TgTTTBSo>
+      </TToan>
+    </NDHDon>
+  </DLHDon>
+</HDon>

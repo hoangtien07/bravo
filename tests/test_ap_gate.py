@@ -20,8 +20,10 @@ from app.ingestion.invoice_parser import parse_invoice_xml
 
 _FIX = Path(__file__).parent / "fixtures" / "invoices"
 _EXPECTED = yaml.safe_load((_FIX / "expected_journals.yaml").read_text(encoding="utf-8"))
-# Fixture hoá đơn HỢP LỆ (loại bad-totals — fixture lỗi để test validator).
-_GOOD = sorted(p.name for p in _FIX.glob("inv_*.xml") if "bad" not in p.name)
+# Fixture hoá đơn HỢP LỆ dựng được bút toán VND (loại: "bad" = fixture lỗi tổng để test
+# validator; "foreign" = hoá đơn ngoại tệ bị CHẶN CỨNG, xem test_journal).
+_GOOD = sorted(p.name for p in _FIX.glob("inv_*.xml")
+               if "bad" not in p.name and "foreign" not in p.name)
 
 
 def test_all_fixtures_balance_and_verify():
@@ -41,8 +43,8 @@ def test_all_fixtures_balance_and_verify():
             assert str(amt) in ev, f"{name}: số {amt} không truy về nguồn"
             # 3) account hợp lệ TT99 + postable
             assert coa.is_valid_posting_account(l.account), f"{name}: TK {l.account} không hợp lệ/postable"
-    # HARD-GATE: balance_pass_rate == 100%
-    assert balanced == len(_GOOD) == 2
+    # HARD-GATE: balance_pass_rate == 100% (và glob không rỗng — phải có ≥2 fixture hợp lệ)
+    assert balanced == len(_GOOD) and len(_GOOD) >= 2
 
 
 def test_account_map_matches_groundtruth_soft():

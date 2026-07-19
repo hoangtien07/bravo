@@ -32,10 +32,16 @@ class Citation(BaseModel):
     cell_range: str | None = None
 
 
+class Integrity(BaseModel):
+    ok: bool = True
+    ungrounded_numbers: list[int] = []
+
+
 class AskResponse(BaseModel):
     answer: str
     citations: list[Citation]
     grounded: bool
+    integrity: Integrity = Integrity()
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -47,4 +53,5 @@ async def ask(
     result = await answer_grounded(db, identity, req.question, top_n=12)
     return AskResponse(
         answer=result["answer"], grounded=result["grounded"],
-        citations=[Citation(**c) for c in result["citations"]])
+        citations=[Citation(**c) for c in result["citations"]],
+        integrity=Integrity(**result.get("integrity", {})))

@@ -56,6 +56,13 @@ def test_build_balanced_multi_rate():
                       "1331": Decimal("140000")}
 
 
+def test_foreign_currency_hard_blocked():
+    """Council blocker (accounting): money-engine không quy đổi tỷ giá -> hoá đơn ngoại tệ phải
+    bị CHẶN CỨNG (không dựng bút toán VND sai), chuyển kế toán xử lý thủ công."""
+    with pytest.raises(ValueError, match="[Nn]goại tệ"):
+        build_journal_entry(_load("inv_foreign_usd.xml"))
+
+
 def test_engine_values_cover_all_journal_numbers():
     je = build_journal_entry(_load("inv_single_10pct_goods.xml"))
     ev = set(je.engine_values)

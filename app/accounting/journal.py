@@ -97,6 +97,13 @@ def build_journal_entry(inv: Invoice, *, coa: CoaCatalog | None = None,
                         version: str = "v1") -> JournalEntryPayload:
     """Hoá đơn -> bút toán nháp (cân Nợ=Có by-construction). Số từ hoá đơn (Decimal)."""
     coa = coa or load_coa()
+    # Ngoại tệ: money-engine KHÔNG quy đổi tỷ giá -> hạch toán số ngoại tệ như VND sẽ SAI thảm
+    # hoạ. Chặn cứng, chuyển kế toán xử lý thủ công (HITL). Pilot AP: chỉ hoá đơn VND.
+    cur = (inv.currency or "VND").strip().upper()
+    if cur != "VND":
+        raise ValueError(
+            f"Hoá đơn ngoại tệ ({cur}) chưa hỗ trợ: money-engine không quy đổi tỷ giá — "
+            f"chuyển kế toán định khoản thủ công. (Pilot AP chỉ nhận hoá đơn VND.)")
     as_of = as_of_from_iso(inv.ngay_lap)          # ngưỡng LUẬT theo NGÀY LẬP hoá đơn
     proposal = map_invoice(inv, coa=coa, version=version, as_of=as_of)
     flags: list[str] = list(validate_invoice(inv)) + list(proposal.notes)

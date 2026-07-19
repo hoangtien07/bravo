@@ -64,6 +64,16 @@ async def answer_grounded(db: AsyncSession, identity: Identity, question: str, *
     if is_abstain:
         answer = ABSTAIN
     grounded = not is_abstain
+
+    # Number-integrity gate (invariant #3) — this endpoint (/api/ask) is the "bare model +
+    # evidence" knowledge path. There is NO money-engine here, so the ONLY trusted money figures
+    # are those in the question or the retrieved context. Any other money-scale figure the model
+    # wrote is a hallucination -> mask it (fail-closed), matching the guarded arm's gate.
+    ungrounded: list[int] = []
+    if grounded:
+        allowed = number_integrity.allowed_from(question, context)
+        answer, ungrounded = number_integrity.mask(answer, allowed)
+
     if not grounded:
         cited: list[dict[str, Any]] = []
     else:
@@ -72,7 +82,8 @@ async def answer_grounded(db: AsyncSession, identity: Identity, question: str, *
         cited = [{"source_id": str(c.source_id), "page_number": c.page_number,
                   "sheet_name": c.sheet_name, "cell_range": c.cell_range} for c in used]
     return {"answer": answer, "grounded": grounded, "citations": cited,
-            "routed_cloud": getattr(decision, "backend", "local") == "cloud"}
+            "routed_cloud": getattr(decision, "backend", "local") == "cloud",
+            "integrity": {"ok": not ungrounded, "ungrounded_numbers": ungrounded}}
 
 
 # --------------------------------------------------------------------------------------------
