@@ -360,6 +360,8 @@ sources:
     source_type: kqpt_ptnv
     module: task
     lifecycle_stage: ba_analysis
+    doc_version: B8R4
+    approved_status: draft
     audience: [ba, developer, qa, implementation_engineer, consultant, support]
 
   - id: kqpt_2fa
@@ -460,6 +462,8 @@ sources:
     source_type: kqpt_ptnv
     module: platform
     lifecycle_stage: ba_analysis
+    doc_version: B8R4
+    approved_status: draft
     audience: [ba, developer, qa, implementation_engineer, support]
 
   - id: kqpt_production

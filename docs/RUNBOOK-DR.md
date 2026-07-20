@@ -13,8 +13,9 @@ scripts/backup.sh /var/backups/bravo
 0 2 * * * cd /opt/bravo && DATABASE_URL=... scripts/backup.sh /var/backups/bravo >> /var/log/bravo-backup.log 2>&1
 ```
 
-Sinh ra: `db_<ts>.dump` (Postgres custom-format, gồm schema+data+pgvector) và
-`uploads_<ts>.tgz` (tài liệu upload `data/uploads/`). Giữ 14 bản gần nhất (retention trong script).
+Sinh ra: `db_<ts>.dump` (Postgres custom-format, gồm schema+data+pgvector),
+`uploads_<ts>.tgz` (tài liệu upload `data/uploads/`) và `private_data_<ts>.tgz`
+(dữ liệu vận hành riêng `data/private/`). Giữ 14 bản gần nhất (retention trong script).
 
 > Lưu ý: corpus `file_system/` là read-only (scp lên VM khi deploy) — không cần backup thường
 > xuyên; nếu có, thêm vào script tuỳ site.
@@ -33,6 +34,7 @@ pg_restore --clean --if-exists --no-owner -d "$CONN" /var/backups/bravo/db_<ts>.
 
 # 4) Phục hồi tài liệu upload
 tar xzf /var/backups/bravo/uploads_<ts>.tgz -C /opt/bravo
+tar xzf /var/backups/bravo/private_data_<ts>.tgz -C /opt/bravo
 
 # 5) Áp migration mới nhất (nếu bản code mới hơn dump)
 alembic upgrade head
@@ -52,7 +54,7 @@ curl -sf localhost:8000/readyz   # {"ready": true, ...}
 createdb bravo_drill
 pg_restore --no-owner -d "postgresql://bravo:bravo@localhost:5432/bravo_drill" db_<ts>.dump
 # Kiểm: số bản ghi draft/audit/conversation khớp bản gốc; thời gian đo được (RTO).
-psql ".../bravo_drill" -c 'SELECT count(*) FROM drafts; SELECT count(*) FROM audit_logs;'
+psql ".../bravo_drill" -c 'SELECT count(*) FROM drafts; SELECT count(*) FROM audit_log;'
 dropdb bravo_drill
 ```
 

@@ -17,7 +17,11 @@ _pool = None
 
 
 def redis_settings() -> RedisSettings:
-    return RedisSettings.from_dsn(_settings.redis_url)
+    settings = RedisSettings.from_dsn(_settings.redis_url)
+    password = _settings.resolved_redis_password()
+    if password:
+        settings.password = password
+    return settings
 
 
 async def get_pool():

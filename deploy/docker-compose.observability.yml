@@ -6,9 +6,9 @@
 services:
   otel-lgtm:
     image: grafana/otel-lgtm:latest
-    ports:
-      - "3000:3000"     # Grafana UI
-      - "4318:4318"     # OTLP/HTTP nhận trace
+    expose:
+      - "3000"     # Grafana UI — internal/admin tunnel only
+      - "4318"     # OTLP/HTTP nhận trace from API
     # Prometheus bên trong tự scrape; cấu hình scrape target 'api:8000/metrics' nếu cần.
 
   api:

@@ -30,8 +30,24 @@ else
   echo "[backup] (bỏ qua uploads: không thấy host dir lẫn volume $UPLOAD_VOL)"
 fi
 
+# Private operational data (runtime manifests/derived private artifacts) is a separate durable
+# volume and must travel with DB + uploads. Missing it is a hard backup failure in production.
+PRIVATE_VOL="${PRIVATE_DATA_VOLUME:-bravo_private_data}"
+if [ -d data/private ]; then
+  echo "[backup] tar data/private (host) -> $DEST/private_data_$TS.tgz"
+  tar czf "$DEST/private_data_$TS.tgz" data/private
+elif command -v docker >/dev/null && docker volume inspect "$PRIVATE_VOL" >/dev/null 2>&1; then
+  echo "[backup] tar docker volume $PRIVATE_VOL -> $DEST/private_data_$TS.tgz"
+  docker run --rm -v "$PRIVATE_VOL":/vol -v "$(cd "$DEST" && pwd)":/out busybox \
+    tar czf "/out/private_data_$TS.tgz" -C /vol .
+else
+  echo "[backup] LỖI: không thấy private data host dir hoặc volume $PRIVATE_VOL" >&2
+  exit 1
+fi
+
 # Giữ 14 bản gần nhất (retention).
 ls -1t "$DEST"/db_*.dump 2>/dev/null | tail -n +15 | xargs -r rm -f
 ls -1t "$DEST"/uploads_*.tgz 2>/dev/null | tail -n +15 | xargs -r rm -f
+ls -1t "$DEST"/private_data_*.tgz 2>/dev/null | tail -n +15 | xargs -r rm -f
 
 echo "[backup] xong: $DEST/db_$TS.dump"

@@ -43,6 +43,7 @@ from app.agent.turn_contract import classify_turn, render_turn_contract
 from app.consultant import ConsultantService
 from app.consultant.critic import review as review_consultant_answer
 from app.consultant.rollout import is_assigned as consultant_is_assigned
+from app.consultant.service import ConsultantStateError
 from app.agent.tools import REGISTRY, call_tool, filter_tools_by_permission, register
 from app.agent_runtime import OpenAIAgentsRuntime, RuntimeUnavailable
 from app.config import get_settings
@@ -784,25 +785,12 @@ class AgentSession:
         yield {"type": "__decision__", "decision": decision, "tokens": tokens, "streamer": None}
 
     async def _finalize_streamed_answer(self, streamer: _AnswerStreamer, citations: list[str]):
-        """Terminal for a STREAMED knowledge answer: flush the guarded tail (WK block / abstain
-        canonical), persist, close the run, emit `done`. Mirrors _stream_answer's non-financial
-        tail but WITHOUT re-emitting the whole answer (it was already streamed)."""
-        tail = streamer.finalize()
-        if tail:
-            yield {"type": "answer", "delta": tail}
-        final = self._normalize_answer(streamer.full)
-        cites, grounded = _prune_citations(final, citations)
-        if getattr(self, "run_mode", "auto") == "deep_research":
-            steps = ["Đã xác định phạm vi và nguồn được phép",
-                     "Đã truy hồi và đối chiếu bằng chứng",
-                     "Đã tổng hợp kết luận kèm trích dẫn"]
-            await self._set_research_plan(steps, "completed")
-            yield {"type": "plan_update", "steps": steps}
-        mid = await self._safe_recall_add("assistant", final)
-        await self._close_run(self._terminal_status())
-        yield {"type": "done", "grounded": grounded, "unmatched": [], "citations": cites,
-               "routed_cloud": getattr(self, "_routed_cloud", False),
-               "session_id": str(self.session_id), **self._msg_ids(mid)}
+        """Fail closed if an application path tries irreversible pre-guard streaming.
+
+        `_decide_streaming(..., allow_stream=True)` remains as a parser-level test seam, but
+        production answer paths must buffer and call `_guard_final_answer` before emitting text.
+        """
+        raise RuntimeError("pre-guard answer streaming is disabled by containment policy")
 
     def _add_aux_tokens(self, decision) -> None:
         """M1: accumulate token usage from AUXILIARY LLM calls (rephrase/summarize) so they are
@@ -1053,7 +1041,15 @@ class AgentSession:
                     user_message, getattr(self, "consultant_profile", "auto"))
                 self._consultant_turn.manifest.config_version = _settings.consultant_config_version
                 self._consultant_trace = self._consultant_turn.manifest.model_dump(mode="json")
+            except ConsultantStateError:
+                await self.db.rollback()
+                raise
             except Exception:
+                # Release any transaction/row lock before the legacy-safe fallback continues.
+                try:
+                    await self.db.rollback()
+                except Exception:
+                    pass
                 _log.warning("consultant state unavailable; continuing legacy-safe path", exc_info=True)
         recall = await self._safe_history()                 # lịch sử (CÓ NÉN) TRƯỚC câu hiện tại
         att_names = [a.get("filename", "?") for a in (attachments or [])]
@@ -1208,7 +1204,18 @@ class AgentSession:
         self.agent_run_id = uuid.uuid4()       # 1 lượt = 1 AgentRun (drafts của lượt link vào)
         await self._open_run()
 
-        messages, chunks, citations = await self._prepare_turn(user_message, attachments)
+        try:
+            messages, chunks, citations = await self._prepare_turn(user_message, attachments)
+        except ConsultantStateError:
+            answer = (
+                "Trạng thái công việc đã lưu bị xung đột hoặc hỏng. Hệ thống đã dừng lượt này "
+                "để không làm mất correction/task epoch; vui lòng phục hồi hoặc đặt lại trạng thái."
+            )
+            await self._audit("consultant.state_failure", {"session_id": str(self.session_id)})
+            await self._close_run("failed")
+            return {"answer": answer, "grounded": False, "citations": [],
+                    "stopped": "state_failure", "routed_cloud": False,
+                    "session_id": str(self.session_id)}
         tracker.tokens += self._aux_tokens     # M1: aux calls count toward the budget
         self._tokens_used += self._aux_tokens
 
@@ -1303,32 +1310,40 @@ class AgentSession:
         "Tuỳ chọn: sau phần có nguồn, có thể thêm khối kiến thức chung mở đầu đúng dòng "
         "'" + _WK_LABEL + "' — trong khối này KHÔNG trích [N] và KHÔNG nêu số tiền/số dư/tỷ lệ cụ thể.")
 
-    async def _stream_answer(self, answer: str, messages: list, engine_values: list, citations: list):
+    def _guard_final_answer(self, answer: str, engine_values: list[MetricResult],
+                            citations: list[str]) -> tuple[str, bool, list, list[str]]:
+        """One deterministic terminal guard shared by sync, SSE and alternate runtimes.
+
+        No answer text may leave an application endpoint before this method has applied the
+        financial verifier, normalization/citation hygiene and Consultant safety critic.
+        """
         if engine_values:
-            # (a) tài chính: buffered verify-gate, phát nguyên khối đã kiểm chứng. Phát `status`
-            # để lượt KHÔNG token-stream này không trông như bị treo trên UI (P1).
-            yield {"type": "status", "text": "Đang kiểm tra số liệu..."}
             verdict = verify_numbers(answer, engine_values)
             safe = answer if verdict.grounded else verdict.safe_answer
             grounded, unmatched = verdict.grounded, verdict.unmatched
-            cites = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
-            if getattr(self, "run_mode", "auto") == "deep_research":
-                steps = ["Đã xác định phạm vi và nguồn được phép",
-                         "Đã truy hồi và đối chiếu bằng chứng",
-                         "Đã tổng hợp kết luận kèm trích dẫn"]
-                await self._set_research_plan(steps, "completed")
-                yield {"type": "plan_update", "steps": steps}
-            mid = await self._safe_recall_add("assistant", safe)
-            await self._close_run(self._terminal_status())
-            yield {"type": "answer", "delta": safe}
-            yield {"type": "done", "grounded": grounded, "unmatched": unmatched,
-                   "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
-                   "session_id": str(self.session_id), **self._msg_ids(mid)}
-            return
+        else:
+            safe, unmatched = self._normalize_answer(answer), []
+            grounded = False
 
-        # (b) tri thức: token-stream THẬT (compose) nếu bật cờ; nếu không, phát answer đã quyết
-        # nguyên khối (đúng, không cắt giả). engine_values rỗng -> không bị number-gate.
-        final = ""
+        critic = review_consultant_answer(safe, getattr(self, "_consultant_turn", None))
+        safe = critic.answer
+        if critic.tags:
+            self._consultant_trace = {
+                **getattr(self, "_consultant_trace", {}),
+                "critic_tags": list(critic.tags),
+            }
+        cites, citation_grounded = _prune_citations(safe, citations)
+        if not engine_values:
+            grounded = citation_grounded
+        return safe, grounded, unmatched, cites
+
+    async def _stream_answer(self, answer: str, messages: list, engine_values: list,
+                             citations: list):
+        """Buffer every candidate, run the shared guard, then emit one safe answer delta."""
+        if engine_values:
+            yield {"type": "status", "text": "Đang kiểm tra số liệu..."}
+
+        candidate = answer
         if _settings.stream_compose_answer:
             # Replace only the legacy JSON protocol. Keep every later system block, including the
             # turn contract; `messages[2:]` used to drop whichever block happened to be second.
@@ -1341,29 +1356,26 @@ class AgentSession:
                         allow_cloud_task=_settings.demo_allow_cloud_answers, temperature=0.2):
                     if ev["type"] == "delta":
                         parts.append(ev["text"])
-                        yield {"type": "answer", "delta": ev["text"]}
                     elif ev["type"] == "done" and getattr(
                             ev.get("decision"), "backend", "local") == "cloud":
                         self._routed_cloud = True
-                final = "".join(parts).strip()
+                if parts:
+                    candidate = "".join(parts).strip()
             except Exception:
-                final = ""
-        if not final:  # cờ tắt HOẶC stream hỏng -> phát answer đã quyết (không mất lượt)
-            final = self._normalize_answer(answer)
-            yield {"type": "answer", "delta": final}
-        else:
-            # compose-stream: token đã phát, không rút lại được — vẫn chuẩn hoá bản ghi/verdict
-            final = self._normalize_answer(final)
-        cites, grounded = _prune_citations(final, citations)  # abstain -> 0 nguồn, not grounded
+                candidate = answer
+
+        safe, grounded, unmatched, cites = self._guard_final_answer(
+            candidate, engine_values, citations)
         if getattr(self, "run_mode", "auto") == "deep_research":
             steps = ["Đã xác định phạm vi và nguồn được phép",
                      "Đã truy hồi và đối chiếu bằng chứng",
                      "Đã tổng hợp kết luận kèm trích dẫn"]
             await self._set_research_plan(steps, "completed")
             yield {"type": "plan_update", "steps": steps}
-        mid = await self._safe_recall_add("assistant", final)
+        mid = await self._safe_recall_add("assistant", safe)
         await self._close_run(self._terminal_status())
-        yield {"type": "done", "grounded": grounded, "unmatched": [],
+        yield {"type": "answer", "delta": safe}
+        yield {"type": "done", "grounded": grounded, "unmatched": unmatched,
                "citations": cites, "routed_cloud": getattr(self, "_routed_cloud", False),
                "session_id": str(self.session_id), **self._msg_ids(mid)}
 
@@ -1472,15 +1484,14 @@ class AgentSession:
                     delta = str(event.data.get("delta") or "")
                     if delta:
                         parts.append(delta)
-                        yield {"type": "answer", "delta": delta}
                 elif event.type == "runtime.progress":
                     yield {"type": "status", "text": "Đang gọi công cụ frontier…"}
 
-            final = self._normalize_answer("".join(parts).strip())
-            if not final:
-                final = "Không nhận được câu trả lời từ frontier runtime. Vui lòng thử lại."
-                yield {"type": "answer", "delta": final}
-            cites, grounded = _prune_citations(final, citations)
+            candidate = "".join(parts).strip()
+            if not candidate:
+                candidate = "Không nhận được câu trả lời từ frontier runtime. Vui lòng thử lại."
+            final, grounded, _unmatched, cites = self._guard_final_answer(
+                candidate, [], citations)
             if getattr(self, "run_mode", "auto") == "deep_research":
                 steps = ["Đã xác định phạm vi và nguồn được phép",
                          "Đã truy hồi và đối chiếu bằng chứng",
@@ -1489,9 +1500,18 @@ class AgentSession:
                 yield {"type": "plan_update", "steps": steps}
             mid = await self._safe_recall_add("assistant", final)
             await self._close_run("done")
+            yield {"type": "answer", "delta": final}
             yield {"type": "done", "grounded": grounded, "citations": cites,
                    "routed_cloud": True, "session_id": str(self.session_id),
                    **self._msg_ids(mid)}
+        except ConsultantStateError:
+            _log.exception("Consultant state failed closed in OpenAI Agents runtime")
+            await self._close_run("failed")
+            yield {"type": "error", "code": "state_failure",
+                   "message": "Trạng thái công việc bị xung đột hoặc hỏng; lượt này đã dừng an toàn."}
+            yield {"type": "done", "grounded": False, "citations": [],
+                   "routed_cloud": True, "session_id": str(self.session_id),
+                   **self._msg_ids(None)}
         except Exception:  # The fallback wrapper handles RuntimeUnavailable before this run.
             _log.exception("OpenAI Agents runtime failed")
             await self._close_run("failed")
@@ -1569,14 +1589,10 @@ class AgentSession:
                            "session_id": str(self.session_id), **self._msg_ids(mid)}
                     return
                 tracker.check()
-                # P0b: single-generation decide. Knowledge turns (no engine values yet) STREAM the
-                # answer field live; financial turns buffer for the verify-gate (invariant #3).
-                # Buffer work-product decisions so the turn contract and useful-fallback guard can
-                # be applied before any legacy abstain token reaches the browser.
-                is_work_product = bool(getattr(self, "_turn_contract", None)
-                                       and self._turn_contract.is_work_product)
-                allow_stream = (_settings.stream_decide_answer and not engine_values
-                                and not is_work_product)
+                # Containment: even knowledge answers are buffered until the single terminal
+                # guard has run. Parser-level streaming remains testable, but no application
+                # endpoint emits irreversible model text before critic/grounding checks.
+                allow_stream = False
                 decision = None
                 used = 0
                 streamer = None
@@ -1661,6 +1677,16 @@ class AgentSession:
                                  "content": json.dumps(decision.model_dump(), ensure_ascii=False)})
                 messages.append({"role": "user",
                                  "content": "QUAN SÁT:\n" + "\n".join(observations)})
+        except ConsultantStateError:
+            _log.exception("Consultant state failed closed")
+            await self._audit("consultant.state_failure", {"session_id": str(self.session_id)})
+            await self._close_run("failed")
+            yield {"type": "error", "code": "state_failure",
+                   "message": "Trạng thái công việc bị xung đột hoặc hỏng; lượt này đã dừng an toàn."}
+            yield {"type": "done", "grounded": False,
+                   "citations": locals().get("citations", []),
+                   "routed_cloud": getattr(self, "_routed_cloud", False),
+                   "session_id": str(self.session_id), **self._msg_ids(None)}
         except BudgetExceeded as be:
             await self._audit("agent.budget_exceeded",
                               {"dimension": be.dimension, "steps": tracker.steps})
@@ -1697,19 +1723,8 @@ class AgentSession:
         steps, 'Điều 5', years, amounts quoted from the cited document) are not engine claims.
         Such an answer is grounded iff it was produced from retrieved context (has citations).
         """
-        if engine_values:
-            verdict = verify_numbers(answer, engine_values)
-            safe = verdict.safe_answer if not verdict.grounded else answer
-            grounded, unmatched = verdict.grounded, verdict.unmatched
-            citations = _prune_citations(safe, citations)[0]  # hygiene: chỉ nguồn thực trích
-        else:
-            safe, unmatched = self._normalize_answer(answer), []
-            citations, grounded = _prune_citations(safe, citations)  # abstain -> 0 nguồn, not grounded
-        critic = review_consultant_answer(safe, getattr(self, "_consultant_turn", None))
-        safe = critic.answer
-        if critic.tags:
-            self._consultant_trace = {**getattr(self, "_consultant_trace", {}),
-                                      "critic_tags": list(critic.tags)}
+        safe, grounded, unmatched, citations = self._guard_final_answer(
+            answer, engine_values, citations)
         await self._safe_recall_add("assistant", safe)
         if getattr(self, "run_mode", "auto") == "deep_research":
             await self._set_research_plan([

@@ -12,7 +12,7 @@ import unicodedata
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.consultant.catalog import match_workflow
@@ -78,6 +78,18 @@ class PreparedConsultantTurn:
     evidence_hint: str = ""
 
 
+class ConsultantStateError(RuntimeError):
+    """Persisted Consultant state cannot be used safely for this turn."""
+
+
+class ConsultantStateCorruptError(ConsultantStateError):
+    """The stored state failed schema validation and must not be treated as empty."""
+
+
+class ConsultantStateConflictError(ConsultantStateError):
+    """A concurrent turn won the state-creation/update race."""
+
+
 class ConsultantService:
     """Single conversation owner for consultant state; specialists remain capabilities."""
 
@@ -91,28 +103,60 @@ class ConsultantService:
     def __init__(self, db: AsyncSession, identity: Identity, session_id: uuid.UUID):
         self.db, self.identity, self.session_id = db, identity, session_id
 
-    async def load_state(self) -> TaskState:
+    async def _load_state(self, *, for_update: bool = False) -> tuple[TaskState, bool]:
         from app.database.models import MemoryBlock
-        row = (await self.db.execute(select(MemoryBlock).where(
-            MemoryBlock.session_id == self.session_id, MemoryBlock.label == self._LABEL))).scalar_one_or_none()
+        stmt = select(MemoryBlock).where(
+            MemoryBlock.session_id == self.session_id, MemoryBlock.label == self._LABEL)
+        if for_update:
+            stmt = stmt.with_for_update()
+        row = (await self.db.execute(stmt)).scalar_one_or_none()
         if not row:
-            return TaskState()
+            return TaskState(), False
         try:
-            return TaskState.model_validate_json(row.value)
-        except Exception:
-            return TaskState()
+            return TaskState.model_validate_json(row.value), True
+        except Exception as exc:
+            # A corrupt block is a recovery event. Silently replacing it with TaskState()
+            # would erase task epoch/corrections and can make a risky task look new.
+            await self.db.rollback()
+            raise ConsultantStateCorruptError(
+                f"Corrupt Consultant state for session {self.session_id}"
+            ) from exc
 
-    async def save_state(self, state: TaskState) -> None:
+    async def load_state(self) -> TaskState:
+        state, _exists = await self._load_state()
+        return state
+
+    async def save_state(self, state: TaskState, *, existed: bool) -> None:
         from sqlalchemy.dialects.postgresql import insert
         from app.database.models import MemoryBlock
         payload = state.model_dump_json()
-        stmt = insert(MemoryBlock).values(session_id=self.session_id, label=self._LABEL, value=payload).on_conflict_do_update(
-            constraint="uq_block_session_label", set_={"value": payload, "updated_at": func.now()})
-        await self.db.execute(stmt)
+        if existed:
+            result = await self.db.execute(
+                update(MemoryBlock)
+                .where(MemoryBlock.session_id == self.session_id,
+                       MemoryBlock.label == self._LABEL)
+                .values(value=payload, updated_at=func.now())
+            )
+            if result.rowcount != 1:
+                await self.db.rollback()
+                raise ConsultantStateConflictError("Consultant state disappeared during update")
+        else:
+            result = await self.db.execute(
+                insert(MemoryBlock)
+                .values(session_id=self.session_id, label=self._LABEL, value=payload)
+                .on_conflict_do_nothing(constraint="uq_block_session_label")
+            )
+            if result.rowcount != 1:
+                await self.db.rollback()
+                raise ConsultantStateConflictError(
+                    "Concurrent Consultant state creation; retry the turn with a fresh revision"
+                )
         await self.db.commit()
 
     async def prepare(self, question: str, requested_profile: str = "auto") -> PreparedConsultantTurn:
-        old = await self.load_state()
+        # Lock an existing state row until the reconciled revision is persisted. A missing-row
+        # race is detected by INSERT .. ON CONFLICT DO NOTHING and fails closed for retry.
+        old, existed = await self._load_state(for_update=True)
         workflow = match_workflow(question)
         # Keep the prior workflow for a short correction/continuation rather than reclassifying it.
         if workflow is None and old.workflow_id:
@@ -163,7 +207,7 @@ class ConsultantService:
                 evidence_hints.append("No verified KEDB resolution matched. Gather log/version/configuration "
                                       "evidence before proposing a fix.")
         evidence_hint = "\n".join(evidence_hints)
-        await self.save_state(state)
+        await self.save_state(state, existed=existed)
         return PreparedConsultantTurn(frame, state, workflow, manifest,
                                      self._prompt(frame, state, workflow, evidence_hint), evidence_hint)
 

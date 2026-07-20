@@ -22,6 +22,13 @@ def load_manifest(path: Path | None) -> dict:
 
 
 def _merge_meta(defaults: dict, entry: dict, rel_path: str) -> dict:
+    # Version-bearing filenames must declare their own version and review state. Otherwise an
+    # old B8R4 source silently inherits the corpus-wide B10R1/approved defaults.
+    if "B8R4" in rel_path.upper():
+        if str(entry.get("doc_version") or "").upper() != "B8R4":
+            raise ValueError(f"B8R4 source must explicitly declare doc_version: {rel_path}")
+        if "approved_status" not in entry:
+            raise ValueError(f"B8R4 source must explicitly declare approved_status: {rel_path}")
     meta = deepcopy(defaults)
     for k, v in entry.items():
         if k not in {"path", "glob"}:

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agentic Engineering Workflow"
+  short_description: "Align complex work into testable vertical slices."
+  default_prompt: "Use $agentic-engineering-workflow to clarify, decompose, implement, verify, and review this software change."

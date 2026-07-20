@@ -6,7 +6,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -16,8 +16,8 @@ from app.consultant.evidence import (lookup_schema, schema_fingerprint, search_k
 from app.consultant.jobs import create_candidates_from_open_gaps
 from app.consultant.service import ConsultantService
 from app.database import get_db
-from app.database.models import (ConsultantGapEvent, Conversation, KnownError, KnowledgeCandidate,
-                                 SchemaSnapshot)
+from app.database.models import (AuditLog, ConsultantGapEvent, Conversation, KnownError,
+                                 KnowledgeCandidate, SchemaSnapshot)
 from app.security.auth import get_current_identity, require_admin, require_permission
 from app.security.rls import Identity
 
@@ -151,17 +151,26 @@ async def review_candidate(candidate_id: uuid.UUID, body: CandidateReviewIn,
                            db: AsyncSession = Depends(get_db)) -> dict:
     if body.decision not in {"approve", "reject"}:
         raise HTTPException(status_code=422, detail="decision must be approve or reject")
-    candidate = await db.get(KnowledgeCandidate, candidate_id)
-    if candidate is None:
-        raise HTTPException(status_code=404, detail="Candidate not found")
-    if candidate.status != "review_required":
+    target = "approved_candidate" if body.decision == "approve" else "rejected"
+    reviewed = (await db.execute(
+        update(KnowledgeCandidate)
+        .where(KnowledgeCandidate.id == candidate_id,
+               KnowledgeCandidate.status == "review_required")
+        .values(status=target, reviewer_id=identity.employee_id,
+                review_note=body.note.strip()[:2000] or None)
+        .returning(KnowledgeCandidate.id, KnowledgeCandidate.status)
+    )).one_or_none()
+    if reviewed is None:
+        exists = await db.get(KnowledgeCandidate, candidate_id)
+        if exists is None:
+            raise HTTPException(status_code=404, detail="Candidate not found")
         raise HTTPException(status_code=409, detail="Candidate was already reviewed")
-    candidate.status = "approved_candidate" if body.decision == "approve" else "rejected"
-    candidate.reviewer_id = identity.employee_id
-    candidate.review_note = body.note.strip()[:2000] or None
+    db.add(AuditLog(actor_id=identity.employee_id, action="consultant.candidate.review",
+                    detail={"candidate_id": str(candidate_id), "from": "review_required",
+                            "to": target, "decision": body.decision}))
     await db.commit()
     # Promotion to active cards/index is intentionally a separate, evidence-gated operation.
-    return {"id": str(candidate.id), "status": candidate.status, "active": False}
+    return {"id": str(reviewed.id), "status": reviewed.status, "active": False}
 
 
 # --- Schema grounding: metadata snapshots only; no live database access. ----------------------
@@ -191,14 +200,27 @@ async def review_schema_snapshot(snapshot_id: uuid.UUID, body: EvidenceReviewIn,
                                  db: AsyncSession = Depends(get_db)) -> dict:
     if body.decision not in {"verify", "reject", "deprecate"}:
         raise HTTPException(status_code=422, detail="decision must be verify, reject, or deprecate")
-    row = await db.get(SchemaSnapshot, snapshot_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="Schema snapshot not found")
-    row.status = {"verify": "verified", "reject": "rejected", "deprecate": "deprecated"}[body.decision]
+    target = {"verify": "verified", "reject": "rejected", "deprecate": "deprecated"}[body.decision]
+    expected = "verified" if body.decision == "deprecate" else "candidate"
+    values = {"status": target}
     if body.decision == "verify":
-        row.approved_by = identity.employee_id
+        values["approved_by"] = identity.employee_id
+    reviewed = (await db.execute(
+        update(SchemaSnapshot)
+        .where(SchemaSnapshot.id == snapshot_id, SchemaSnapshot.status == expected)
+        .values(**values)
+        .returning(SchemaSnapshot.id, SchemaSnapshot.status)
+    )).one_or_none()
+    if reviewed is None:
+        exists = await db.get(SchemaSnapshot, snapshot_id)
+        if exists is None:
+            raise HTTPException(status_code=404, detail="Schema snapshot not found")
+        raise HTTPException(status_code=409, detail=f"Schema snapshot must be {expected}")
+    db.add(AuditLog(actor_id=identity.employee_id, action="consultant.schema.review",
+                    detail={"snapshot_id": str(snapshot_id), "from": expected,
+                            "to": target, "decision": body.decision}))
     await db.commit()
-    return {"id": str(row.id), "status": row.status}
+    return {"id": str(reviewed.id), "status": reviewed.status}
 
 
 @router.get("/schema-lookup")
@@ -236,17 +258,31 @@ async def review_known_error(entry_id: uuid.UUID, body: KnownErrorReviewIn,
                              db: AsyncSession = Depends(get_db)) -> dict:
     if body.decision not in {"verify", "reject", "supersede"}:
         raise HTTPException(status_code=422, detail="decision must be verify, reject, or supersede")
-    row = await db.get(KnownError, entry_id)
-    if row is None:
-        raise HTTPException(status_code=404, detail="KEDB entry not found")
     if body.decision == "supersede" and not body.supersedes_case_key:
         raise HTTPException(status_code=422, detail="supersedes_case_key is required to supersede")
-    row.status = {"verify": "verified", "reject": "rejected", "supersede": "superseded"}[body.decision]
-    row.supersedes_case_key = body.supersedes_case_key if body.decision == "supersede" else row.supersedes_case_key
+    target = {"verify": "verified", "reject": "rejected", "supersede": "superseded"}[body.decision]
+    expected = "verified" if body.decision == "supersede" else "candidate"
+    values = {"status": target}
+    if body.decision == "supersede":
+        values["supersedes_case_key"] = body.supersedes_case_key
     if body.decision == "verify":
-        row.verified_by = identity.employee_id
+        values["verified_by"] = identity.employee_id
+    reviewed = (await db.execute(
+        update(KnownError)
+        .where(KnownError.id == entry_id, KnownError.status == expected)
+        .values(**values)
+        .returning(KnownError.id, KnownError.status)
+    )).one_or_none()
+    if reviewed is None:
+        exists = await db.get(KnownError, entry_id)
+        if exists is None:
+            raise HTTPException(status_code=404, detail="KEDB entry not found")
+        raise HTTPException(status_code=409, detail=f"KEDB entry must be {expected}")
+    db.add(AuditLog(actor_id=identity.employee_id, action="consultant.kedb.review",
+                    detail={"entry_id": str(entry_id), "from": expected,
+                            "to": target, "decision": body.decision}))
     await db.commit()
-    return {"id": str(row.id), "status": row.status}
+    return {"id": str(reviewed.id), "status": reviewed.status}
 
 
 @router.get("/kedb/search")

@@ -13,11 +13,12 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.loop import AgentSession
+from app.agent import conversations as conversation_service
 from app.database import get_db
 from app.security.auth import require_permission
 from app.security.rls import Identity
@@ -46,7 +47,20 @@ async def agent_ask(
     identity: Identity = Depends(require_permission("doc:read")),
     db: AsyncSession = Depends(get_db),
 ) -> AgentAskResponse:
-    session = AgentSession(db, identity, session_id=req.session_id)
+    # This legacy endpoint accepts a caller-supplied session id, so ownership must be
+    # established before AgentSession can read memory, mutate task state, or call a model.
+    # Return 404 for a foreign id to avoid revealing that the conversation exists.
+    session_id = req.session_id or uuid.uuid4()
+    try:
+        await conversation_service.ensure_conversation(
+            db, session_id, identity.employee_id, first_question=req.question)
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Hội thoại không tồn tại hoặc ngoài phạm vi",
+        ) from exc
+
+    session = AgentSession(db, identity, session_id=session_id)
     out = await session.step(req.question)
     return AgentAskResponse(
         answer=out.get("answer", ""),

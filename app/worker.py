@@ -18,6 +18,11 @@ from app.queue import redis_settings
 _settings = get_settings()
 
 
+async def startup(ctx) -> None:
+    """Apply the same fail-closed configuration/egress policy as the API process."""
+    _settings.validate_boot()
+
+
 async def ingest_task(ctx, source_id: str, path: str) -> int:
     async with async_session_factory() as db:
         return await ingest_source(db, uuid.UUID(source_id), path)
@@ -81,3 +86,4 @@ class WorkerSettings:
     cron_jobs = [cron(consultant_gap_curation_task, minute=0),
                  cron(consultant_state_retention_task, hour=3, minute=17)]
     redis_settings = redis_settings()
+    on_startup = startup

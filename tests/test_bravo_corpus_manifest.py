@@ -28,3 +28,13 @@ def test_bravo_manifest_maps_mindmap_and_technical_manual():
     assert idx["Mindmaps/Mindmap_Purchase.md"]["source_type"] == "mindmap"
     assert idx["TaiLieuBravo10_KhoiKyThuat.docx"]["source_type"] == "technical_manual"
     assert idx["TaiLieuBravo10_KhoiKyThuat.docx"]["lifecycle_stage"] == "technical_design"
+
+
+def test_b8r4_sources_do_not_inherit_b10r1_approval():
+    manifest = load_manifest(_MANIFEST)
+    idx = manifest_index(manifest, _FS)
+
+    b8_rows = [meta for path, meta in idx.items() if "B8R4" in path.upper()]
+    assert b8_rows
+    assert all(meta["doc_version"] == "B8R4" for meta in b8_rows)
+    assert all(meta["approved_status"] != "approved" for meta in b8_rows)

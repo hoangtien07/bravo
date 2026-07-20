@@ -5,6 +5,7 @@ See .env.example for all keys. Maps to ADR-0003 (hybrid LLM), ADR-0009 (model st
 from __future__ import annotations
 
 from functools import lru_cache
+from urllib.parse import urlsplit
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -169,6 +170,8 @@ class Settings(BaseSettings):
 
     # Worker
     redis_url: str = "redis://localhost:6379/0"
+    # Production can mount a one-line secret instead of exposing the password in Compose.
+    redis_password_file: str = ""
     # Ingest inline (no arq/Redis). Test/dev fallback so the suite runs without a worker.
     # Prod runs the arq worker and enqueues -> keep False.
     ingest_sync: bool = False
@@ -246,6 +249,8 @@ class Settings(BaseSettings):
         self.validate_data_runtime_policy()
         if self.agent_runtime not in {"legacy", "openai", "canary"}:
             raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
+        if self.egress_policy not in {"hybrid", "cloud_only"}:
+            raise RuntimeError("[boot-guard] egress_policy must be hybrid or cloud_only.")
         if not 0 <= self.agent_runtime_canary_percent <= 100:
             raise RuntimeError("[boot-guard] agent_runtime_canary_percent must be 0..100.")
         if not 0 <= self.consultant_rollout_percent <= 100:
@@ -268,6 +273,15 @@ class Settings(BaseSettings):
                     f"[boot-guard] {name} còn giá trị mặc định/quá ngắn ở env={self.env}. "
                     "Đặt secret ngẫu nhiên ≥16 ký tự trước khi chạy production (fail-closed)."
                 )
+        if "bravo:bravo@" in self.database_url or "change-me" in self.database_url:
+            raise RuntimeError(
+                "[boot-guard] production DATABASE_URL vẫn dùng thông tin xác thực mặc định."
+            )
+        redis_password = self.resolved_redis_password()
+        if not redis_password:
+            raise RuntimeError(
+                "[boot-guard] production REDIS_URL phải xác thực bằng mật khẩu/ACL."
+            )
         if self.cloud_enabled and not (self.cloud_api_key and self.cloud_base_url):
             raise RuntimeError(
                 "[boot-guard] cloud_enabled=true nhưng thiếu cloud_api_key/cloud_base_url."
@@ -315,6 +329,23 @@ class Settings(BaseSettings):
                 Path(self.private_data_root or data_root / "private").resolve()
             ),
         }
+
+    def resolved_redis_password(self) -> str | None:
+        """Resolve Redis auth without exposing the secret through status/config output."""
+        if self.redis_password_file:
+            from pathlib import Path
+
+            try:
+                value = Path(self.redis_password_file).read_text(encoding="utf-8").strip()
+            except OSError as exc:
+                raise RuntimeError("[boot-guard] REDIS_PASSWORD_FILE không đọc được.") from exc
+            if not value:
+                raise RuntimeError("[boot-guard] REDIS_PASSWORD_FILE rỗng.")
+            return value
+        try:
+            return urlsplit(self.redis_url).password
+        except ValueError as exc:
+            raise RuntimeError("[boot-guard] REDIS_URL không hợp lệ.") from exc
 
     def validate_data_runtime_policy(self) -> None:
         from pathlib import Path
