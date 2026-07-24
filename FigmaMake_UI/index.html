@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="<!-- figma:lang -->">
+  <head>
+    <!-- figma:head-start -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (() => {
+        const requested = new URLSearchParams(location.search).get('theme') || 'system';
+        const resolved = requested === 'system'
+          ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : requested;
+        document.documentElement.dataset.theme = resolved === 'dark' ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = resolved === 'dark' ? 'dark' : 'light';
+      })();
+    </script>
+    <title><!-- figma:title --></title>
+    <!-- figma:head-end -->
+  </head>
+  <body>
+    <!-- figma:body-start -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- figma:body-end -->
+  </body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "title": "Bravo Agent AI",
+  "description": "Prototype tương tác cho Conversation Core V2 và Financial Close Advisor.",
+  "language": "vi",
+  "robots": { "index": false },
+  "accessibility": { "addBypassLinks": true }
+}
