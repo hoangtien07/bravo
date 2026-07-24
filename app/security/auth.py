@@ -45,6 +45,17 @@ async def _employee_to_identity(emp: Employee) -> Identity:
     )
 
 
+async def _stamp_native_rls_context(db: AsyncSession, identity: Identity) -> None:
+    """Apply native-RLS GUCs to every authenticated DB session when the backstop is armed.
+
+    HTTP dependencies and MCP token resolution share retrieval sessions but use different auth
+    paths. Keeping the stamp here prevents MCP from silently missing the database policy.
+    """
+    if _settings.native_rls_enabled:
+        from app.security.native_rls import apply_rls_gucs
+        await apply_rls_gucs(db, identity)
+
+
 async def get_current_identity(
     token: str | None = Depends(_oauth2),
     db: AsyncSession = Depends(get_db),
@@ -60,12 +71,8 @@ async def get_current_identity(
     if emp is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
     identity = await _employee_to_identity(emp)
-    # P0.6: when the native RLS backstop is armed, stamp this request's transaction with the
-    # per-identity GUCs the 0017 policies filter on. No-op by default (layer #1 WHERE clauses
-    # remain the enforced path); this is defense-in-depth once an operator arms native RLS.
-    if _settings.native_rls_enabled:
-        from app.security.native_rls import apply_rls_gucs
-        await apply_rls_gucs(db, identity)
+    # P0.6: no-op by default; independent SQL backstop after operator cutover.
+    await _stamp_native_rls_context(db, identity)
     return identity
 
 
@@ -93,4 +100,8 @@ async def resolve_mcp_identity(token: str, db: AsyncSession) -> Identity | None:
     """Resolve an MCP bearer token (plaintext) to an Identity via its stored hash."""
     digest = hash_token(token)
     emp = (await db.execute(select(Employee).where(Employee.mcp_token_hash == digest))).scalar_one_or_none()
-    return await _employee_to_identity(emp) if emp else None
+    if emp is None:
+        return None
+    identity = await _employee_to_identity(emp)
+    await _stamp_native_rls_context(db, identity)
+    return identity

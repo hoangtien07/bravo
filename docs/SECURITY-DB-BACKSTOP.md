@@ -49,6 +49,21 @@ so it is a deliberate operator step, not a default.
 6. Rollback if needed: `ALTER TABLE chunks NO FORCE / DISABLE ROW LEVEL SECURITY;` and
    `NATIVE_RLS_ENABLED=false`; repoint `DATABASE_URL` to the owner.
 
+## Cutover preflight
+
+Run this command with the **non-owner runtime** `DATABASE_URL` after enabling the policy and
+before admitting traffic. It reads PostgreSQL catalogs only and exits non-zero if the runtime is a
+superuser, has `BYPASSRLS`, owns `chunks`, lacks `FORCE ROW LEVEL SECURITY`, lacks the policy, or
+has not enabled the application GUC stamping:
+
+```bash
+NATIVE_RLS_ENABLED=true python scripts/verify_native_rls_cutover.py
+```
+
+The ingestion worker needs a separately reviewed write role before native RLS is armed: migration
+0017 supplies a `SELECT` policy for `chunks`, not a blanket writer bypass. Do not reuse the
+owner/migrator role for API, MCP, or worker processes.
+
 ## Follow-up (not in 0017)
 
 Extend the backstop to `sources` (join table `source_departments`), `conversations`

@@ -6,6 +6,7 @@ Không dựng full MCP handshake (cần client protocol); test lõi: _token_from
 from __future__ import annotations
 
 import asyncio
+import uuid
 
 import pytest
 
@@ -80,6 +81,42 @@ async def test_kb_search_rejects_bad_token(monkeypatch):
         assert "không hợp lệ" in out or "thu hồi" in out
     finally:
         await engine.dispose()
+
+
+@pytest.mark.asyncio
+async def test_mcp_identity_stamps_native_rls_context_when_armed(monkeypatch):
+    """MCP must not be the authenticated read path missing native-RLS GUCs."""
+    from app.security import auth
+    from app.security.rls import Identity
+
+    identity = Identity(
+        employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
+        permissions=frozenset({"doc:read:own_dept"}),
+    )
+
+    class _Result:
+        def scalar_one_or_none(self):
+            return object()
+
+    class _Db:
+        async def execute(self, _statement):
+            return _Result()
+
+    stamped: list[Identity] = []
+
+    async def _identity(_employee):
+        return identity
+
+    async def _stamp(_db, actual_identity):
+        stamped.append(actual_identity)
+
+    monkeypatch.setattr(auth, "_employee_to_identity", _identity)
+    monkeypatch.setattr(auth, "_stamp_native_rls_context", _stamp)
+
+    actual = await auth.resolve_mcp_identity("test-token", _Db())
+
+    assert actual == identity
+    assert stamped == [identity]
 
 
 def test_app_mounts_mcp():
