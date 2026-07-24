@@ -109,6 +109,27 @@ def static_compose_projection(root: Path, compose_files: list[str]) -> dict[str,
     return {"compose_files": files, "services": dict(sorted(services.items()))}
 
 
+def production_network_failures(projection: dict[str, Any]) -> list[str]:
+    """Check the declared production topology without rendering any secret interpolation."""
+    failures: list[str] = []
+    services = projection["services"]
+    expected_caddy_ports = {"80:80", "443:443"}
+    if "caddy" not in services:
+        failures.append("production topology has no caddy ingress service")
+    for name, service in services.items():
+        ports = set(service["ports"])
+        if name == "caddy":
+            missing = expected_caddy_ports - ports
+            extra = ports - expected_caddy_ports
+            if missing:
+                failures.append(f"caddy is missing approved ingress port(s): {sorted(missing)}")
+            if extra:
+                failures.append(f"caddy has unapproved published port(s): {sorted(extra)}")
+        elif ports:
+            failures.append(f"{name} publishes unapproved host port(s): {sorted(ports)}")
+    return failures
+
+
 def _python_snapshot_hash() -> str:
     output = subprocess.check_output([sys.executable, "-m", "pip", "freeze"], text=True)
     return _sha256_bytes(output.encode("utf-8"))
@@ -140,6 +161,8 @@ def build_manifest(
     compose_files = compose_files or list(DEFAULT_COMPOSE_FILES)
     corpus_path = root / corpus_manifest
     corpus = yaml.safe_load(corpus_path.read_text(encoding="utf-8")) or {}
+    projection = static_compose_projection(root, compose_files)
+    static_failures = production_network_failures(projection)
     return {
         "schema_version": "bravo-v2-runtime-baseline/v1",
         "generated_at": datetime.now(UTC).isoformat(),
@@ -166,7 +189,11 @@ def build_manifest(
             "version": corpus.get("version"),
             "system_version": corpus.get("system_version"),
         },
-        "static_compose_projection": static_compose_projection(root, compose_files),
+        "static_compose_projection": projection,
+        "static_network_preflight": {
+            "status": "passed" if not static_failures else "failed",
+            "failures": static_failures,
+        },
         "runtime_proof": {
             "status": "not_collected",
             "reason": "Requires an operator-run, redacted effective-Compose projection and live probes.",
@@ -181,6 +208,8 @@ def main() -> int:
                         help="Named source baseline; no secret or environment data is accepted.")
     parser.add_argument("--compose-file", action="append", dest="compose_files",
                         help="Static Compose input; repeat to include an explicit topology overlay.")
+    parser.add_argument("--require-production-network", action="store_true",
+                        help="Exit non-zero unless the static topology exposes only Caddy 80/443.")
     parser.add_argument("--out", required=True, help="Output JSON path")
     args = parser.parse_args()
 
@@ -189,7 +218,7 @@ def main() -> int:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return 0
+    return 0 if not args.require_production_network or manifest["static_network_preflight"]["status"] == "passed" else 1
 
 
 if __name__ == "__main__":

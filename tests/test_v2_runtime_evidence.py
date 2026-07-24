@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.v2_runtime_evidence import build_manifest, static_compose_projection
+from scripts.v2_runtime_evidence import (
+    build_manifest,
+    production_network_failures,
+    static_compose_projection,
+)
 
 
 def _write(path: Path, content: str) -> None:
@@ -44,3 +48,16 @@ def test_manifest_declares_static_not_runtime_proof(tmp_path, monkeypatch):
     assert manifest["git"]["conversation_code_baseline"] == "code-baseline"
     assert manifest["runtime_proof"]["status"] == "not_collected"
     assert manifest["secret_handling"]["reads_env_files"] is False
+
+
+def test_network_preflight_rejects_keycloak_dev_overlay():
+    projection = {
+        "services": {
+            "caddy": {"ports": ["80:80", "443:443"]},
+            "keycloak": {"ports": ["8080:8080"]},
+        }
+    }
+
+    failures = production_network_failures(projection)
+
+    assert failures == ["keycloak publishes unapproved host port(s): ['8080:8080']"]

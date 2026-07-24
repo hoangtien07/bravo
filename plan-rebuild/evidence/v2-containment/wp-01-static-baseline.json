@@ -1,6 +1,6 @@
 {
   "schema_version": "bravo-v2-runtime-baseline/v1",
-  "generated_at": "2026-07-24T06:15:53.674869+00:00",
+  "generated_at": "2026-07-24T06:19:39.376027+00:00",
   "secret_handling": {
     "reads_env_files": false,
     "renders_interpolated_compose": false,
@@ -8,7 +8,7 @@
     "records_credentials": false
   },
   "git": {
-    "head": "1f230cf817435b912c36e228dfaccd6658a9cc11",
+    "head": "3bc88a940bffce74907455ef05a0fbf6268c8510",
     "branch": "codex/v2-financial-close-core",
     "conversation_code_baseline": "9cc4c91a45a56476428b2e7cddacccea9e0f355d"
   },
@@ -20,7 +20,7 @@
     "frontend-react/package-lock.json": "b06ea86f13e3903d1262f21c1a9150fc643efb3efd747dc633e2ad361ac53030",
     "python_lockfile": "uv.lock:65ed1c4f5032ed0445f369f517458e50ef86ce7285f65f797e86d35fe6206bc4",
     "python_executable": "3.12.13",
-    "python_package_snapshot_sha256": "b3dc37ea36531daf688df39e1f9191a2e937d70208647c1aa64044bdca480b15"
+    "python_package_snapshot_sha256": "72cdecae6ac69330bca43175070d71d7eb66d4e455b5503190af2a41d023f868"
   },
   "corpus_manifest": {
     "path": "file_system/bravo_corpus_manifest.yaml",
@@ -98,6 +98,10 @@
         "has_build": true
       }
     }
+  },
+  "static_network_preflight": {
+    "status": "passed",
+    "failures": []
   },
   "runtime_proof": {
     "status": "not_collected",
