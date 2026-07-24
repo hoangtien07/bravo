@@ -12,7 +12,7 @@ COPY frontend-react/ ./
 RUN npm run build      # -> /fe/dist (base=/static/)
 
 # --- Python runtime --------------------------------------------------------------------
-FROM python:3.11-slim AS base
+FROM python:3.11-slim AS app-base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -34,6 +34,14 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY scripts ./scripts
+
+# Test image is deliberately separate from the runtime image: it carries development
+# dependencies and the test suite, but does not pay the cost of the frontend build.
+FROM app-base AS test
+RUN pip install -e ".[dev]"
+COPY tests ./tests
+
+FROM app-base AS base
 # React SPA đã build (frontend-react/dist)
 COPY --from=frontend-build /fe/dist ./frontend-react/dist
 

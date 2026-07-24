@@ -95,6 +95,24 @@ pytest -q
 python -m app.eval.run --passk --mock --k=8 # eval HARD-FAIL gate (deterministic)
 cd frontend-react && npm run build          # tsc + vite (typecheck FE)
 ```
+
+### Docker-only PostgreSQL integration tests
+
+Use this path when the host environment should not publish PostgreSQL or rewrite its
+`DATABASE_URL`. The test container shares PostgreSQL's network namespace, so legacy DB probes
+and the application engine exercise the same local database without exposing a host port.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.test.yml up -d postgres
+docker compose -f docker-compose.yml -f docker-compose.test.yml build test
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps test alembic upgrade head
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps test python -m scripts.seed_demo
+docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps test python -m pytest -q -rs
+```
+
+The `test` target includes development dependencies only; the production `api` and `worker`
+images remain unchanged.
+
 > ⚠️ Nếu KHÔNG export `DATABASE_URL=...localhost...`, 7 test DB-integration sẽ **FAIL** (không phải skip):
 > probe `_db_available()` dò `localhost` (docker map port → thấy mở) nhưng engine đọc `get_settings().database_url`
 > = host `postgres` từ `.env` → lỗi name-resolution. Đây là ranh giới dev-env, không phải bug code.

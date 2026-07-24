@@ -56,7 +56,7 @@ def test_run_persist_pause_and_complete_on_approval():
             maker = (await db.execute(select(Employee.id).where(
                 Employee.email == "ketoan@bravo.vn"))).scalar_one()
             approver = (await db.execute(select(Employee.id).where(
-                Employee.email == "admin@bravo.vn"))).scalar_one()
+                Employee.email == "giamdoc@bravo.vn"))).scalar_one()
             try:
                 # 1) persist run (running) -> 2) paused_for_approval
                 await runs.start_run(db, run_id=run_id, session_id=uuid.uuid4(), employee_id=maker)

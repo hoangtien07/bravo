@@ -82,7 +82,15 @@ def _factory():
 
 
 async def _seed_source(db, *, visibility, owner_id=None, dept_ids=(), tag):
-    from app.database.models import Chunk, Source, SourceDepartment
+    from app.database.models import Chunk, Employee, Source, SourceDepartment
+    if owner_id is not None and await db.get(Employee, owner_id) is None:
+        db.add(Employee(
+            id=owner_id,
+            email=f"rls-personal-{owner_id.hex}@test.invalid",
+            full_name="RLS personal test owner",
+            password_hash="not-a-login-secret",
+        ))
+        await db.flush()
     src = Source(filename=f"{tag}.txt", knowledge_type="guide", status="ready",
                  visibility=visibility, owner_id=owner_id)
     db.add(src)
@@ -146,6 +154,9 @@ def test_personal_chunk_not_visible_to_same_department_peer():
                     Chunk.content.like("pers-%") | Chunk.content.like("glob-%")))
                 await db.execute(__import__("sqlalchemy").delete(Source).where(
                     Source.filename.like("pers-%") | Source.filename.like("glob-%")))
+                from app.database.models import Employee
+                await db.execute(__import__("sqlalchemy").delete(Employee).where(
+                    Employee.email.like("rls-personal-%")))
                 await db.commit()
             await eng.dispose()
 
@@ -177,6 +188,9 @@ def test_permissionless_user_still_reads_own_personal_files():
                 from app.database.models import Source
                 await db.execute(__import__("sqlalchemy").delete(Source).where(
                     Source.filename.like("pers-%")))
+                from app.database.models import Employee
+                await db.execute(__import__("sqlalchemy").delete(Employee).where(
+                    Employee.email.like("rls-personal-%")))
                 await db.commit()
             await eng.dispose()
 

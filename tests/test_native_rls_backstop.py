@@ -18,23 +18,10 @@ from sqlalchemy import text
 
 from app.security.native_rls import apply_rls_gucs
 from app.security.rls import Identity
+from tests.db_support import db_available
 
 
-def _db_available() -> bool:
-    import asyncpg
-
-    async def _check():
-        try:
-            conn = await asyncpg.connect("postgresql://bravo:bravo@localhost:5432/bravo")
-            await conn.close()
-            return True
-        except Exception:
-            return False
-
-    return asyncio.run(_check())
-
-
-pytestmark = pytest.mark.skipif(not _db_available(), reason="Postgres not reachable")
+pytestmark = pytest.mark.skipif(not db_available(), reason="Postgres not reachable")
 
 
 def _engine():

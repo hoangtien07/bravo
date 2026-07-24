@@ -54,7 +54,7 @@ def test_approve_and_reject_do_not_bypass_department_scope():
         try:
             async with factory() as db:
                 maker, reviewer = (await db.execute(select(Employee.id).where(
-                    Employee.email.in_(["ketoan@bravo.vn", "admin@bravo.vn"])
+                    Employee.email.in_(["ketoan@bravo.vn", "giamdoc@bravo.vn"])
                 ))).scalars().all()
                 dept_a, dept_b = uuid.uuid4(), uuid.uuid4()
                 maker_identity = Identity(

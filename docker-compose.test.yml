@@ -1,0 +1,24 @@
+services:
+  test:
+    # Legacy integration probes use localhost. Sharing the PostgreSQL network namespace
+    # keeps them honest without publishing a host port or changing production Compose.
+    network_mode: "service:postgres"
+    build:
+      context: .
+      target: test
+    env_file: .env
+    environment:
+      ENV: local
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-bravo}:${POSTGRES_PASSWORD:-bravo}@localhost:5432/${POSTGRES_DB:-bravo}
+      EMBEDDING_PROVIDER: local
+      APP_ROOT: /app
+      DATA_ROOT: /app/data
+      CORPUS_ROOT: /app/file_system
+      UPLOAD_ROOT: /app/data/uploads
+      PRIVATE_DATA_ROOT: /app/data/private
+      DATA_RUNTIME_POLICY: /app/file_system/bravo_data_runtime_policy.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./file_system:/app/file_system:ro
