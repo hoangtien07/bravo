@@ -19,6 +19,18 @@ package, run the 24-trajectory blind evaluation, or passed the production/platfo
 Engineering Workbench and frontend prototype tracks remain independent and are not evidence that
 conversation quality has improved.
 
+## Phase-demo topology decision
+
+For the current conversation-quality demo, Keycloak/OIDC is explicitly out of scope. The effective
+demo and production-like topology must not include `deploy/docker-compose.keycloak.yml`, a
+Keycloak container, or an OIDC ingress. The existing trusted application identity/RLS shell remains
+in place for the demo; full SSO/OIDC productization is deferred until conversation quality has
+passed the frozen benchmark gates.
+
+This scope reduction does not relax authorization, tenant isolation, draft/approval, audit,
+offline-path, credential, or network-ingress invariants. The Keycloak overlay remains reference
+material only and must not be combined with the phase-demo topology.
+
 ## Verified baseline
 
 | Item | Verified state | Evidence / limit |
@@ -51,8 +63,9 @@ not proof of a clean dependency posture.
 
 No production, security, or quality claim may be made until the following evidence exists:
 
-1. Rotate the previously exposed provider credential; verify effective production Compose exposes
-   only approved ingress, uses non-default database/Keycloak credentials, and authenticates Redis.
+1. Rotate the previously exposed provider credential; verify effective phase-demo Compose exposes
+   only approved ingress, has no Keycloak/OIDC service or ingress, uses non-default database
+   credentials, and authenticates Redis.
 2. Provision separate non-owner runtime roles, arm native RLS deliberately, and pass negative
    HTTP, MCP and worker probes with a real PostgreSQL environment. Extend native policy coverage
    beyond `chunks` before relying on it as a database backstop.

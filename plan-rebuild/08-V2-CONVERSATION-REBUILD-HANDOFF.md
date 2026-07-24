@@ -35,6 +35,17 @@ V2 therefore starts from a product-quality failure statement: **the current conv
 not the implementation to keep extending**. Existing auth, RLS, evidence, audit, approval, draft,
 artifact, and deployment services may be retained only behind explicit ports after verification.
 
+### Phase-demo topology decision (2026-07-24)
+
+Keycloak/OIDC is excluded from the conversation-quality demo and its production-like Compose
+topology. Do not combine `deploy/docker-compose.keycloak.yml` with this phase's deployment and do
+not publish an OIDC/Keycloak ingress. The existing application identity and RLS shell is sufficient
+for the bounded demo; complete SSO/OIDC productization is deferred until the conversation-quality
+gate passes.
+
+This decision reduces demo scope only. It does not weaken authorization, database isolation,
+draft/approval, audit, offline/egress, credential, or network-ingress gates.
+
 ## 2. Product target and non-negotiable boundaries
 
 V2 is a clean conversation core inside the existing trusted platform shell. It must be visibly
@@ -62,8 +73,9 @@ extension before the headless core works.
 
 - Revoke and rotate the provider credential exposed through local Compose rendering; never copy
   its value into this repository or another conversation.
-- Fix effective production Compose so only 80/443 are published. Remove default Postgres/Keycloak
-  credentials, authenticate Redis, and keep observability/admin ports internal.
+- Fix effective phase-demo Compose so only 80/443 are published. Exclude the Keycloak/OIDC
+  overlay, remove default Postgres credentials, authenticate Redis, and keep
+  observability/admin ports internal.
 - Add Conversation owner authorization to the legacy `/api/agent/ask` path before any memory read,
   state mutation, or model call.
 - Do not use real/private customer data with the current cloud-only configuration without explicit
