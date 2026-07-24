@@ -1,85 +1,90 @@
 # BRAVO AI Copilot — current project state
 
-Status: `IN_PROGRESS — documentation cleanup verified; architecture review preparation`  
+Status: `IN_PROGRESS — containment implementation verified; R1 baseline freeze and Core V2 slice remain open`
 Owner: project owner  
-As of: 2026-07-16  
-Verified against Git: branch `research-14-7`, HEAD `50fa877`, dirty worktree
+As of: 2026-07-24
+Verified against Git: branch `codex/v2-financial-close-core`, commit `9cc4c91a45a56476428b2e7cddacccea9e0f355d`, clean worktree before this documentation update
 
 ## Executive state
 
-The repository contains an existing BRAVO platform plus uncommitted Consultant Intelligence
-work. The current direction is **not** a full platform rewrite and is **not** approval to keep
-patching the legacy loop indefinitely.
+BRAVO retains its existing platform shell (identity, application RLS, retrieval, tools, draft
+approval, audit, checkpoints and deployment). The current direction remains a **framework-
+independent Conversation Core V2** behind that shell, beginning with the Financial Close Advisor.
+It is not approval to keep broad-patching the legacy agent loop, nor to rewrite the entire
+platform.
 
-Two independently evaluated strangler tracks are proposed:
+The project has completed and tested a code-level P0 containment increment since the previous
+snapshot. It has **not** yet frozen a real A/B answer baseline, built the clean Core V2 domain
+package, run the 24-trajectory blind evaluation, or passed the production/platform gates. The
+Engineering Workbench and frontend prototype tracks remain independent and are not evidence that
+conversation quality has improved.
 
-1. **Conversation Intelligence Core v2** — improve outcome understanding, prerequisite reasoning,
-   evidence planning, synthesis, and multi-turn correction; benchmark separately against BravoGen.
-2. **Engineering Workbench** — process technical requirements into canonical cases, isolated
-   diffs, validators, build/test evidence, and developer handover.
+## Verified baseline
 
-The tracks may share BRAVO identity/RLS, environment, evidence, artifacts, approval, and trace
-services. A passing engineering artifact does not prove conversational quality, and a helpful
-answer does not prove a technical change is correct.
-
-## Evidence-backed milestones
-
-| Item | Current state | Evidence strength |
+| Item | Verified state | Evidence / limit |
 |---|---|---|
-| Markdown documentation cleanup | Verified complete for the 2026-07-16 pass | Generated inventory: 0 broken relative links, 0 exact duplicates; owner-approved archive batch executed |
-| BravoGen R0 black-box collection | Research complete | Strong for observed behavior; no claim about hidden implementation |
-| Current platform services | Existing code for API, RLS, retrieval, tools, drafts, approval, audit, and checkpoints | Code exists; this cleanup did not re-run full tests |
-| Consultant Intelligence additions | Large uncommitted implementation/eval slice exists | Implementation snapshot; production quality and TMS gates remain open |
-| Conversation Core v2 | Proposed design; clean matched-model benchmark not executed | Decision pending |
-| Engineering Workbench | Proposed contract; headless runner/IDE adapter not implemented | Decision pending |
-| Production rollout | Not approved | SME, data, canary, SLO, and ownership gates remain open |
+| Git baseline | Clean at `9cc4c91` before this documentation pass | Current branch is `codex/v2-financial-close-core`; this pass changes documentation only |
+| Alembic | `0017_native_rls_backstop` is the single head | `python -m alembic heads` |
+| Python test suite | 404 passed, 41 skipped | `python -m pytest -q -p no:cacheprovider`, 2026-07-24; skipped tests are not a DB/production pass |
+| Focused containment/evaluation tests | 17 passed, 5 skipped | Owner authorization, answer-guard parity, CAS state, native-RLS, replay/C0/SME/release-gate contracts |
+| Markdown documentation | 254 tracked Markdown files, 0 broken relative-link occurrences | `docs/documentation/MARKDOWN-INVENTORY.md`; two intentional import duplicates remain review signals |
+| Static lint | Not green repository-wide | `ruff check app tests scripts` reports 10 pre-existing test-file findings; no code was changed in this documentation pass |
 
-## Verification limitations at this snapshot
+The suite emitted two dependency/deprecation warnings (Starlette HTTP 422 alias and
+`langchain-community` through RAGAS). They do not fail the suite, but they are maintenance work,
+not proof of a clean dependency posture.
 
-- The worktree contains modified and untracked source, migrations, tests, documentation, and
-  `plan-rebuild/`; a clean baseline has not been committed.
-- Docker Desktop/daemon was unavailable during the 2026-07-16 documentation audit.
-- The host Python installation has no `pytest` package; Consultant tests were not re-run during
-  this cleanup.
-- Claims in historical implementation/review documents are evidence snapshots, not automatically
-  revalidated current facts.
+## Evidence-backed progress
 
-## Current decisions and contracts
+| Work item | Current state | What it does **not** prove |
+|---|---|---|
+| Legacy `/api/agent/ask` owner authorization and rate limiting | Implemented and covered by focused tests | Two-user/two-department production probes across HTTP, MCP and worker |
+| One final-answer safety/grounding guard for sync and SSE | Implemented and parity-tested | Grounded usefulness or SME quality |
+| Consultant state CAS and corrupt-state recovery | Implemented and unit-tested | Correctness under a real concurrent PostgreSQL workload |
+| Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
+| Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
+| A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
+| Conversation Core V2 / Financial Close Advisor | Not started as a clean domain package | The existing Consultant workflow cards and frontend Financial Close prototype are not Core V2 |
+| BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
-- Current rebuild boundary and repository council: `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
-- Engineering pipeline contract: `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md`.
-- Two-track execution sequence: `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md`.
-- Conversation architecture and BravoGen benchmark: `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
-- OSS runtime prototype choice: `plan-rebuild/03-OSS-CORE-DECISION-PYDANTIC-LANGGRAPH-ZENML-KITARU.md`.
+## Gates still open
 
-These documents are proposed decision inputs. Accepted ADRs remain authoritative for existing
-platform invariants until explicitly superseded.
+No production, security, or quality claim may be made until the following evidence exists:
 
-## Invariants retained during the decision
+1. Rotate the previously exposed provider credential; verify effective production Compose exposes
+   only approved ingress, uses non-default database/Keycloak credentials, and authenticates Redis.
+2. Provision separate non-owner runtime roles, arm native RLS deliberately, and pass negative
+   HTTP, MCP and worker probes with a real PostgreSQL environment. Extend native policy coverage
+   beyond `chunks` before relying on it as a database backstop.
+3. Run clean `0012 -> head` migration, downgrade/upgrade and all security-critical DB integration
+   checks without skips; perform an isolated backup/restore drill including private operational
+   data.
+4. Freeze System A and B answers, traces, model/version, prompts and `EvidenceBundle` before
+   changing routing, retrieval, prompts or synthesis. The repository currently contains tooling,
+   not a frozen answer artifact.
+5. Author and validate the Financial Close evidence pack and benchmark contracts; obtain the
+   required reviewer calibration and blind SME evidence before judging Core V2.
+6. Independently run frontend typecheck/test/build and the controlled offline/egress smoke before
+   making frontend or on-prem readiness claims.
 
-- RLS/authorization remains outside the model/runtime framework.
-- Exact financial calculations remain deterministic.
-- Writes remain draft/approval gated; no generated SQL/config is executed automatically.
-- BravoGen is a behavioral comparator, not an oracle or knowledge-promotion source.
-- One online orchestration owner and one business-state owner are preferred until evidence
-  justifies additional infrastructure.
+## Next authorized implementation sequence
 
-## Immediate sequence
+1. Use the current clean commit as the named code baseline and record the redacted environment,
+   lockfile hashes and effective Compose evidence in a controlled run artifact.
+2. Complete the operational containment proofs above. If the required runtime roles, maintenance
+   window, credentials or backup target are unavailable, record the gate as blocked rather than
+   simulating a pass.
+3. Freeze the matched System A/B Financial Close anchors with no further prompt, routing,
+   retrieval or synthesis edits.
+4. Only then create the framework-independent Core V2 contracts and the single Financial Close
+   vertical slice behind narrow ports.
 
-1. Review the dirty codebase using `AI-REVIEW-MANIFEST.md` and the two-track contracts before
-   changing more features.
-2. Establish an immutable A/B conversational baseline and evidence fixtures.
-3. Run the contract-to-code feasibility spike before an IDE extension or repository migration.
+## Source of truth and precedence
 
-## Not current truth by default
-
-The following are retained as evidence/reference and must not override this file without fresh
-verification:
-
-- `docs/research/**`, `docs/reviews/**`, and `docs/work-packages/**`;
-- `docs/research/frontier-conversation-architecture-v2/**`;
-- `plan-rebuild/bravogen-p0/**` raw/derived research;
-- legacy top-level plans and dated council reviews;
-- corpus/data Markdown under `file_system/**`;
-- Deep Research prompt/upload derivatives;
-- `docs/archive/**` and `plan-rebuild/archive/**`.
+1. Reproducible code, tests, migrations and runtime evidence override prose claims.
+2. This file owns the current snapshot; `docs/AI-REVIEW-MANIFEST.md` owns the bounded review set.
+3. Accepted ADRs own existing platform invariants; the `plan-rebuild/04–08` documents own the V2
+   decision design and gates.
+4. `docs/research/**`, `docs/reviews/**`, `docs/work-packages/**`, `plan-rebuild/bravogen-p0/**`,
+   `file_system/**` Markdown, and archive directories are retained evidence/reference only. Do
+   not treat them as current progress without fresh verification.

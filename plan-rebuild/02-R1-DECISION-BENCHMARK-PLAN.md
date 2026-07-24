@@ -1,10 +1,11 @@
 # Phase R1 — Decision benchmark and root-cause isolation
 
-Status: `PREPARATION — execute after documentation cleanup, baseline freeze, and fixture/SME gate`
+Status: `PREPARATION — documentation baseline verified; execute after operational containment proof, baseline freeze, and fixture/SME gate`
 
-The earlier `READY TO EXECUTE` marker is superseded. The worktree now contains uncommitted
-Consultant changes and the benchmark has been split from the Engineering Workbench gate; capture
-an immutable A/B baseline before implementing Conversation Core v2.
+The earlier `READY TO EXECUTE` marker is superseded. As of 2026-07-24, the intended containment
+increment is committed on a clean baseline, but its runtime/production proofs and the immutable
+A/B answer capture remain open. The benchmark is separate from the Engineering Workbench gate;
+capture an immutable A/B baseline before implementing Conversation Core v2.
 
 ## 1. Objective
 

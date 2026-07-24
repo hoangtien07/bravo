@@ -1,6 +1,6 @@
 # BRAVO V2 Conversation Rebuild — handoff plan
 
-Status: `USER DIRECTION — rebuild V2; implementation not started`  
+Status: `ACTIVE — P0 containment implementation verified; baseline freeze and Core V2 vertical slice not started`
 Decision date: 2026-07-16  
 Primary objective: produce conversations that are materially more useful, trustworthy, and
 outcome-oriented than the current BRAVO implementation—not a cosmetic prompt/UI revision.
@@ -13,14 +13,23 @@ and a critic, yet the final answer is still largely produced by the legacy free-
 tests prove many structural contracts; they do not prove that users complete BRAVO work better or
 that the answers outperform BravoGen on a controlled benchmark.
 
-Verified snapshot at this decision:
+Verified continuation snapshot (2026-07-24):
 
-- backend suite: 372 passed, 35 skipped; most DB integration coverage was skipped because
-  PostgreSQL was unavailable;
-- frontend tests/typecheck were not runnable because workspace dependencies were absent;
-- the worktree contains a large uncommitted Consultant/migration/frontend/documentation slice;
-- the matched-model A/B/C/D conversation benchmark has not been executed;
-- Conversation Core v2 and Engineering Workbench are still proposed designs, not implementations.
+- clean code baseline: `9cc4c91a45a56476428b2e7cddacccea9e0f355d` on
+  `codex/v2-financial-close-core`; Alembic head: `0017_native_rls_backstop`;
+- Python suite: 404 passed, 41 skipped; the focused P0 containment/evaluation contracts: 17
+  passed, 5 skipped. These are code-level checks and do not replace real PostgreSQL/operator
+  proofs;
+- P0 owner authorization, answer-guard parity, state CAS/recovery, worker/credential checks and
+  a ready-to-arm native-RLS backstop are implemented. Native RLS is still OFF and only covers the
+  `chunks` read surface;
+- A/B replay, C0 comparison and blind-SME/release-gate tooling exist, but no immutable matched
+  A/B answer/trace artifact or full A/B/C/D evaluation has been captured;
+- the clean framework-independent Conversation Core V2 package and Financial Close Advisor
+  vertical slice have not been implemented. Existing Consultant cards and UI prototypes are not
+  substitutes;
+- frontend test/typecheck/build, effective production Compose, credential rotation, isolated
+  restore and offline/egress proofs remain unverified.
 
 V2 therefore starts from a product-quality failure statement: **the current conversation path is
 not the implementation to keep extending**. Existing auth, RLS, evidence, audit, approval, draft,
@@ -79,13 +88,13 @@ tests and runtime evidence.
 
 ### Phase A — freeze an auditable baseline
 
-1. Inventory the dirty worktree and create a named baseline from the intended Consultant source,
-   migrations, tests, and documentation; exclude secrets, raw customer data, and generated noise.
-2. Record commit, dependency locks, Alembic head, redacted config, corpus manifest version, and
-   effective Compose output.
-3. Run `0012 -> head` migration tests on a clean database, downgrade/upgrade verification, all
-   security-critical DB integration tests without skip, and frontend test/typecheck/build.
-4. Freeze legacy System A and current Consultant System B outputs before changing prompts,
+1. **Complete:** named code baseline is clean at `9cc4c91`; do not add prompt/routing/retrieval or
+   synthesis changes before answer capture.
+2. **Open:** record dependency-lock hashes, redacted config, corpus manifest version and effective
+   Compose output in a controlled evidence artifact. Never render or copy secret values.
+3. **Open:** run `0012 -> head` migration tests on a clean database, downgrade/upgrade verification,
+   all security-critical DB integration tests without skip, and frontend test/typecheck/build.
+4. **Open:** freeze legacy System A and current Consultant System B outputs before changing prompts,
    retrieval, routing, or synthesis.
 
 ### Phase B — build the clean Conversation Core v2
@@ -168,6 +177,6 @@ Read in this order:
 5. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
    `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only for shared contracts and gates.
 
-The next conversation should begin with containment and baseline verification, not prompt tuning or
-feature implementation. It must preserve unrelated user changes in the dirty worktree and must not
-repeat or display any local secret.
+The next conversation should begin with the open operational containment proofs and immutable A/B
+baseline capture, not prompt tuning or feature implementation. It must preserve unrelated user
+changes and must not repeat or display any local secret.

@@ -1,7 +1,7 @@
 # AI review manifest
 
 Status: `ACTIVE — review entrypoint`  
-Last verified: 2026-07-16
+Last verified: 2026-07-24
 
 ## Purpose
 
@@ -12,25 +12,30 @@ research, raw conversations, or obsolete progress as current truth.
 
 ### Tier 0 — always read
 
-1. `docs/PROJECT-STATE.md` — current state, verification limits, and precedence.
+1. `docs/PROJECT-STATE.md` — current verified state, gates, and precedence.
 2. `CLAUDE.md` — existing product/security invariants (applies as project context even when the
    reviewing tool is not Claude).
 3. `README.md` — current repository surface and local run orientation.
 
 ### Tier 1 — architecture decision review
 
-4. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
-5. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
-6. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md`.
-7. `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md`.
-8. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
+4. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md` — current execution boundary.
+5. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
+6. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
+7. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
+8. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
+   `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only when the independent track or
+   shared contract is in scope.
 
 ### Tier 2 — open only for a specific claim
 
 - `docs/adr/README.md` and the relevant accepted ADR;
 - `docs/ARCHITECTURE.md` for the legacy/current platform shape, checking its stale-status warning;
 - `docs/SECURITY-RLS.md`, `docs/SECURITY-AGENT-DB-ROLE.md`, and `docs/TOOL-INVENTORY.md`;
-- `docs/CONSULTANT-INTELLIGENCE-IMPLEMENTATION.md` for the uncommitted implementation snapshot;
+- `docs/CONSULTANT-INTELLIGENCE-IMPLEMENTATION.md` for the legacy/Consultant implementation
+  snapshot; it is not evidence that the clean Core V2 is built;
+- `docs/SECURITY-DB-BACKSTOP.md` and `docs/RLS-RECOVERY-PREFLIGHT.md` for native-RLS and recovery
+  operator actions;
 - code, migrations, tests, configuration, and generated runtime evidence.
 
 ## Excluded from default context
@@ -56,7 +61,7 @@ the canonical document; do not recursively load an evidence tree.
 1. Reproducible code/test/runtime evidence overrides prose implementation claims.
 2. `PROJECT-STATE.md` owns the current snapshot.
 3. Accepted ADRs own existing architectural invariants.
-4. `plan-rebuild/04–07` own the current proposed two-track decision design.
+4. `plan-rebuild/04–08` own the current proposed two-track decision design and execution gates.
 5. Historical research and council reports do not become current merely because they are detailed.
 6. A structural/synthetic green test does not prove conversational task quality.
 
@@ -70,7 +75,8 @@ The next project review should answer:
 3. Can Conversation Core v2 be isolated without duplicating auth, state, retrieval, or approval?
 4. Can the Engineering Workbench run headlessly and fail closed before any IDE/browser adapter?
 5. Which existing tests prove the required behavior, and which only prove structure?
-6. What must be fixed before freezing the matched A/B baseline?
+6. Which containment gates are code-tested only, and which have real runtime evidence?
+7. What must be fixed before freezing the matched A/B baseline?
 
 ## Required review output
 
