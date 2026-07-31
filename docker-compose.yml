@@ -30,7 +30,9 @@ services:
   api:
     build: .
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    env_file: .env
+    # Normal local development uses .env. WP-00 can select an isolated, gitignored secret file
+    # via BRAVO_ENV_FILE without copying or modifying the existing deployment environment.
+    env_file: ${BRAVO_ENV_FILE:-.env}
     environment:
       APP_ROOT: /app
       DATA_ROOT: /app/data
@@ -49,7 +51,7 @@ services:
   worker:
     build: .
     command: arq app.worker.WorkerSettings
-    env_file: .env
+    env_file: ${BRAVO_ENV_FILE:-.env}
     environment:
       APP_ROOT: /app
       DATA_ROOT: /app/data

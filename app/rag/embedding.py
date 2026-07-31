@@ -28,8 +28,12 @@ def _local_model():
 def _cloud_client():
     from openai import OpenAI  # lazy
 
-    return OpenAI(base_url=_settings.cloud_embedding_base_url or None,
-                  api_key=_settings.cloud_embedding_api_key, timeout=30.0, max_retries=2)
+    # A phase-demo provider commonly exposes chat and embeddings behind one approved endpoint
+    # and credential. Dedicated embedding values still take precedence when supplied; the fallback
+    # avoids duplicating a provider secret into a second environment variable.
+    return OpenAI(base_url=_settings.cloud_embedding_base_url or _settings.cloud_base_url or None,
+                  api_key=_settings.cloud_embedding_api_key or _settings.cloud_api_key,
+                  timeout=30.0, max_retries=2)
 
 
 def embed(texts: list[str], *, sensitive: bool = False) -> list[list[float]]:

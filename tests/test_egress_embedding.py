@@ -60,6 +60,31 @@ def test_cloud_non_sensitive_audits(monkeypatch, caplog):
     assert any("embedding.egress" in r.message for r in caplog.records)
 
 
+def test_cloud_embedding_client_uses_llm_endpoint_and_key_as_fallback(monkeypatch):
+    import sys
+    import types
+
+    captured = {}
+
+    class _FakeOpenAI:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=_FakeOpenAI))
+    monkeypatch.setattr(embedding._settings, "cloud_embedding_base_url", "")
+    monkeypatch.setattr(embedding._settings, "cloud_embedding_api_key", "")
+    monkeypatch.setattr(embedding._settings, "cloud_base_url", "https://approved.example/v1")
+    monkeypatch.setattr(embedding._settings, "cloud_api_key", "test-key")
+    embedding._cloud_client.cache_clear()
+    try:
+        embedding._cloud_client()
+    finally:
+        embedding._cloud_client.cache_clear()
+
+    assert captured["base_url"] == "https://approved.example/v1"
+    assert captured["api_key"] == "test-key"
+
+
 def test_cloud_only_policy_allows_sensitive_embed_with_audit(monkeypatch, caplog):
     """ADR-0019: under cloud_only there is no local embedder, so the sensitive-raise is
     downgraded to an audit log — sensitive content embeds on cloud but leaves a trail."""
