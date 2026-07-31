@@ -1,0 +1,19 @@
+# Optional WP-00 overlay. It is deliberately separate from normal Compose so a non-owner
+# database-role cutover is an explicit operator action rather than a silent configuration change.
+#
+# Run only after the roles in runtime-roles.sql exist and the secret manager injects both DSNs:
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#   -f deploy/docker-compose.rls-cutover.yml --env-file <deployment-secret-file> up -d
+#
+# No secret belongs in this file. The API and MCP share one trusted-shell process and therefore
+# one non-owner role. The worker stays on its own role and does not arm the read policy until its
+# separately reviewed write policy exists.
+services:
+  api:
+    environment:
+      DATABASE_URL: ${BRAVO_API_DATABASE_URL:?set a non-owner API/MCP runtime DSN}
+      NATIVE_RLS_ENABLED: "true"
+  worker:
+    environment:
+      DATABASE_URL: ${BRAVO_WORKER_DATABASE_URL:?set a separate worker runtime DSN}
+      NATIVE_RLS_ENABLED: "false"

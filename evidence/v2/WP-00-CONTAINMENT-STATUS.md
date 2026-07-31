@@ -30,3 +30,11 @@ Recorded: 2026-07-31 (UTC)
 ## Gate decision
 
 WP-00 is **not passed**. Per the accepted dependency order, WP-01 through WP-10 remain closed: no prompt, routing, retrieval, synthesis, case-core, deterministic-engine, API, or UI implementation was started from this run.
+
+## 2026-07-31 remediation update
+
+- The documentation/evidence baseline was committed as `6fe51f32217babfcaeeedef51a283a453728afae`; the worktree was clean before the remediation tooling in this update.
+- Docker Desktop is reachable, but the only discovered Compose container (`postgres`) is stopped. No API, worker, or Redis runtime proof exists.
+- Production Compose correctly rejects a missing `REDIS_PASSWORD`. This remains a blocked secret-injection gate, not a configuration pass.
+- `deploy/runtime-roles.sql` and `deploy/docker-compose.rls-cutover.yml` now provide an explicit non-owner API/MCP versus worker cutover path. They contain no password and must be executed by the responsible database/secrets operator.
+- `app.eval.frozen_ab_baseline` now refuses incomplete A/B captures and binds each new synthetic baseline to fixture, replay, evidence, model/version, and prompt hashes without recording credentials.
