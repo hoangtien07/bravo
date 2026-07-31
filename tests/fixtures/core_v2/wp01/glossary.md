@@ -16,4 +16,5 @@ an assertion about a live BRAVO configuration.
 | `BANK_ONLY` / `BRAVO_ONLY` | A source row has no eligible counterpart after the ordered policy rules. |
 | `AMBIGUOUS` | More than one eligible resolution remains and the frozen policy has no deterministic tie-break. |
 | `INVALID_INPUT` | A row fails its frozen schema and is quarantined with a reason, never coerced into checking. |
+| Result difference | `BANK_ONLY` and `BRAVO_ONLY` retain signed movement; tolerance uses absolute pair difference; duplicate/ambiguous use the minimum candidate difference rather than summing mutually exclusive candidates. |
 | Critical false negative | A held-out critical case whose expected classification or must-not constraint is violated. |
