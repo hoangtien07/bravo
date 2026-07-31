@@ -1,7 +1,8 @@
 # BRAVO V2 Conversation Rebuild — handoff plan
 
-Status: `ACTIVE — P0 containment implementation verified; baseline freeze and Core V2 vertical slice not started`
+Status: `DEV PLAN ACCEPTED — runtime containment and A/B baseline freeze remain implementation gates`
 Decision date: 2026-07-16  
+Product-scope correction: 2026-07-31
 Primary objective: produce conversations that are materially more useful, trustworthy, and
 outcome-oriented than the current BRAVO implementation—not a cosmetic prompt/UI revision.
 
@@ -13,9 +14,10 @@ and a critic, yet the final answer is still largely produced by the legacy free-
 tests prove many structural contracts; they do not prove that users complete BRAVO work better or
 that the answers outperform BravoGen on a controlled benchmark.
 
-Verified continuation snapshot (2026-07-24):
+Verified continuation snapshot (product scope reviewed 2026-07-31; test evidence remains
+2026-07-24):
 
-- clean code baseline: `9cc4c91a45a56476428b2e7cddacccea9e0f355d` on
+- clean documentation baseline: `24209ab10535aba2f6facc0cc1bdc766e7eac079` on
   `codex/v2-financial-close-core`; Alembic head: `0017_native_rls_backstop`;
 - Python suite: 404 passed, 41 skipped; the focused P0 containment/evaluation contracts: 17
   passed, 5 skipped. These are code-level checks and do not replace real PostgreSQL/operator
@@ -25,9 +27,9 @@ Verified continuation snapshot (2026-07-24):
   `chunks` read surface;
 - A/B replay, C0 comparison and blind-SME/release-gate tooling exist, but no immutable matched
   A/B answer/trace artifact or full A/B/C/D evaluation has been captured;
-- the clean framework-independent Conversation Core V2 package and Financial Close Advisor
-  vertical slice have not been implemented. Existing Consultant cards and UI prototypes are not
-  substitutes;
+- the clean framework-independent Conversation Core V2 package and first Accounting Work
+  capability have not been implemented. Existing Consultant cards and Financial Close UI
+  prototypes are not substitutes or evidence of a selected product wedge;
 - frontend test/typecheck/build, effective production Compose, credential rotation, isolated
   restore and offline/egress proofs remain unverified.
 
@@ -37,19 +39,24 @@ artifact, and deployment services may be retained only behind explicit ports aft
 
 ### Phase-demo topology decision (2026-07-24)
 
-Keycloak/OIDC is excluded from the conversation-quality demo and its production-like Compose
-topology. Do not combine `deploy/docker-compose.keycloak.yml` with this phase's deployment and do
-not publish an OIDC/Keycloak ingress. The existing application identity and RLS shell is sufficient
-for the bounded demo; complete SSO/OIDC productization is deferred until the conversation-quality
-gate passes.
+Keycloak/OIDC is excluded from the synthetic single-tenant conversation-quality demo. Do not
+combine `deploy/docker-compose.keycloak.yml` with this phase's deployment and do not publish an
+OIDC/Keycloak ingress. This topology is not production-like and makes no production identity
+claim. The existing application identity and RLS shell is sufficient only for the bounded demo.
+ADR-0033 selects a customer-managed single-tenant on-prem data plane as the pilot reference
+target. A pilot/production release must still prove customer identity federation, service identity
+and resource-level authorization; this does not mandate Keycloak.
 
 This decision reduces demo scope only. It does not weaken authorization, database isolation,
 draft/approval, audit, offline/egress, credential, or network-ingress gates.
 
 ## 2. Product target and non-negotiable boundaries
 
-V2 is a clean conversation core inside the existing trusted platform shell. It must be visibly
-different in behavior:
+V2 is a clean conversation and accounting-case core inside the existing trusted platform shell.
+The product target and capability-selection gates are defined in
+`plan-rebuild/10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`. Knowledge Chat and Accounting
+Operations Hub share only justified platform components; they retain separate users, buyers,
+liability, data, support and success scorecards. V2 must be visibly different in behavior:
 
 1. Understand the user's real outcome before choosing a workflow or composing an answer.
 2. Model business/technical prerequisites explicitly; do not reduce them to prompt instructions.
@@ -115,39 +122,58 @@ Create a framework-independent domain package with these minimum contracts:
 
 - `TaskBrief`: outcome, task/profile, environment, constraints, risk, known/missing facts;
 - `PrerequisitePlan`: required business/technical nodes, alternatives, completion evidence;
-- `EvidencePlan` and `EvidenceBundle`: claims to ground, source scope, version/environment, gaps;
+- `EvidencePlan` and versioned `EvidenceSnapshot`s: claims to ground, source scope,
+  version/environment, cutoff, lineage, gaps and `supersedes`;
 - `ConversationState`: task epoch, correction/cancellation state, bounded facts, expected revision;
-- `AnswerDraft` and `CriticReport`: claims, next actions, uncertainty, unsupported/risky findings;
+- `AnswerDraft` and `CriticReport`: claims, next actions, uncertainty and unsupported/risky
+  findings. `CriticReport` is a supplemental model quality check, never an independent accounting,
+  authorization or approval control;
 - `StateDelta`: validated transition proposed for atomic persistence.
 
 The domain package must run without FastAPI, SQLAlchemy, Postgres, vector DB, browser, or a live
 LLM. Runtime, retrieval, state, tools, audit, and approval connect through narrow ports. Framework
 objects and opaque checkpoints must not become domain truth.
 
-Implement only one deep vertical slice: **Financial Close Advisor**. It must cover goal discovery,
-period/environment scope, posting/reconciliation/closing prerequisites, evidence gaps, safe report
-readiness, corrections, pause/cancel, and handoff. Other Consultant workflows remain frozen.
+ADR-0032 selects **Reconciliation & Exception Investigator** as the first deep V2 demonstrator and
+supersedes ADR-0016/0031 only for that selection. The owner subsequently selected **Bank statement
+↔ sổ tiền gửi BRAVO** as the first subtype. Before implementation, freeze its user outcome,
+scope/schema, completeness and tolerance/materiality policies, golden fixtures and SME answer key.
+ADR-0033 accepts the owner package and adds two sequential functional/bounded cases:
+**Voucher Evidence & Accounting Review** and **Period Close Readiness**. Bank Reconciliation
+remains primary/deep; the two additions must reuse the shared core and cannot duplicate BRAVO
+voucher posting or period-close engines.
+
+Financial Close remains one benchmark family and optional Periodic Accounting case template. It
+must not become the product identity merely because its benchmark data already exists. Other
+capabilities remain frozen.
 
 ### Phase C — rebuild evidence and evaluation
 
 1. Audit corpus owner, BRAVO version, approval status, and effective date per source. B8R4 material
    must not inherit B10R1-approved status by default.
-2. Assemble a Financial Close evidence pack with reviewed workflow nodes, exact-claim sources,
-   known gaps, and must-not claims.
-3. Freeze six development anchors and the 24-trajectory/66-turn manifest, then add 30–50 redacted
-   real-pattern conversations plus an SME-held-out set not visible during implementation.
+2. Preserve the reviewed Financial Close evidence pack as benchmark coverage and assemble a
+   capability-specific evidence pack for Bank Reconciliation. Add bounded, case-specific packs for
+   Voucher Review and Period Close Readiness. Each pack records exact-claim sources, source/cutoff
+   versions, known gaps and must-not claims.
+3. Freeze six development anchors and the 24-trajectory/66-turn manifest, add matched anchors for
+   the selected capability, then add 30–50 redacted real-pattern conversations plus an
+   SME-held-out set not visible during implementation.
 4. Run A/B/C/D blind evaluation: legacy, current Consultant, Core v2, and BravoGen. A/B/C use the
-   same model/version, token budget, prompt input, environment facts, and frozen EvidenceBundle.
+   same model/version, token budget, prompt input, environment facts, and frozen versioned
+   evidence snapshots.
 5. Run ablations for model strength, retrieval/evidence, prerequisite planner, critic, and
    multi-turn state so the source of improvement is identifiable.
 
 ### Phase D — decision and rollout
 
 Adopt Core v2 behind the existing API/security shell only when the complete gate below passes.
-Route a small, stable canary cohort to V2 while preserving rollback to the frozen baseline. Use one
-canonical chat surface for the wedge; hide/defer graph, anomaly, tax, and unrelated feature entry
-points during dogfood. Engineering Workbench remains a separately gated headless experiment and
-must not be used as proof of conversation quality.
+Route a small, stable canary cohort to V2 while preserving rollback to the frozen baseline.
+Knowledge Chat and Accounting Work may share one shell, but they use distinct navigation,
+entitlements and scorecards. The three accepted accounting cases use one Accounting Work inbox and
+shared typed case page; their side chat is not workflow state. Bank Reconciliation remains the
+primary/deep evaluation case. Hide/defer graph, anomaly, tax and unrelated entry points during
+dogfood. Engineering Workbench remains a separately gated headless experiment and must not be used
+as proof of conversation quality.
 
 ## 5. Acceptance and stop gates
 
@@ -183,11 +209,18 @@ the failure clusters, and do not expand V2 by adding frameworks or features.
 Read in this order:
 
 1. `docs/PROJECT-STATE.md` and `docs/AI-REVIEW-MANIFEST.md`;
-2. this document;
-3. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`;
-4. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`;
-5. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
+2. `plan-rebuild/10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`;
+3. `plan-rebuild/11-OWNER-DECISION-PACKET-RECONCILIATION-DEMO.md`;
+4. `docs/adr/0032-first-v2-demonstrator-reconciliation-exception.md` and
+   `docs/adr/0033-three-case-demo-and-owner-package.md`;
+5. `plan-rebuild/12-THREE-CASE-DEMO-DEV-BACKLOG.md`;
+6. this document;
+7. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`;
+8. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`;
+9. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
    `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only for shared contracts and gates.
+
+If this list conflicts with `docs/AI-REVIEW-MANIFEST.md`, follow the manifest.
 
 The next conversation should begin with the open operational containment proofs and immutable A/B
 baseline capture, not prompt tuning or feature implementation. It must preserve unrelated user

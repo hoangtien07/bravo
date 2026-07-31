@@ -1,7 +1,7 @@
 # AI review manifest
 
 Status: `ACTIVE — review entrypoint`  
-Last verified: 2026-07-24
+Last verified: 2026-07-31
 
 ## Purpose
 
@@ -19,11 +19,21 @@ research, raw conversations, or obsolete progress as current truth.
 
 ### Tier 1 — architecture decision review
 
-4. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md` — current execution boundary.
-5. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
-6. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
-7. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
-8. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
+4. `plan-rebuild/10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md` — current product target,
+   non-duplication boundary, capability portfolio and owner decision gates.
+5. `plan-rebuild/11-OWNER-DECISION-PACKET-RECONCILIATION-DEMO.md` — accepted OD-01..OD-10
+   package, including the owner amendment to three functional cases.
+6. `docs/adr/0032-first-v2-demonstrator-reconciliation-exception.md` — accepted first
+   demonstrator decision and its explicit non-decisions.
+7. `docs/adr/0033-three-case-demo-and-owner-package.md` — accepted three-case scope and
+   demo-to-pilot guardrails.
+8. `plan-rebuild/12-THREE-CASE-DEMO-DEV-BACKLOG.md` — implementation dependency order,
+   contracts, schemas, work packages and acceptance tests.
+9. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md` — current execution boundary.
+10. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
+11. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
+12. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
+13. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
    `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only when the independent track or
    shared contract is in scope.
 
@@ -61,7 +71,11 @@ the canonical document; do not recursively load an evidence tree.
 1. Reproducible code/test/runtime evidence overrides prose implementation claims.
 2. `PROJECT-STATE.md` owns the current snapshot.
 3. Accepted ADRs own existing architectural invariants.
-4. `plan-rebuild/04–08` own the current proposed two-track decision design and execution gates.
+4. `plan-rebuild/04–12` own the current product/decision design, execution gates and dev backlog.
+   ADR-0032 now selects Reconciliation & Exception Investigator as the first deep V2 demonstrator
+   and supersedes the earlier AP/Close demonstrator conflict. ADR-0033 accepts the three-case
+   scope and target pilot guardrails. Plan 12 owns implementation sequencing. Target architecture
+   is not runtime/production evidence.
 5. Historical research and council reports do not become current merely because they are detailed.
 6. A structural/synthetic green test does not prove conversational task quality.
 
@@ -77,6 +91,10 @@ The next project review should answer:
 5. Which existing tests prove the required behavior, and which only prove structure?
 6. Which containment gates are code-tested only, and which have real runtime evidence?
 7. What must be fixed before freezing the matched A/B baseline?
+8. Does a proposed `Công việc AI` capability complement BRAVO 10, or duplicate an existing
+   transaction, calculation, approval, task, reporting or system function?
+9. Which user, buyer, liability, data contract and success metric support the first Accounting
+   Work capability, independently of Knowledge Chat?
 
 ## Required review output
 

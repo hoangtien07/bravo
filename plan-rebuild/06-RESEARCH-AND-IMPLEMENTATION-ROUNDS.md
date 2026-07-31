@@ -225,8 +225,19 @@ The only sensible Graphiti pilot, after System C works, is the pair: same sympto
 
 Conversation track:
 
-1. **Financial Close Advisor** validates the most important business gap: connecting accounting prerequisites to BRAVO operations and reporting.
-2. **Schema/KEDB Troubleshooting** validates version-aware support reasoning and resolution governance.
+1. **Reconciliation & Exception Investigator** is the owner-selected deep V2 demonstrator under
+   ADR-0032. It validates one bounded reconciliation subtype with an identified user outcome,
+   source/scope contract, deterministic engine, liability model and success metric. ADR-0033
+   selects the target user/buyer hypothesis and on-prem pilot architecture; WTP and readiness
+   remain evidence gates rather than open design choices.
+2. **Voucher Evidence & Accounting Review** and **Period Close Readiness** are accepted by
+   ADR-0033 as functional/bounded cases implemented sequentially after Bank Reconciliation. They
+   reuse the same core and do not authorize BRAVO voucher/close engine duplication.
+3. **Financial Close/report readiness** remains benchmark coverage and the Period Close case
+   template; it is not evidence that Close is the product objective or most important business
+   gap.
+4. **Schema/KEDB Troubleshooting** validates version-aware support reasoning and resolution
+   governance for Knowledge Chat.
 
 Engineering track:
 

@@ -1,6 +1,8 @@
 # 0031. Pilot đóng cổng L2→L3 = U2 (Copilot AP) đơn lẻ; U1 (hỏi-đáp tri thức) là tiện ích nền
 
-- **Trạng thái:** **Proposed** (2026-07-20) — chờ chủ dự án duyệt.
+- **Trạng thái:** **Superseded before acceptance** (2026-07-31) bởi
+  [ADR-0032](0032-first-v2-demonstrator-reconciliation-exception.md). Tài liệu này được giữ làm
+  evidence lịch sử; nó không còn chọn demonstrator hoặc pilot hiện tại.
 - **Ngày:** 2026-07-20
 - **Người đề xuất:** Rà soát use-case (inventory grounded từ code, branch `feat/v2-p0-containment`) + Hội đồng cố vấn 5 thành viên.
 - **Căn cứ:** Council review 2026-07-20 (5/5 phản hồi, tổng hợp trong ADR này). Xây trên [ADR-0016](0016-pivot-standalone-ap-vertical.md) (mũi nhọn AP, Accepted), [MATURITY-LADDER.md](../MATURITY-LADDER.md) (định nghĩa cổng L2/L3), [ADR-0030](0030-offline-as-dated-exit-criterion.md) (offline là exit-criterion), quyết định pilot V2 cloud-only (memory 2026-07-19). KHÔNG sửa 4 bất biến.

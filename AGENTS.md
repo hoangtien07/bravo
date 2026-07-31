@@ -8,17 +8,34 @@ agent loop.
 
 1. `docs/PROJECT-STATE.md`
 2. `docs/AI-REVIEW-MANIFEST.md`
-3. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md`
-4. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`
-5. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`
+3. `plan-rebuild/10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`
+4. `plan-rebuild/11-OWNER-DECISION-PACKET-RECONCILIATION-DEMO.md`
+5. `docs/adr/0032-first-v2-demonstrator-reconciliation-exception.md`
+6. `docs/adr/0033-three-case-demo-and-owner-package.md`
+7. `plan-rebuild/12-THREE-CASE-DEMO-DEV-BACKLOG.md`
+8. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md`
+9. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`
+10. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`
 
 Treat code, current tests, migrations, and runtime evidence as stronger than historical progress
 claims. Historical council/research documents are evidence inputs, not current truth.
 
 ## Current objective
 
-- Build a framework-independent Conversation Core V2 behind the existing trusted platform shell.
-- Start with the Financial Close Advisor vertical slice.
+- Build a framework-independent Conversation and AccountingCase Core V2 behind the existing
+  trusted platform shell.
+- Target a standalone BRAVO Accounting Intelligence product with separately governed Knowledge
+  Chat and Accounting Operations Hub modules.
+- Treat Financial Close as one benchmark family and optional case template, not the product
+  objective.
+- ADR-0032 selects Reconciliation & Exception Investigator as the first deep V2 demonstrator.
+  Its first subtype is Bank statement ↔ sổ tiền gửi BRAVO. Freeze the scope/schema, deterministic
+  policy, golden fixtures and SME answer key before implementation. ADR-0032 alone does not infer
+  a paid pilot, production topology or real-data policy.
+- ADR-0033 adds two functional/bounded cases after Bank Reconciliation: Voucher Evidence &
+  Accounting Review, then Period Close Readiness. Reuse the shared core; do not rebuild BRAVO
+  voucher posting, closing calculations, reports or period lock. ADR-0033 selects target pilot
+  guardrails, not production-readiness evidence or customer-data permission.
 - Demonstrate a materially better outcome through frozen A/B/C/D evidence and blind SME review.
 - Keep Engineering Workbench independent from the conversation-quality verdict.
 

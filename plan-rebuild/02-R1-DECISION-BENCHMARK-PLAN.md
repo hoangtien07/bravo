@@ -195,6 +195,14 @@ Implement only three deep workflow packs:
 2. screenshot-to-technical implementation plan (DocNo/UNC case);
 3. troubleshooting/schema/KEDB clarification and fail-closed grounding.
 
+These are benchmark packs selected to isolate reasoning failures. They do not define the commercial
+product or select Financial Close as the objective of `Công việc AI`. The first Accounting Work
+capability is Reconciliation & Exception Investigator under ADR-0032; add matched anchors for one
+bounded reconciliation subtype without deleting the existing close coverage. Paid-pilot and
+production decisions remain governed by ADR-0033 and
+`10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`. Voucher Evidence Review and Period Close Readiness
+receive bounded functional anchors only after the Bank deterministic gate passes.
+
 All other cases may route through a generic evidence-aware fallback. Do not port unrelated legacy UI or action workflows.
 
 Exit gate: C runs through the existing API adapter, uses existing RLS/read boundaries and exposes stage-level traces.

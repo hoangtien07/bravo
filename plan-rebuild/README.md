@@ -12,6 +12,15 @@ Thư mục này là nguồn sự thật cho quyết định rebuild BRAVO AI Cop
 
 ## Cấu trúc
 
+- `10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`: product north star hiện tại cho Knowledge Chat
+  và Accounting Operations Hub, ranh giới không làm lại chức năng BRAVO 10, portfolio capability,
+  deterministic/LLM contract, demo/pilot topology và các owner decision gate còn mở.
+- `11-OWNER-DECISION-PACKET-RECONCILIATION-DEMO.md`: gói OD-01..OD-10 để chủ dự án xác nhận một
+  lần toàn bộ user/buyer, data, topology, model/egress, integration, packaging, dev scope và
+  release gates trước khi chuyển kế hoạch sang Ready for Dev.
+- `12-THREE-CASE-DEMO-DEV-BACKLOG.md`: backlog implementation đã khóa dependency order,
+  AccountingCase contracts, schemas, deterministic/LLM boundaries, work packages và acceptance
+  tests cho Bank Reconciliation, Voucher Evidence Review và Period Close Readiness.
 - `08-V2-CONVERSATION-REBUILD-HANDOFF.md`: quyết định của chủ dự án chuyển sang
   Conversation Core V2, council blockers, implementation sequence, acceptance gates và read order
   để tiếp tục an toàn trong một luồng hội thoại khác.

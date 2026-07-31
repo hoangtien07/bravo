@@ -234,11 +234,16 @@ If C only wins with a stronger model, the decision is a model upgrade. If oracle
 1. Freeze A/B outputs for the six anchors and full manifest before prompt changes.
 2. Formalize expected outcome, prerequisite nodes, allowed alternatives and must-not claims.
 3. Build a fake/oracle EvidenceBroker and `ReasoningPort` contract.
-4. Implement Core v2 only for three deep packs: financial close, technical requirement analysis, and troubleshooting/schema/KEDB.
-5. Run matched A/B/C smoke tests and ablations.
-6. Correct domain models/evidence gaps; do not tune against BravoGen wording.
-7. Run the full 24-trajectory/66-turn blind C-versus-D evaluation.
-8. Issue the architecture ADR: retain B, adopt C strangler, upgrade model/retrieval, or—only with demonstrated platform blockers—approve a larger split.
+4. Retain financial close, technical requirement analysis and troubleshooting/schema/KEDB as
+   deep benchmark packs. Benchmark coverage does not select the product objective.
+5. Apply ADR-0032: select one bounded reconciliation subtype, add matched anchors and implement
+   Core V2 for Reconciliation & Exception Investigator.
+6. After the Bank deterministic gate passes, add bounded functional anchors for Voucher Evidence
+   Review and Period Close Readiness under ADR-0033; keep Bank as the primary causal evaluation.
+7. Run matched A/B/C smoke tests and ablations.
+8. Correct domain models/evidence gaps; do not tune against BravoGen wording.
+9. Run the full 24-trajectory/66-turn blind C-versus-D evaluation.
+10. Issue the architecture ADR: retain B, adopt C strangler, upgrade model/retrieval, or—only with demonstrated platform blockers—approve a larger split.
 
 ## 13. Definition of done for the conversation track
 

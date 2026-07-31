@@ -42,7 +42,9 @@ Tạo ADR mới: dùng skill **`/adr-new`** (tự đánh số, theo mẫu, cập
 | [0027b](0027-openai-agents-runtime-migration.md) | Di trú runtime sang OpenAI Agents SDK theo canary | Accepted | 2026-07-13 |
 | [0028](0028-frontier-optional-surfaces-and-graphrag-gate.md) | Optional frontier surfaces và cổng GraphRAG | Accepted | 2026-07-13 |
 | [0029](0029-frontier-runtime-boundary-and-durability.md) | Thay lõi orchestration/durability, giữ BRAVO control plane | **Proposed** | 2026-07-13 |
-| [0031](0031-first-pilot-ap-vertical-gate.md) | Pilot đóng cổng = U2 (Copilot AP) đơn lẻ; U1 tri thức là tiện ích nền | **Proposed** | 2026-07-20 |
+| [0031](0031-first-pilot-ap-vertical-gate.md) | Pilot đóng cổng = U2 (Copilot AP) đơn lẻ; U1 tri thức là tiện ích nền | Superseded before acceptance by 0032 | 2026-07-20 |
+| [0032](0032-first-v2-demonstrator-reconciliation-exception.md) | Demonstrator sâu đầu tiên của V2 = Reconciliation & Exception Investigator | **Accepted** | 2026-07-31 |
+| [0033](0033-three-case-demo-and-owner-package.md) | Demo ba case + owner package về data/topology/egress/integration/release gate | **Accepted** | 2026-07-31 |
 
 > ADR 0010-0013 được **Hội đồng (2 vòng) xác nhận**. 0012 (verify-gate) **đã implement** — nối vào agent loop (`app/agent/loop.py`, gate `verify_numbers` tại `_finish_answer`), có test (`tests/test_grounding.py`). Trạng thái triển khai chi tiết: **nguồn sự thật = [../work-packages/STATUS.md](../work-packages/STATUS.md)**. Đánh giá tổng thể mức độ trưởng thành: [../COUNCIL-REVIEW-2026-07.md](../COUNCIL-REVIEW-2026-07.md).
 

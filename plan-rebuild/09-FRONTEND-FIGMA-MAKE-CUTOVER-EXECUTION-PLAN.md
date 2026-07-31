@@ -1,13 +1,28 @@
 # BRAVO V2 frontend — Figma Make productization and cutover plan
 
-Status: `READY FOR IMPLEMENTATION — local Figma Make productization authorized`
+Status: `READY FOR REBASE AFTER CORE CONTRACT FREEZE — three-case product scope accepted`
 Owner: project owner
-Decision updated: 2026-07-21
+Decision updated: 2026-07-31
 Repository baseline: `feat/v2-p0-containment` at `f17d31c079f8de71f0ffc303495f3176eef59d23`
 Candidate V2 frontend: `FigmaMake_UI/`
 Classic baseline/rollback frontend: `frontend-react/`
 
 ---
+
+## 0. Product-scope correction
+
+The approved visual system may be retained, but this plan predates
+`10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`. Financial Close is now one synthetic case
+reference/benchmark family, not the product identity. The target shell has two distinct modes:
+Knowledge Chat and Accounting Operations Hub (`Công việc AI`).
+
+Do not implement the legacy route table, FM-05 operational parity expansion or FM-06 Financial
+Close productization below. ADR-0032/0033 and backlog 12 now define one Accounting Work inbox and
+three functional cases: deep Bank Reconciliation, bounded Voucher Evidence Review and bounded
+Period Close Readiness. Rebase this frontend plan onto their typed contracts after the shared core
+contract freeze. Governance & Integration stops at BA specification and an explicitly
+non-functional FE mock; runtime configuration remains configuration-as-code. No Agent Catalog,
+billing UI, marketplace, agent builder or general model-management console is authorized.
 
 ## 1. Owner direction and purpose
 
@@ -75,8 +90,8 @@ secrets. Do not edit reference repositories outside this workspace.
 
 ## 4. Product target
 
-Subject: BRAVO evidence-led operational workspace for accountants, chief accountants, finance
-managers, BRAVO consultants and authorized administrators.
+Subject: the standalone BRAVO Accounting Intelligence shell, with separately governed Knowledge
+Chat and Accounting Operations Hub experiences for their respective users and buyers.
 
 Single primary job: help a user reach the next safe, evidence-backed action in a BRAVO task without
 mistaking a draft, fixture, inference or unverified claim for an executed ERP result.
@@ -107,7 +122,9 @@ Visual direction: **Assured Operations — Quản trị chắc chắn, có bằn
 - Productize `FigmaMake_UI` into a real React SPA.
 - Preserve its approved design language while replacing simulation infrastructure.
 - Integrate existing backend contracts without adding endpoints merely to satisfy a mock screen.
-- Use explicit synthetic fixtures only for unbacked Financial Close presentation surfaces.
+- Use explicit synthetic fixtures only for unbacked Accounting Work presentation surfaces.
+- Treat existing Financial Close screens as a non-authoritative case-template reference, not the
+  navigation root or selected implementation capability.
 - Keep `frontend-react` runnable and untouched for comparison/rollback.
 
 ### Non-goals
@@ -160,7 +177,8 @@ FigmaMake_UI/src/
   design/           tokens, primitives, logo rules, themes, responsive shell
   conversation/     real store, history, SSE, stop, upload, evidence, drafts
   features/         knowledge, approvals, admin and operational tools
-  financial-close/  explicitly synthetic readiness/graph projections
+  accounting-work/  typed inbox/case shell; selected capability added only after owner decision
+  financial-close/  legacy synthetic case reference, not the product root
   fixtures/         scenario data and zero-network simulation reducer
   test/             API mocks, fixtures and deterministic clocks
 ```
