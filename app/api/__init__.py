@@ -5,6 +5,7 @@ from fastapi import APIRouter
 
 from app.api import (
     routes_admin,
+    routes_accounting_cases_v2,
     routes_agent,
     routes_artifacts,
     routes_agents,
@@ -41,3 +42,4 @@ router.include_router(routes_artifacts.router, tags=["artifacts"])
 router.include_router(routes_attachments.router, tags=["chat"])
 router.include_router(routes_invoices.router, tags=["money-engine"])
 router.include_router(routes_drafts.router, tags=["drafts"])
+router.include_router(routes_accounting_cases_v2.router, tags=["accounting-cases-v2"])
