@@ -25,3 +25,9 @@ findings: <redacted rationale and required changes>
 Acceptance requires two `accepted` attestations, one for each required role, that name the same
 policy/golden/held-out hashes. A disagreement on a hard failure is escalated to the designated
 adjudicator; it never becomes an implicit approval.
+
+Validate completed records before recording a gate receipt:
+
+```powershell
+.venv\Scripts\python.exe -c "from app.core_v2.wp01_review import validate_attestations; print(validate_attestations('tests/fixtures/core_v2/wp01/manifest.json', ['<accounting-review>.yaml', '<bravo-review>.yaml']).as_dict())"
+```

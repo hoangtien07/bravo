@@ -16,15 +16,17 @@ Alembic head observed: `0017_native_rls_backstop`
   hard must-not claims in `tests/fixtures/core_v2/wp01/`.
 - Fixture manifest plus `SHA256SUMS`; the test suite verifies every declared artifact hash and
   the manifest checksum.
+- Fail-closed attestation validator: two distinct SME roles must accept the same frozen hashes,
+  with timezone-aware timestamps and no declared conflict, before it emits a human-only receipt.
 
 ## Evidence
 
 - Fixture manifest: `tests/fixtures/core_v2/wp01/manifest.json`
 - Checksums: `tests/fixtures/core_v2/wp01/SHA256SUMS`
 - Reviewer template: `evidence/v2/WP-01-SME-REVIEW-ATTESTATION-TEMPLATE.md`
-- Verification: `.venv\\Scripts\\python.exe -m pytest -q -p no:cacheprovider tests/test_core_v2_wp01_schema.py`
-  — `10 passed` (2026-07-31)
-- Static check: `.venv\\Scripts\\python.exe -m ruff check app/core_v2/wp01_schema.py tests/test_core_v2_wp01_schema.py`
+- Verification: `.venv\\Scripts\\python.exe -m pytest -q -p no:cacheprovider tests/test_core_v2_wp01_schema.py tests/test_core_v2_wp01_review.py`
+  — `14 passed` (2026-07-31)
+- Static check: `.venv\\Scripts\\python.exe -m ruff check app/core_v2/wp01_schema.py app/core_v2/wp01_review.py tests/test_core_v2_wp01_schema.py tests/test_core_v2_wp01_review.py`
   — passed (2026-07-31)
 
 ## Explicit blocker
