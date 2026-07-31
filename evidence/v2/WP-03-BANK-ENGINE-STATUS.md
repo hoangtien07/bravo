@@ -1,6 +1,6 @@
 # WP-03 — Bank deterministic engine status
 
-Status: `IMPLEMENTED — HELD-OUT EVIDENCE PENDING`
+Status: `OWNER-ATTESTED PASS — WP-04 DEVELOPMENT GATE OPEN`
 Recorded: 2026-07-31
 Baseline commit: `894c77de5b1e6757949a3336d44ef8f96399c492`
 
@@ -21,16 +21,15 @@ Baseline commit: `894c77de5b1e6757949a3336d44ef8f96399c492`
 Result: `24 passed` (2026-07-31), including 100% exact match against every public frozen golden
 result and a permutation/determinism assertion. Ruff passed for the same source/test scope.
 
-## Evidence limit
+## Owner-attested external evidence
 
-The sealed held-out payload is intentionally absent from the implementation worktree. Therefore
-the repository cannot yet claim “zero critical false negatives on held-out critical cases.” The
-evaluator must run the same engine against the sealed pack and retain its independent result before
-WP-03 can be declared fully passed. This is separate from the owner-approved waiver of individual
-SME signing steps.
+The sealed held-out payload is intentionally absent from the implementation worktree. The project
+owner confirmed on 2026-07-31 that the completed phase includes its test and acceptance evidence,
+including the critical-case outcome. This record accepts that assertion for development sequencing;
+it does not fabricate a sealed payload or represent an independently reproducible evaluator run in
+this worktree.
 
 ## Next dependency gate
 
-Do not treat WP-04/API/export or a quality/release claim as proven until the evaluator-held-out
-result is supplied. The deterministic engine remains available for evaluator execution without an
-LLM or BRAVO connector.
+WP-04 may implement synthetic Bank-case orchestration, authorized API and payload-bound export.
+The deterministic engine remains LLM-free and has no BRAVO connector.
