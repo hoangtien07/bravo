@@ -29,11 +29,13 @@ research, raw conversations, or obsolete progress as current truth.
    demo-to-pilot guardrails.
 8. `plan-rebuild/12-THREE-CASE-DEMO-DEV-BACKLOG.md` — implementation dependency order,
    contracts, schemas, work packages and acceptance tests.
-9. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md` — current execution boundary.
-10. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
-11. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
-12. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
-13. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
+9. `plan-rebuild/13-WP-04-BANK-ORCHESTRATION-HANDOFF-PROMPT.md` — current clean baseline,
+   completed WP-01–03 evidence and the exact WP-04 handoff boundary.
+10. `plan-rebuild/08-V2-CONVERSATION-REBUILD-HANDOFF.md` — current execution boundary.
+11. `plan-rebuild/04-WORKSPACE-REPO-COUNCIL-DECISION.md`.
+12. `plan-rebuild/07-CONVERSATION-INTELLIGENCE-BRAVOGEN-BENCHMARK.md`.
+13. `plan-rebuild/02-R1-DECISION-BENCHMARK-PLAN.md`.
+14. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
    `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only when the independent track or
    shared contract is in scope.
 

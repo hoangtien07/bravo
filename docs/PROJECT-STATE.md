@@ -1,9 +1,9 @@
 # BRAVO AI Copilot — current project state
 
-Status: `PLAN READY FOR DEV — implementation remains blocked by containment proof and A/B baseline freeze`
+Status: `WP-04 READY — synthetic Bank-case orchestration is next`
 Owner: project owner  
 As of: 2026-07-31
-Verified against Git: branch `codex/v2-financial-close-core`, commit `24209ab10535aba2f6facc0cc1bdc766e7eac079`, clean worktree before this documentation update
+Verified against Git: branch `codex/v2-financial-close-core`, commit `33421684541663e199d397d2f7db12388ccb170a`, clean worktree before this documentation update
 
 ## Executive state
 
@@ -20,11 +20,13 @@ cases: Voucher Evidence & Accounting Review and Period Close Readiness. See
 It is not approval to keep broad-patching the legacy agent loop, nor to rewrite the entire
 platform.
 
-The project has completed and tested a code-level P0 containment increment since the previous
-snapshot. It has **not** yet frozen a real A/B answer baseline, built the clean Core V2 domain
-package, run the 24-trajectory blind evaluation, or passed the production/platform gates. The
-Engineering Workbench and frontend prototype tracks remain independent and are not evidence that
-conversation quality has improved.
+WP-00 is passed for the synthetic demo: a 30-case System A/B baseline is frozen with checksums.
+WP-01 synthetic fixture truth is owner-accepted; WP-02 implements the framework-independent
+AccountingCase Core V2; and WP-03 implements and golden-tests the LLM-free Bank reconciliation
+engine. WP-04 (synthetic orchestration, authorized API and payload-bound export) is next. The
+24-trajectory blind evaluation and all production/pilot claims remain open. The Engineering
+Workbench and frontend prototype tracks remain independent and are not evidence that conversation
+quality has improved.
 
 ## Phase-demo topology decision
 
@@ -44,7 +46,7 @@ material only and must not be combined with the phase-demo topology.
 
 | Item | Verified state | Evidence / limit |
 |---|---|---|
-| Git baseline | Clean at `24209ab` before this documentation pass | Current branch is `codex/v2-financial-close-core`; this pass changes documentation only |
+| Git baseline | Clean at `3342168` before this documentation pass | Current branch is `codex/v2-financial-close-core`; WP-04 has not begun |
 | Alembic | `0017_native_rls_backstop` is the single head | `python -m alembic heads` |
 | Python test suite | 404 passed, 41 skipped | `python -m pytest -q -p no:cacheprovider`, 2026-07-24; skipped tests are not a DB/production pass |
 | Focused containment/evaluation tests | 17 passed, 5 skipped | Owner authorization, answer-guard parity, CAS state, native-RLS, replay/C0/SME/release-gate contracts |
@@ -65,34 +67,26 @@ not proof of a clean dependency posture.
 | Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
 | Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
 | A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
-| Conversation/AccountingCase Core V2 three-case demo | ADR-0032/0033 select deep Bank Reconciliation plus bounded Voucher Review and Period Close Readiness; fixtures and clean domain package not started | Accepted design is not implementation or quality evidence |
+| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine | No independent blind quality claim, customer-data authorization, production claim, or secondary-case implementation |
 | BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
 ## Gates still open
 
 No production, security, or quality claim may be made until the following evidence exists:
 
-1. Rotate the previously exposed provider credential; verify effective phase-demo Compose exposes
-   only approved ingress, has no Keycloak/OIDC service or ingress, uses non-default database
-   credentials, and authenticates Redis.
-2. Provision separate non-owner runtime roles, arm native RLS deliberately, and pass negative
-   HTTP, MCP and worker probes with a real PostgreSQL environment. Extend native policy coverage
-   beyond `chunks` before relying on it as a database backstop.
-3. Run clean `0012 -> head` migration, downgrade/upgrade and all security-critical DB integration
-   checks without skips; perform an isolated backup/restore drill including private operational
-   data.
-4. Freeze System A and B answers, traces, model/version, prompts and versioned evidence snapshots before
-   changing routing, retrieval, prompts or synthesis. The repository currently contains tooling,
-   not a frozen answer artifact.
-5. Preserve Financial Close cases as benchmark coverage, add matched Reconciliation & Exception
+1. Preserve the WP-00 runtime/credential/RLS/restore evidence as synthetic-demo evidence only;
+   it is not a production or pilot authorization.
+2. Preserve the frozen 30-case System A/B baseline before changing routing, retrieval, prompts or
+   synthesis. It is not a full blind quality verdict.
+3. Preserve Financial Close cases as benchmark coverage, add matched Reconciliation & Exception
    Investigator anchors, then add case-specific fixtures/tests for Voucher Review and Period Close
    Readiness. Validate capability-specific evidence contracts and obtain
    reviewer calibration and blind SME evidence before judging Core V2. Benchmark coverage does not
    select the product capability.
-6. Independently run frontend typecheck/test/build and the controlled offline/egress smoke before
+4. Independently run frontend typecheck/test/build and the controlled offline/egress smoke before
    making frontend or on-prem readiness claims.
 
-## Next authorized implementation sequence
+## Historical implementation sequence (completed through WP-03)
 
 1. Use the current clean commit as the named code baseline and record the redacted environment,
    lockfile hashes and effective Compose evidence in a controlled run artifact.
@@ -107,6 +101,14 @@ No production, security, or quality claim may be made until the following eviden
 5. Only then create the framework-independent Core V2 contracts; implement Bank Reconciliation
    first, then Voucher Evidence Review, then Period Close Readiness behind the same narrow ports.
    BRAVO remains the voucher, accounting-close and reporting engine.
+
+## Current next step
+
+Begin WP-04 from the clean commit: synthetic file evidence adapter; scope → snapshot → checks →
+findings → review transitions; authorized V2 Bank-case endpoints; payload-bound export; and
+privacy-minimized audit/trace references. Keep legacy endpoints unchanged. Pass authorization,
+negative-scope, idempotency/concurrency, supersession/recheck and “export is not ERP execution”
+tests before starting WP-05 conversation work or Bank UX.
 
 ## Source of truth and precedence
 
