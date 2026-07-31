@@ -1,0 +1,11 @@
+{
+  "schema_version": "bravo-accounting-case-wp01-held-out-manifest/v1",
+  "held_out_pack_id": "bank-reconciliation-held-out/v1.0.0",
+  "synthetic_only": true,
+  "repository_payload": false,
+  "case_count": 4,
+  "sealed_pack_sha256": "25b62bd26f57cf420e4910e3dba5c2f108ed5d1f1f788d65a895fe303c7e874d",
+  "control_owner": "UNASSIGNED",
+  "storage_requirement": "Evaluator-owned access-controlled evidence store, outside the implementation worktree and CI logs.",
+  "release_condition": "An evaluator verifies the sealed pack hash before scoring; developers receive only aggregate pass/fail and failure-class information."
+}

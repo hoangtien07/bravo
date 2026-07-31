@@ -50,6 +50,18 @@ def _positive_decimal(value: Any) -> Decimal:
     return parsed
 
 
+def _nonnegative_decimal(value: Any) -> Decimal:
+    if isinstance(value, bool) or isinstance(value, float):
+        raise ValueError("must be a decimal string or Decimal, never float")
+    try:
+        parsed = Decimal(value)
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError("must be a valid decimal") from exc
+    if not parsed.is_finite() or parsed < 0:
+        raise ValueError("must be a finite non-negative decimal")
+    return parsed
+
+
 class BankDirection(StrEnum):
     CREDIT = "CREDIT"
     DEBIT = "DEBIT"
@@ -130,8 +142,8 @@ class BravoBankLedgerRow(StrictModel):
     )(_required)
     _posting_date = field_validator("posting_date", mode="before")(_iso_date)
     _document_date = field_validator("document_date", mode="before")(_iso_date)
-    _debit = field_validator("debit", mode="before")(_positive_decimal)
-    _credit = field_validator("credit", mode="before")(_positive_decimal)
+    _debit = field_validator("debit", mode="before")(_nonnegative_decimal)
+    _credit = field_validator("credit", mode="before")(_nonnegative_decimal)
 
     @model_validator(mode="after")
     def exactly_one_side(self) -> "BravoBankLedgerRow":

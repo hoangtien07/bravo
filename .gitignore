@@ -19,6 +19,7 @@ __pycache__/
 venv/
 .pytest_cache/
 .ruff_cache/
+.tmp-wp00-pytest/
 
 # Node / frontend
 node_modules/

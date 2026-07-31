@@ -1,0 +1,42 @@
+schema_version: bravo-accounting-case-wp01-bank-fixture/v1
+fixture_id: bank-reconciliation-golden/v1.0.0
+truth_status: pending_independent_sme_review
+synthetic_only: true
+scope:
+  tenant_id: synthetic-demo-tenant
+  legal_entity_id: synthetic-bravo-co
+  ledger_id: bank-ledger-vnd
+  period: 2026-07
+  cutoff: "2026-07-31"
+  currency: VND
+  environment: synthetic-demo
+  bravo_version: B10R1-synthetic
+  config_version: bank-reconciliation/v1.0.0
+  bank_account_ref: "1121-VCB-001"
+bank_statement_rows:
+  - {source_row_id: BANK-001, account_ref: "1121-VCB-001", transaction_date: "2026-07-01", value_date: "2026-07-01", amount: "1000000", direction: CREDIT, currency: VND, bank_reference: BR-001, description: "Customer payment", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "2"}}
+  - {source_row_id: BANK-002, account_ref: "1121-VCB-001", transaction_date: "2026-07-02", value_date: "2026-07-02", amount: "500000", direction: DEBIT, currency: VND, bank_reference: BR-002, description: "Bank fee", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "3"}}
+  - {source_row_id: BANK-003, account_ref: "1121-VCB-001", transaction_date: "2026-07-04", value_date: "2026-07-04", amount: "3000000", direction: CREDIT, currency: VND, bank_reference: BR-003, description: "Grouped collections", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "4"}}
+  - {source_row_id: BANK-004, account_ref: "1121-VCB-001", transaction_date: "2026-07-05", value_date: "2026-07-05", amount: "700000", direction: CREDIT, currency: VND, bank_reference: BR-004, description: "Duplicated import candidate", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "5"}}
+  - {source_row_id: BANK-005, account_ref: "1121-VCB-001", transaction_date: "2026-07-06", value_date: "2026-07-06", amount: "888000", direction: DEBIT, currency: VND, bank_reference: BR-005, description: "Unbooked transfer", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "6"}}
+  - {source_row_id: BANK-006, account_ref: "1121-VCB-001", transaction_date: "2026-07-07", value_date: "2026-07-07", amount: "600000", direction: CREDIT, currency: VND, bank_reference: BR-006, description: "Insufficient remittance", lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "7"}}
+bravo_bank_ledger_rows:
+  - {bravo_row_id: BRAVO-001, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-01", document_date: "2026-07-01", debit: "1000000", credit: "0", currency: VND, document_id: DOC-001, voucher_id: PT-001, reference_id: BR-001, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "2"}}
+  - {bravo_row_id: BRAVO-002, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-03", document_date: "2026-07-03", debit: "0", credit: "499900", currency: VND, document_id: DOC-002, voucher_id: PC-001, reference_id: BR-002, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "3"}}
+  - {bravo_row_id: BRAVO-003A, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-04", document_date: "2026-07-04", debit: "1000000", credit: "0", currency: VND, document_id: DOC-003A, voucher_id: PT-003A, reference_id: BR-003-A, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "4"}}
+  - {bravo_row_id: BRAVO-003B, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-04", document_date: "2026-07-04", debit: "2000000", credit: "0", currency: VND, document_id: DOC-003B, voucher_id: PT-003B, reference_id: BR-003-B, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "5"}}
+  - {bravo_row_id: BRAVO-004A, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-05", document_date: "2026-07-05", debit: "700000", credit: "0", currency: VND, document_id: DOC-004A, voucher_id: PT-004A, reference_id: BR-004, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "6"}}
+  - {bravo_row_id: BRAVO-004B, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-05", document_date: "2026-07-05", debit: "700000", credit: "0", currency: VND, document_id: DOC-004B, voucher_id: PT-004B, reference_id: BR-004, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "7"}}
+  - {bravo_row_id: BRAVO-005, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-08", document_date: "2026-07-08", debit: "999000", credit: "0", currency: VND, document_id: DOC-005, voucher_id: PT-005, reference_id: BR-007, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "8"}}
+  - {bravo_row_id: BRAVO-006A, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-07", document_date: "2026-07-07", debit: "600000", credit: "0", currency: VND, document_id: DOC-006A, voucher_id: PT-006A, reference_id: null, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "9"}}
+  - {bravo_row_id: BRAVO-006B, legal_entity_id: synthetic-bravo-co, account_ref: "1121-VCB-001", ledger_id: bank-ledger-vnd, posting_date: "2026-07-07", document_date: "2026-07-07", debit: "600000", credit: "0", currency: VND, document_id: DOC-006B, voucher_id: PT-006B, reference_id: null, lineage: {snapshot_id: BRAVO-SNAPSHOT-001, source_file: bravo_bank_ledger_synthetic.csv, line_ref: "10"}}
+invalid_bank_statement_rows:
+  - {source_row_id: BANK-INVALID-001, account_ref: "1121-VCB-001", transaction_date: "07/31/2026", value_date: "2026-07-31", amount: "100", direction: CREDIT, currency: VND, lineage: {snapshot_id: BANK-SNAPSHOT-001, source_file: bank_statement_synthetic.csv, line_ref: "11"}}
+golden_results:
+  - {result_id: GOLDEN-001, classification: EXACT_MATCH, bank_row_ids: [BANK-001], bravo_row_ids: [BRAVO-001], amount_difference_vnd: "0", reason_code: EXACT_REFERENCE_AMOUNT_DATE}
+  - {result_id: GOLDEN-002, classification: TOLERANCE_MATCH, bank_row_ids: [BANK-002], bravo_row_ids: [BRAVO-002], amount_difference_vnd: "100", reason_code: WITHIN_APPROVED_TOLERANCE}
+  - {result_id: GOLDEN-003, classification: AGGREGATED_CANDIDATE, bank_row_ids: [BANK-003], bravo_row_ids: [BRAVO-003A, BRAVO-003B], amount_difference_vnd: "0", reason_code: TWO_LEDGER_ROWS_WITHIN_AGGREGATION_LIMIT}
+  - {result_id: GOLDEN-004, classification: DUPLICATE_CANDIDATE, bank_row_ids: [BANK-004], bravo_row_ids: [BRAVO-004A, BRAVO-004B], amount_difference_vnd: "0", reason_code: DUPLICATE_REFERENCE_AND_SIGNED_AMOUNT}
+  - {result_id: GOLDEN-005, classification: BANK_ONLY, bank_row_ids: [BANK-005], bravo_row_ids: [], amount_difference_vnd: "-888000", reason_code: NO_ELIGIBLE_BRAVO_ROW}
+  - {result_id: GOLDEN-006, classification: BRAVO_ONLY, bank_row_ids: [], bravo_row_ids: [BRAVO-005], amount_difference_vnd: "999000", reason_code: NO_ELIGIBLE_BANK_ROW}
+  - {result_id: GOLDEN-007, classification: AMBIGUOUS, bank_row_ids: [BANK-006], bravo_row_ids: [BRAVO-006A, BRAVO-006B], amount_difference_vnd: "0", reason_code: MULTIPLE_ELIGIBLE_ROWS_NO_TIE_BREAK}

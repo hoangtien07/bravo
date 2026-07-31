@@ -1,0 +1,47 @@
+schema_version: bravo-accounting-case-wp01-policy/v1
+policy_id: bank-reconciliation/v1.0.0
+policy_status: pending_independent_sme_review
+synthetic_only: true
+scope:
+  permitted_currency: VND
+  maximum_statement_rows: 10000
+  maximum_ledger_rows: 10000
+normalization:
+  date_format: ISO-8601-calendar-date
+  bank_credit_signed_amount: positive
+  bank_debit_signed_amount: negative
+  bravo_debit_signed_amount: positive
+  bravo_credit_signed_amount: negative
+matching:
+  exact:
+    amount_difference_vnd: "0"
+    date_window_days: 0
+    require_same_account: true
+  tolerance:
+    amount_difference_vnd: "100"
+    date_window_days: 2
+    require_same_account: true
+  aggregation:
+    maximum_contributing_ledger_rows: 2
+    amount_difference_vnd: "0"
+    date_window_days: 1
+    require_same_account: true
+  duplicate:
+    same_reference_and_signed_amount: true
+    same_account: true
+classification_precedence:
+  - INVALID_INPUT
+  - DUPLICATE_CANDIDATE
+  - EXACT_MATCH
+  - TOLERANCE_MATCH
+  - AGGREGATED_CANDIDATE
+  - AMBIGUOUS
+  - BANK_ONLY
+  - BRAVO_ONLY
+approval:
+  required_reviewers: 2
+  reviewer_roles:
+    - accounting_reconciliation_sme
+    - bravo_erp_sme
+  reviewer_records: []
+  note: "No reviewer identity, approval, or policy acceptance is inferred from ADR-0033."

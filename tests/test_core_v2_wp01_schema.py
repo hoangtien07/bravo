@@ -1,4 +1,5 @@
 from decimal import Decimal
+import hashlib
 import json
 from pathlib import Path
 
@@ -62,11 +63,49 @@ def test_scope_is_single_tenant_vnd_and_rejects_unknown_fields():
         ScopeKey.model_validate({**scope.model_dump(mode="json"), "tenant_ids": ["other"]})
 
 
+def test_golden_pack_covers_every_locked_bank_result_class_once_or_more():
+    fixture = _load("bank_golden.yaml")
+    classes = {result["classification"] for result in fixture["golden_results"]}
+    assert classes == {
+        "EXACT_MATCH", "TOLERANCE_MATCH", "AGGREGATED_CANDIDATE", "DUPLICATE_CANDIDATE",
+        "BANK_ONLY", "BRAVO_ONLY", "AMBIGUOUS",
+    }
+    assert all(str(result["amount_difference_vnd"]) == result["amount_difference_vnd"]
+               for result in fixture["golden_results"])
+
+
+def test_pack_is_declared_synthetic_and_contains_no_credential_fields():
+    for path in (*_ROOT.glob("*.json"), *_ROOT.glob("*.yaml"), _ROOT / "must_not_claims.md", _ROOT / "glossary.md"):
+        contents = path.read_text(encoding="utf-8").lower()
+        assert "synthetic" in contents
+        assert "api_key" not in contents
+        assert "password" not in contents
+
+
 def test_fixture_manifest_hashes_every_declared_artifact():
     manifest = json.loads((_ROOT / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "bravo-accounting-case-wp01-manifest/v1"
     assert manifest["review_status"] == "pending_independent_sme_review"
     assert {item["path"] for item in manifest["artifacts"]} == {
-        "bank_golden.yaml", "bank_held_out.yaml", "bank_policy.yaml", "voucher_schema.yaml",
-        "period_close_schema.yaml", "must_not_claims.md",
+        "bank_golden.yaml", "held_out_manifest.json", "bank_policy.yaml", "voucher_schema.yaml",
+        "period_close_schema.yaml", "must_not_claims.md", "glossary.md",
     }
+    for artifact in manifest["artifacts"]:
+        digest = hashlib.sha256((_ROOT / artifact["path"]).read_bytes()).hexdigest()
+        assert artifact["sha256"] == digest
+
+
+def test_held_out_truth_is_not_shipped_to_the_implementation_worktree():
+    held_out = json.loads((_ROOT / "held_out_manifest.json").read_text(encoding="utf-8"))
+    assert held_out["repository_payload"] is False
+    assert held_out["case_count"] == 4
+    assert "expected_classification" not in json.dumps(held_out)
+    assert not (_ROOT / "bank_held_out.yaml").exists()
+
+
+def test_checksum_file_also_covers_the_manifest():
+    lines = (_ROOT / "SHA256SUMS").read_text(encoding="utf-8").splitlines()
+    checksums = dict(line.split("  ", 1) for line in lines if line)
+    for name, expected in checksums.items():
+        assert hashlib.sha256((_ROOT / expected).read_bytes()).hexdigest() == name
+    assert "manifest.json" in checksums.values()

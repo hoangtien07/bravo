@@ -1,0 +1,12 @@
+schema_version: bravo-accounting-case-wp01-period-close-schema/v1
+fixture_id: period-close-readiness-schema/v1.0.0
+truth_status: pending_independent_sme_review
+synthetic_only: true
+required_scope: [tenant_id, legal_entity_id, ledger_id, period, cutoff, currency, environment, bravo_version, config_version]
+evidence_types:
+  prerequisite_policy: [policy_id, effective_date, prerequisites, dependencies, lineage]
+  process_status: [process_id, status, as_of, owner, lineage]
+  reconciliation_reference: [case_id, status, materiality, lineage]
+  approval_record: [approval_id, maker_id, checker_id, payload_hash, lineage]
+required_checks: [required_coverage, dependency_order, evidence_freshness, unresolved_reconciliation, maker_checker, explicit_blockers]
+must_not_claims_ref: must_not_claims.md#period-close-readiness

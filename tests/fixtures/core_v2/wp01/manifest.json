@@ -1,0 +1,31 @@
+{
+  "schema_version": "bravo-accounting-case-wp01-manifest/v1",
+  "fixture_pack_id": "bravo-accounting-intelligence-wp01/v1.0.0",
+  "baseline_commit": "aeb72641f26df53e2e2483fa3183f18c13439526",
+  "synthetic_only": true,
+  "customer_data_permitted": false,
+  "review_status": "pending_independent_sme_review",
+  "review_gate": {
+    "required_reviewer_roles": [
+      "accounting_reconciliation_sme",
+      "bravo_erp_sme"
+    ],
+    "reviewer_records": [],
+    "attestation_template": "evidence/v2/WP-01-SME-REVIEW-ATTESTATION-TEMPLATE.md",
+    "blocker": "No reviewer identity, approval, or answer-key acceptance may be inferred from ADR-0033 or the owner packet."
+  },
+  "implementation_gate": {
+    "wp02_allowed": false,
+    "wp03_allowed": false,
+    "reason": "WP-01 policy and golden/held-out answer keys still require two independent SME reviews."
+  },
+  "artifacts": [
+    {"path": "bank_golden.yaml", "sha256": "b398413d37938853cd27db4543db20df2b6ee2945e314555a1eabc4d501c12b6"},
+    {"path": "held_out_manifest.json", "sha256": "fc8d2046d6a5f778be1495ba4387b76f7a640e82e4b40c1cd58c6a3a6a5558ce"},
+    {"path": "bank_policy.yaml", "sha256": "8057f17b265c9fb41c4ae0b91f3cf75c6c4976b91411cd5a8f0ecbb52dea47cb"},
+    {"path": "voucher_schema.yaml", "sha256": "13c1d3f707ce64cd325331bdfe77d3d2fd859eca8df6fd64ef351c6bc49e3635"},
+    {"path": "period_close_schema.yaml", "sha256": "8a9a98a64699ac3d17845fc7ab00b9f791727aee217381b819ed2cda16bd8ef2"},
+    {"path": "must_not_claims.md", "sha256": "79a3885230984391da79cd705a717aa2509daa6ab359275389d8ea168efd70d7"},
+    {"path": "glossary.md", "sha256": "388268622815bfc5d0316770fa0f053bf1f5335ce821629b362c8131692e0a0d"}
+  ]
+}

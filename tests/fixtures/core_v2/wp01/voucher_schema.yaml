@@ -1,0 +1,12 @@
+schema_version: bravo-accounting-case-wp01-voucher-schema/v1
+fixture_id: voucher-evidence-review-schema/v1.0.0
+truth_status: pending_independent_sme_review
+synthetic_only: true
+required_scope: [tenant_id, legal_entity_id, ledger_id, period, cutoff, currency, environment, bravo_version, config_version]
+evidence_types:
+  invoice: [source_id, normalized_total, tax_total, currency, issue_date, lineage]
+  purchase_order_or_contract: [source_id, supplier_id, approved_amount, currency, lineage]
+  receipt_or_qc: [source_id, quantity_or_acceptance, date, lineage]
+  bravo_draft_voucher: [source_id, document_id, voucher_id, debit_lines, credit_lines, currency, lineage]
+required_checks: [document_total, tax_arithmetic, duplicate_candidate, three_way_evidence, master_reference, account_dimension_eligibility, evidence_coverage]
+must_not_claims_ref: must_not_claims.md#voucher-evidence-review
