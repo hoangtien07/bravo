@@ -1,6 +1,6 @@
 schema_version: bravo-accounting-case-wp01-voucher-schema/v1
 fixture_id: voucher-evidence-review-schema/v1.0.0
-truth_status: pending_independent_sme_review
+truth_status: owner_accepted_synthetic
 synthetic_only: true
 required_scope: [tenant_id, legal_entity_id, ledger_id, period, cutoff, currency, environment, bravo_version, config_version]
 evidence_types:

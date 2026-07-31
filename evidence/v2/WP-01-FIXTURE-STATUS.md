@@ -1,6 +1,6 @@
 # WP-01 — glossary, schemas, fixtures and SME truth status
 
-Status: `IN PROGRESS — SME REVIEW BLOCKED`
+Status: `OWNER-ACCEPTED — WP-02/03 DEVELOPMENT GATE OPEN`
 Recorded: 2026-07-31
 Baseline commit observed: `aeb72641f26df53e2e2483fa3183f18c13439526` (`complete wp00`)
 Alembic head observed: `0017_native_rls_backstop`
@@ -29,15 +29,13 @@ Alembic head observed: `0017_native_rls_backstop`
 - Static check: `.venv\\Scripts\\python.exe -m ruff check app/core_v2/wp01_schema.py app/core_v2/wp01_review.py tests/test_core_v2_wp01_schema.py tests/test_core_v2_wp01_review.py`
   — passed (2026-07-31)
 
-## Explicit blocker
+## Owner acceptance and remaining evidence limit
 
-The repository supplies no approved tolerance/aggregation policy, named reviewer records, or
-independently accepted answer key. The fixture pack therefore remains
-`pending_independent_sme_review`; its policy is a synthetic proposal, not an SME-approved fact.
-WP-02 and WP-03 remain closed in `manifest.json` until two independent reviewers (accounting
-reconciliation and BRAVO ERP) accept the policy, golden results and sealed held-out truth without
-introducing customer data or credentials. The evaluator-held-out payload must not return to this
-worktree or implementation CI logs.
+The project owner accepted the frozen synthetic policy, golden truth and development gate on
+2026-07-31. `manifest.json` now opens WP-02/03. This is an owner acceptance for synthetic
+development, not a claim that two independent SMEs reviewed the evidence or that an external
+quality gate has passed. The evaluator-held-out payload must not return to this worktree or
+implementation CI logs.
 
 ## Worktree note
 
@@ -48,5 +46,5 @@ remove the tracked pytest temporary artifact and add the directory to `.gitignor
 
 ## Next dependency gate
 
-Obtain and record the two independent SME approvals. Only then freeze the approved version and
-checksum as immutable and open WP-02/03; do not start a reconciliation engine or prompt work.
+Begin WP-02. Retain independent SME attestations for the later blind-evaluation/release evidence;
+they are no longer a prerequisite to the synthetic Core V2 implementation.

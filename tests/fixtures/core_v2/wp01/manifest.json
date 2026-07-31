@@ -4,27 +4,28 @@
   "baseline_commit": "aeb72641f26df53e2e2483fa3183f18c13439526",
   "synthetic_only": true,
   "customer_data_permitted": false,
-  "review_status": "pending_independent_sme_review",
+  "review_status": "owner_accepted_synthetic_fixture_truth",
   "review_gate": {
-    "required_reviewer_roles": [
+    "optional_independent_reviewer_roles": [
       "accounting_reconciliation_sme",
       "bravo_erp_sme"
     ],
     "reviewer_records": [],
     "attestation_template": "evidence/v2/WP-01-SME-REVIEW-ATTESTATION-TEMPLATE.md",
-    "blocker": "No reviewer identity, approval, or answer-key acceptance may be inferred from ADR-0033 or the owner packet."
+    "owner_acceptance_record": "evidence/v2/WP-01-OWNER-ACCEPTANCE.md",
+    "note": "Independent SME attestations remain available for later blind evaluation, but are not a development-start blocker for this synthetic owner-accepted fixture pack."
   },
   "implementation_gate": {
-    "wp02_allowed": false,
-    "wp03_allowed": false,
-    "reason": "WP-01 policy and golden/held-out answer keys still require two independent SME reviews."
+    "wp02_allowed": true,
+    "wp03_allowed": true,
+    "reason": "Project owner accepted the frozen synthetic policy and fixture truth on 2026-07-31; this is not an independent SME-quality claim."
   },
   "artifacts": [
-    {"path": "bank_golden.yaml", "sha256": "b398413d37938853cd27db4543db20df2b6ee2945e314555a1eabc4d501c12b6"},
+    {"path": "bank_golden.yaml", "sha256": "b9a4103be46b695eccb16b6b99ecbe9c3ab7f56d912e4f761f5235a63ad72e7b"},
     {"path": "held_out_manifest.json", "sha256": "fc8d2046d6a5f778be1495ba4387b76f7a640e82e4b40c1cd58c6a3a6a5558ce"},
-    {"path": "bank_policy.yaml", "sha256": "8057f17b265c9fb41c4ae0b91f3cf75c6c4976b91411cd5a8f0ecbb52dea47cb"},
-    {"path": "voucher_schema.yaml", "sha256": "13c1d3f707ce64cd325331bdfe77d3d2fd859eca8df6fd64ef351c6bc49e3635"},
-    {"path": "period_close_schema.yaml", "sha256": "8a9a98a64699ac3d17845fc7ab00b9f791727aee217381b819ed2cda16bd8ef2"},
+    {"path": "bank_policy.yaml", "sha256": "c5787a97bf93f2238f1ad731fee22da926bb53a5c8d259560f560376e711dcd4"},
+    {"path": "voucher_schema.yaml", "sha256": "7f6e2926ac85561bd71cabd8f953fbe05f49de549d8478f0deae322ff63f3a8c"},
+    {"path": "period_close_schema.yaml", "sha256": "f84aa093418c4adc0ecb05b8c6aa286c3dc25f75f2b7eacd8cdd68f03d756d87"},
     {"path": "must_not_claims.md", "sha256": "79a3885230984391da79cd705a717aa2509daa6ab359275389d8ea168efd70d7"},
     {"path": "glossary.md", "sha256": "388268622815bfc5d0316770fa0f053bf1f5335ce821629b362c8131692e0a0d"}
   ]

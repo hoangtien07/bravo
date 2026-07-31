@@ -85,7 +85,12 @@ def test_pack_is_declared_synthetic_and_contains_no_credential_fields():
 def test_fixture_manifest_hashes_every_declared_artifact():
     manifest = json.loads((_ROOT / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "bravo-accounting-case-wp01-manifest/v1"
-    assert manifest["review_status"] == "pending_independent_sme_review"
+    assert manifest["review_status"] == "owner_accepted_synthetic_fixture_truth"
+    assert manifest["implementation_gate"] == {
+        "wp02_allowed": True,
+        "wp03_allowed": True,
+        "reason": "Project owner accepted the frozen synthetic policy and fixture truth on 2026-07-31; this is not an independent SME-quality claim.",
+    }
     assert {item["path"] for item in manifest["artifacts"]} == {
         "bank_golden.yaml", "held_out_manifest.json", "bank_policy.yaml", "voucher_schema.yaml",
         "period_close_schema.yaml", "must_not_claims.md", "glossary.md",

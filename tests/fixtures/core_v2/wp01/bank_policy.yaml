@@ -1,6 +1,6 @@
 schema_version: bravo-accounting-case-wp01-policy/v1
 policy_id: bank-reconciliation/v1.0.0
-policy_status: pending_independent_sme_review
+policy_status: owner_accepted_synthetic
 synthetic_only: true
 scope:
   permitted_currency: VND
@@ -39,9 +39,8 @@ classification_precedence:
   - BANK_ONLY
   - BRAVO_ONLY
 approval:
-  required_reviewers: 2
-  reviewer_roles:
+  optional_independent_reviewer_roles:
     - accounting_reconciliation_sme
     - bravo_erp_sme
   reviewer_records: []
-  note: "No reviewer identity, approval, or policy acceptance is inferred from ADR-0033."
+  note: "Project owner accepted this synthetic policy for development on 2026-07-31. Independent SME review remains optional evidence for later blind evaluation."

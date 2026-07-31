@@ -93,8 +93,10 @@ def validate_attestations(manifest_path: str | Path, attestation_paths: list[str
         raise ReviewGateError("public fixture manifest is unreadable") from exc
     if manifest.get("schema_version") != "bravo-accounting-case-wp01-manifest/v1":
         raise ReviewGateError("unexpected public fixture manifest schema")
-    if manifest.get("review_status") != "pending_independent_sme_review":
-        raise ReviewGateError("fixture manifest is not awaiting independent SME review")
+    if manifest.get("review_status") not in {
+        "pending_independent_sme_review", "owner_accepted_synthetic_fixture_truth",
+    }:
+        raise ReviewGateError("fixture manifest is not eligible for independent SME review")
     if len(attestation_paths) != len(REQUIRED_ROLES):
         raise ReviewGateError("exactly two attestations are required")
 

@@ -1,6 +1,6 @@
 schema_version: bravo-accounting-case-wp01-bank-fixture/v1
 fixture_id: bank-reconciliation-golden/v1.0.0
-truth_status: pending_independent_sme_review
+truth_status: owner_accepted_synthetic
 synthetic_only: true
 scope:
   tenant_id: synthetic-demo-tenant
