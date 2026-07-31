@@ -1,0 +1,17 @@
+{
+  "schema_version": "bravo-wp00-restore-drill/v1",
+  "captured_at": "2026-07-31T06:29:57.642346+00:00",
+  "source_project": "bravo-wp00",
+  "target_project": "bravo-wp00-restore",
+  "synthetic_drill": true,
+  "rto_seconds": 16.3,
+  "checks": {
+    "migration_0017": true,
+    "vector_extension": true,
+    "rls_forced": true,
+    "rls_policy": true,
+    "runtime_grants": true,
+    "readyz": true
+  },
+  "passed": true
+}

@@ -1,0 +1,26 @@
+{
+  "schema_version": "bravo-wp00-runtime-probe/v1",
+  "captured_at": "2026-07-31T07:05:00+00:00",
+  "run_id": "a4c3ef53-2da0-4d76-a2fe-cf9c4b02c749",
+  "synthetic_only": true,
+  "http_mcp": {
+    "checks": {
+      "http_a_and_global_visible": true,
+      "http_b_not_visible": true,
+      "mcp_a_and_global_visible": true,
+      "mcp_b_not_visible": true
+    },
+    "passed": true
+  },
+  "worker": {
+    "checks": {
+      "non_superuser": true,
+      "no_bypassrls": true,
+      "department_a_and_global_visible": true,
+      "department_b_not_visible": true
+    },
+    "visible_marker_count": 2,
+    "passed": true
+  },
+  "passed": true
+}

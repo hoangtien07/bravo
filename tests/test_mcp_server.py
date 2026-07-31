@@ -5,30 +5,16 @@ Không dựng full MCP handshake (cần client protocol); test lõi: _token_from
 """
 from __future__ import annotations
 
-import asyncio
 import uuid
 
 import pytest
 
 from app.mcp import server
-
-
-def _db_available() -> bool:
-    import asyncpg
-
-    async def _c():
-        try:
-            conn = await asyncpg.connect("postgresql://bravo:bravo@localhost:5432/bravo")
-            await conn.close()
-            return True
-        except Exception:
-            return False
-
-    return asyncio.run(_c())
+from tests.db_support import db_available
 
 
 # Kiểm ở IMPORT time (không có event loop đang chạy) -> an toàn với asyncio.run.
-_DB_UP = _db_available()
+_DB_UP = db_available()
 
 
 class _Headers:

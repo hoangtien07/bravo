@@ -92,3 +92,29 @@ container.
    external operator assertion unless its redacted control-plane evidence is attached.
 
 **Gate result: WP-00 remains BLOCKED.** No downstream package may start from this artifact.
+
+## 2026-07-31 WP-00 implementation update
+
+- Clean source baseline is `b6487f232e0fb93ea493a81bd0a41718f73dd9d6`; Alembic source head is
+  `0017_native_rls_backstop`. The refreshed static manifest includes the RLS overlay and records
+  no environment values or credentials.
+- The synthetic HTTP, MCP and worker probes passed: every path returned only department A plus
+  global rows and excluded department B; worker is non-superuser and non-BYPASSRLS. See
+  [`wp-00-runtime-probe-20260731.json`](wp-00-runtime-probe-20260731.json).
+- Backup integrity and a separate-project restore drill passed. The restore preserved migration
+  `0017`, pgvector, FORCE RLS/policy, runtime grants and an offline `/readyz` check in 16.3 seconds.
+  See [`wp-00-restore-drill-20260731.json`](wp-00-restore-drill-20260731.json).
+- A provider credential was exposed outside the approved secret path. `.env.wp00` was fail-closed:
+  cloud credential fields were cleared and API/worker were stopped. A new credential must be
+  rotated and injected before cloud runtime, HTTP/MCP proof, or frozen A/B replay resumes.
+- Credential rotation remains pending the non-secret owner attestation at
+  [`WP-00-CREDENTIAL-ROTATION-ATTESTATION.md`](WP-00-CREDENTIAL-ROTATION-ATTESTATION.md).
+
+## 2026-07-31 final baseline freeze
+
+- Owner confirmed provider-key rotation; the signing form is accepted as an owner confirmation and
+  contains no credential value.
+- The matched synthetic A/B replay completed all 30 cases in both modes and was frozen without
+  overwrite at `evidence/v2/ab/wp00-20260731/`; `SHA256SUMS` binds the immutable baseline.
+
+**Gate result: WP-00 PASS.** WP-01 may begin according to the locked dependency order.

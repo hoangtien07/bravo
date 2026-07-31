@@ -1,0 +1,654 @@
+{
+  "schema_version": "bravo-v2/frozen-ab-baseline/v1",
+  "captured_at": "2026-07-31T07:22:32.368699+00:00",
+  "source": {
+    "fixture_path": "app/eval/consultant_benchmark.example.yaml",
+    "fixture_sha256": "da812fb08452f342dee9f59d79040ee53b7640b661af535b4cf422bc7fb64337",
+    "replay_path": "C:/Users/tienph/AppData/Local/Temp/bravo-wp00-ab-freeze/wp00-ab-replay.json",
+    "replay_sha256": "a663f25c10caa49a6589d779882d99e31c400c5837a49285500b19a7f4d6a0eb"
+  },
+  "controls": {
+    "baseline_commit": "b6487f232e0fb93ea493a81bd0a41718f73dd9d6",
+    "model_provider": "openai_compatible",
+    "model": "gpt-4o",
+    "model_version": "configured-gpt-4o",
+    "evidence_snapshot_sha256": "68605c4fa4533ac0be434244e50e47b8a333554ead8f1e96828a1f384e5bd41d",
+    "prompt_hashes": {
+      "consultant_service": "d2c5e5334ab959150734dd6fcfa902fe10d0105bbe5d1e96cfa6777ee0dd9665"
+    },
+    "credentials_recorded": false
+  },
+  "cases": [
+    {
+      "case_id": "financial.close.correction",
+      "system_a_legacy": {
+        "answer": "Để lập báo cáo tài chính trong hệ thống BRAVO, bạn cần thực hiện các bước sau:\n\n1. **Chuẩn bị dữ liệu**:\n   - Đảm bảo rằng tất cả các chứng từ kế toán đã được nhập và hạch toán đầy đủ trong hệ thống.\n   - Kiểm tra và đối chiếu số liệu giữa các sổ sách kế toán để đảm bảo tính chính xác.\n\n2. **Chọn loại báo cáo tài chính cần lập**:\n   - Báo cáo tài chính thường bao gồm: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển tiền tệ, và Thuyết minh báo cáo tài chính.\n\n3. **Sử dụng chức năng báo cáo trong BRAVO**:\n   - Truy cập vào module báo cáo tài chính trong hệ thống BRAVO.\n   - Chọn loại báo cáo cần lập và thiết lập các tham số cần thiết như kỳ báo cáo, đơn vị tiền tệ, và các tùy chọn khác.\n\n4. **Kiểm tra và điều chỉnh**:\n   - Sau khi hệ thống tạo báo cáo, kiểm tra lại các số liệu trên báo cáo để đảm bảo tính chính xác.\n   - Thực hiện các điều chỉnh cần thiết nếu có sai sót hoặc cần bổ sung thông tin.\n\n5. **Xuất báo cáo**:\n   - Sau khi hoàn tất kiểm tra, bạn có thể xuất báo cáo ra các định dạng như PDF, Excel để lưu trữ hoặc gửi cho các bên liên quan.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nBáo cáo tài chính là một phần quan trọng trong việc quản lý tài chính của doanh nghiệp, giúp cung cấp thông tin về tình hình tài chính, kết quả hoạt động và dòng tiền của doanh nghiệp. Thông thường, báo cáo tài chính được lập định kỳ (hàng quý, hàng năm) và tuân thủ các chuẩn mực kế toán quốc tế hoặc quốc gia.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 12104
+      },
+      "system_b_consultant": {
+        "answer": "Để lập báo cáo tài chính trong hệ thống BRAVO, bạn cần thực hiện các bước sau:\n\n1. **Chuẩn bị dữ liệu**:\n   - Đảm bảo tất cả các chứng từ kế toán đã được nhập và hạch toán đầy đủ trong hệ thống.\n   - Kiểm tra và đối chiếu số liệu giữa các sổ sách kế toán để đảm bảo tính chính xác.\n\n2. **Chọn loại báo cáo tài chính cần lập**:\n   - Báo cáo tài chính thường bao gồm: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển tiền tệ, và Thuyết minh báo cáo tài chính.\n\n3. **Sử dụng chức năng báo cáo trong BRAVO**:\n   - Truy cập vào module báo cáo tài chính trong hệ thống BRAVO.\n   - Chọn loại báo cáo cần lập và thiết lập các tham số cần thiết như kỳ báo cáo, đơn vị tính, và các tùy chọn khác.\n\n4. **Kiểm tra và điều chỉnh**:\n   - Sau khi hệ thống tạo báo cáo, cần kiểm tra lại các số liệu trên báo cáo để đảm bảo tính chính xác.\n   - Thực hiện các điều chỉnh cần thiết nếu có sai sót hoặc cần bổ sung thông tin.\n\n5. **Xuất báo cáo**:\n   - Sau khi hoàn tất kiểm tra, bạn có thể xuất báo cáo ra các định dạng cần thiết như PDF, Excel để lưu trữ hoặc gửi cho các bên liên quan.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nBáo cáo tài chính là một phần quan trọng trong việc quản lý tài chính của doanh nghiệp, giúp cung cấp thông tin về tình hình tài chính, kết quả hoạt động kinh doanh và dòng tiền của doanh nghiệp. Các báo cáo này thường được lập định kỳ (hàng quý, hàng năm) và tuân thủ theo các chuẩn mực kế toán quốc tế hoặc quốc gia.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 12171
+      }
+    },
+    {
+      "case_id": "financial.close.ready",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"Khóa sổ tháng 05/2026, đã hạch toán và đã đối chiếu\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4601
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"Khóa sổ tháng 05/2026, đã hạch toán và đã đối chiếu\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4541
+      }
+    },
+    {
+      "case_id": "ap.invoice",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về việc xử lý hóa đơn đầu vào tháng 5? Cụ thể, bạn cần hướng dẫn về việc nhập liệu, kiểm tra, hạch toán hay một quy trình cụ thể nào khác?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4242
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về việc xử lý hóa đơn đầu vào tháng 5? Bạn cần hướng dẫn về quy trình nhập liệu, kiểm tra, hay hạch toán hóa đơn?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3173
+      }
+    },
+    {
+      "case_id": "report.discrepancy",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về cách tính toán hoặc cấu trúc của hai báo cáo này không? Điều này sẽ giúp tôi xác định nguyên nhân có thể gây ra sự lệch giữa báo cáo doanh thu và báo cáo công nợ.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3498
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về cách tính toán hoặc cấu trúc của hai báo cáo này không? Điều này sẽ giúp tôi xác định nguyên nhân có thể gây ra sự lệch giữa báo cáo doanh thu và báo cáo công nợ.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3071
+      }
+    },
+    {
+      "case_id": "technical.layout",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại báo cáo hoặc module cụ thể mà bạn muốn tạo Layout XML và DataSource không? Điều này sẽ giúp tôi xác định chính xác yêu cầu và cung cấp hướng dẫn phù hợp.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 7367
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại báo cáo hoặc module cụ thể mà bạn muốn tạo Layout XML và DataSource không? Điều này sẽ giúp tôi xác định chính xác yêu cầu và cung cấp hướng dẫn phù hợp.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4312
+      }
+    },
+    {
+      "case_id": "schema.version",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"bảng chứa chứng từ database BRAVO 10\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2849
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"q\":\"bảng chứa chứng từ trong database BRAVO 10\"}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3067
+      }
+    },
+    {
+      "case_id": "incident",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết thêm thông tin về loại chứng từ nào không hiển thị và trong module nào không? Điều này sẽ giúp tôi xác định chính xác hơn nguyên nhân và cách kiểm tra log.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4849
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại chứng từ nào không hiển thị và trong module nào không? Điều này sẽ giúp tôi xác định chính xác log cần kiểm tra.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2939
+      }
+    },
+    {
+      "case_id": "ar.collection",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"hạch toán công nợ phải thu và thu tiền\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4265
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"hạch toán công nợ phải thu và thu tiền\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3765
+      }
+    },
+    {
+      "case_id": "inventory.close",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"chốt tồn kho cuối tháng\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2141
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"chốt tồn kho cuối tháng\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2507
+      }
+    },
+    {
+      "case_id": "fixed.asset",
+      "system_a_legacy": {
+        "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nKhấu hao tài sản cố định là quá trình phân bổ chi phí của tài sản cố định vào chi phí hoạt động trong suốt thời gian sử dụng hữu ích của tài sản đó. Các phương pháp tính khấu hao phổ biến bao gồm:\n\n1. **Phương pháp đường thẳng**: Chi phí khấu hao hàng năm được tính bằng cách chia nguyên giá của tài sản cho thời gian sử dụng hữu ích.\n\n2. **Phương pháp số dư giảm dần**: Chi phí khấu hao hàng năm được tính dựa trên tỷ lệ phần trăm cố định của giá trị còn lại của tài sản.\n\n3. **Phương pháp tổng số năm**: Chi phí khấu hao hàng năm được tính dựa trên tỷ lệ phần trăm của tổng số năm sử dụng hữu ích.\n\n4. **Phương pháp sản lượng**: Chi phí khấu hao được tính dựa trên sản lượng thực tế của tài sản so với tổng sản lượng dự kiến trong suốt thời gian sử dụng hữu ích.\n\nLưu ý rằng việc áp dụng phương pháp nào phụ thuộc vào chính sách kế toán của từng doanh nghiệp và quy định pháp luật hiện hành.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 6068
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"Tính khấu hao tài sản cố định trong BRAVO\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2506
+      }
+    },
+    {
+      "case_id": "costing",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"Tính giá thành sản phẩm trong BRAVO\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3155
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"Tính giá thành sản phẩm trong BRAVO\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2769
+      }
+    },
+    {
+      "case_id": "pause.resume",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"lên BCTC\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2235
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"lên BCTC\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2186
+      }
+    },
+    {
+      "case_id": "financial.close.period-first",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết rõ hơn về loại báo cáo tài chính cụ thể nào bạn cần chuẩn bị cho kỳ 2026-04 không? Ví dụ như báo cáo kết quả hoạt động kinh doanh, bảng cân đối kế toán, hay báo cáo lưu chuyển tiền tệ?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3075
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cho biết rõ hơn về loại báo cáo tài chính cụ thể bạn cần chuẩn bị cho kỳ 2026-04 không? Ví dụ như báo cáo kết quả hoạt động kinh doanh, bảng cân đối kế toán, hay báo cáo lưu chuyển tiền tệ?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3966
+      }
+    },
+    {
+      "case_id": "financial.close.unclosed",
+      "system_a_legacy": {
+        "answer": "1. **Hạch toán và Kết chuyển**: Hạch toán là việc ghi nhận các nghiệp vụ kinh tế phát sinh vào sổ sách kế toán. Kết chuyển là quá trình chuyển các số dư từ các tài khoản tạm thời sang tài khoản chính thức để xác định kết quả kinh doanh.\n\n2. **Báo cáo tài chính**: Báo cáo tài chính thường bao gồm bảng cân đối kế toán, báo cáo kết quả hoạt động kinh doanh, và báo cáo lưu chuyển tiền tệ. Để lập báo cáo tài chính chính xác, cần phải hoàn tất cả các bút toán kết chuyển.\n\n3. **Ảnh hưởng của việc chưa kết chuyển**: Nếu chưa thực hiện kết chuyển, các số liệu trên báo cáo tài chính có thể không phản ánh chính xác tình hình tài chính và kết quả hoạt động kinh doanh của doanh nghiệp. Điều này có thể dẫn đến sai lệch trong việc đánh giá hiệu quả kinh doanh và tình hình tài chính.\n\n4. **Khuyến nghị**: Để đảm bảo báo cáo tài chính chính xác và đầy đủ, nên thực hiện kết chuyển trước khi lập báo cáo tài chính. Nếu cần thiết, có thể lập báo cáo tạm thời nhưng cần ghi chú rõ ràng về việc chưa thực hiện kết chuyển.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 10989
+      },
+      "system_b_consultant": {
+        "answer": "1. **Hạch toán và Kết chuyển**: Hạch toán là việc ghi nhận các nghiệp vụ kinh tế phát sinh vào sổ sách kế toán. Kết chuyển là quá trình chuyển số dư từ các tài khoản tạm thời sang tài khoản chính để xác định kết quả kinh doanh.\n\n2. **Báo cáo tài chính**: Báo cáo tài chính thường bao gồm bảng cân đối kế toán, báo cáo kết quả hoạt động kinh doanh, và báo cáo lưu chuyển tiền tệ. Để lập báo cáo tài chính chính xác, cần phải hoàn tất cả các bút toán kết chuyển.\n\n3. **Ảnh hưởng của việc chưa kết chuyển**: Nếu chưa thực hiện kết chuyển, các số liệu trên báo cáo tài chính có thể không phản ánh chính xác tình hình tài chính và kết quả kinh doanh của doanh nghiệp. Điều này có thể dẫn đến sai lệch trong việc đánh giá hiệu quả hoạt động và tình hình tài chính.\n\n4. **Khuyến nghị**: Để đảm bảo báo cáo tài chính chính xác và đầy đủ, nên thực hiện kết chuyển trước khi lập báo cáo tài chính. Nếu cần thiết, có thể lập báo cáo tài chính tạm thời nhưng cần ghi chú rõ ràng về tình trạng chưa kết chuyển.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 11411
+      }
+    },
+    {
+      "case_id": "financial.close.version",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"khóa sổ tháng BRAVO 10.2\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2359
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"khóa sổ tháng 2026-03 BRAVO 10.2\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2388
+      }
+    },
+    {
+      "case_id": "ap.invoice.version",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"BRAVO 10 xử lý chứng từ mua đầu vào\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2579
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"BRAVO 10 xử lý chứng từ mua đầu vào\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2572
+      }
+    },
+    {
+      "case_id": "ap.invoice.tax",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"kiểm tra thuế hóa đơn mua trước khi hạch toán\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2485
+      },
+      "system_b_consultant": {
+        "answer": "1. **Kiểm tra hóa đơn mua hàng**: Trước khi hạch toán, hóa đơn mua hàng cần được kiểm tra kỹ lưỡng, bao gồm cả các thông tin về thuế. Điều này đảm bảo rằng các thông tin trên hóa đơn là chính xác và phù hợp với quy định pháp luật.\n   - Kiểm tra tính hợp lệ của hóa đơn: Đảm bảo hóa đơn có đầy đủ thông tin cần thiết như mã số thuế, tên người bán, ngày phát hành, và các chi tiết về hàng hóa/dịch vụ.\n   - Kiểm tra thuế suất và số tiền thuế: Đảm bảo rằng thuế suất áp dụng là đúng và số tiền thuế được tính toán chính xác.\n\n2. **Hạch toán sau khi kiểm tra**: Sau khi đã kiểm tra và xác nhận tính chính xác của hóa đơn, bao gồm cả phần thuế, bạn có thể tiến hành hạch toán vào hệ thống kế toán. Việc này giúp đảm bảo rằng các số liệu tài chính được ghi nhận chính xác và tuân thủ quy định pháp luật.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 6568
+      }
+    },
+    {
+      "case_id": "ar.document",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"đối chiếu hóa đơn bán và công nợ phải thu\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 5199
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"đối chiếu hóa đơn bán và công nợ phải thu\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4650
+      }
+    },
+    {
+      "case_id": "inventory.cost",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"tính giá thành tồn kho sau khi nhập xuất kho\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3435
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"tính giá thành tồn kho sau nhập xuất kho\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2854
+      }
+    },
+    {
+      "case_id": "fixed.asset.depreciation",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"q\":\"khấu hao tài sản cố định cuối tháng bị thiếu\"}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2583
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về quy trình khấu hao tài sản cố định hiện tại của bạn không? Ví dụ: phần mềm nào đang được sử dụng, có sử dụng BRAVO ERP không, và nếu có thì phiên bản nào?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3424
+      }
+    },
+    {
+      "case_id": "costing.preconditions",
+      "system_a_legacy": {
+        "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nThông thường, để tính giá thành sản phẩm, cần phải có đầy đủ thông tin về chi phí đầu vào, bao gồm nguyên vật liệu, nhân công, và các chi phí sản xuất khác. Nếu chưa đủ chi phí đầu vào, việc tính giá thành có thể không chính xác hoặc không thể thực hiện được. Tuy nhiên, trong một số trường hợp, có thể sử dụng các phương pháp ước tính hoặc dự báo để tạm tính giá thành, nhưng điều này cần được xem xét cẩn thận và có thể không phản ánh đúng thực tế.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4479
+      },
+      "system_b_consultant": {
+        "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nThông thường, để tính giá thành sản phẩm, cần phải có đầy đủ thông tin về chi phí đầu vào, bao gồm chi phí nguyên vật liệu, nhân công, và các chi phí sản xuất chung khác. Nếu chưa đủ chi phí đầu vào, việc tính giá thành có thể không chính xác hoặc không thể thực hiện được. Tuy nhiên, trong một số trường hợp, có thể sử dụng các ước tính hoặc dữ liệu tạm thời để tính toán sơ bộ giá thành, nhưng điều này cần được điều chỉnh lại khi có đủ thông tin chi phí thực tế.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 4729
+      }
+    },
+    {
+      "case_id": "discrepancy.parameters",
+      "system_a_legacy": {
+        "answer": "1. **Tham số thời gian**: Xác định khoảng thời gian cụ thể mà bạn muốn kiểm tra, ví dụ như tháng, quý, hoặc năm.\n\n2. **Tham số đơn vị kinh doanh**: Chọn đơn vị kinh doanh hoặc chi nhánh cụ thể nếu công ty có nhiều đơn vị.\n\n3. **Tham số loại hàng hóa**: Phân loại theo nhóm hàng hóa hoặc sản phẩm cụ thể để dễ dàng so sánh.\n\n4. **Tham số tài khoản kế toán**: Xác định tài khoản kế toán cụ thể để kiểm tra số liệu liên quan.\n\n5. **Tham số đối tượng**: Chọn đối tượng cụ thể như khách hàng, nhà cung cấp, hoặc nhân viên để kiểm tra số liệu liên quan.\n\n6. **Tham số loại chứng từ**: Xác định loại chứng từ như hóa đơn, phiếu nhập, phiếu xuất để kiểm tra số liệu liên quan.\n\n7. **Tham số kho hàng**: Nếu có nhiều kho, cần xác định kho cụ thể để kiểm tra số liệu tồn kho.\n\n8. **Tham số loại giao dịch**: Phân loại theo loại giao dịch như mua hàng, bán hàng, hoặc chuyển kho để dễ dàng so sánh.\n\nCác tham số này giúp khoanh vùng và xác định nguyên nhân chênh lệch trong báo cáo một cách hiệu quả.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 6434
+      },
+      "system_b_consultant": {
+        "answer": "1. **Khoanh vùng theo thời gian**: Xác định khoảng thời gian cụ thể mà số liệu chênh lệch xuất hiện. Điều này giúp tập trung vào các giao dịch hoặc sự kiện xảy ra trong khoảng thời gian đó.\n\n2. **Khoanh vùng theo loại giao dịch**: Xem xét các loại giao dịch cụ thể có thể gây ra chênh lệch, chẳng hạn như mua hàng, bán hàng, nhập kho, xuất kho, v.v.\n\n3. **Khoanh vùng theo tài khoản kế toán**: Kiểm tra các tài khoản kế toán liên quan để xác định xem chênh lệch có thể xuất phát từ việc ghi nhận sai tài khoản hay không.\n\n4. **Khoanh vùng theo đơn vị tổ chức**: Nếu công ty có nhiều chi nhánh hoặc đơn vị kinh doanh, cần xác định xem chênh lệch có liên quan đến một đơn vị cụ thể nào không.\n\n5. **Khoanh vùng theo sản phẩm hoặc dịch vụ**: Xác định xem chênh lệch có liên quan đến một sản phẩm hoặc dịch vụ cụ thể nào không.\n\n6. **Khoanh vùng theo người thực hiện**: Kiểm tra xem có sự khác biệt nào trong cách thực hiện của các nhân viên khác nhau không.\n\n7. **Khoanh vùng theo hệ thống hoặc phần mềm**: Đôi khi chênh lệch có thể do lỗi hệ thống hoặc phần mềm, cần kiểm tra các bản cập nhật hoặc thay đổi gần đây.",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 6508
+      }
+    },
+    {
+      "case_id": "discrepancy.stop-resume",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại sai sót trong báo cáo công nợ không? Ví dụ: sai số liệu, sai định dạng, hay thiếu dữ liệu? Và bạn đang sử dụng phiên bản BRAVO nào?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3259
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại sai sót nào đang xảy ra trong báo cáo công nợ không? Ví dụ: sai số liệu, thiếu dữ liệu, hay vấn đề định dạng? Và bạn đang sử dụng phiên bản BRAVO nào?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3692
+      }
+    },
+    {
+      "case_id": "technical.b00lookup",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về yêu cầu tạo B00Lookup? Cụ thể, bạn cần tạo mới hay chỉnh sửa một B00Lookup đã có, và mục đích sử dụng của nó là gì?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3195
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về yêu cầu tạo B00Lookup? Cụ thể, bạn muốn biết về quy trình tạo, cấu trúc dữ liệu, hay cách sử dụng B00Lookup trong BRAVO 10?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3219
+      }
+    },
+    {
+      "case_id": "technical.template",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về loại template và datasource bạn muốn thiết kế không? Ví dụ: template cho báo cáo, chứng từ, hay một loại tài liệu cụ thể nào khác? Và datasource sẽ lấy dữ liệu từ đâu?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 5462
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về loại template và datasource bạn muốn thiết kế không? Ví dụ như mục đích sử dụng, các trường dữ liệu cần có, hoặc hệ thống cụ thể mà bạn đang làm việc?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 5433
+      }
+    },
+    {
+      "case_id": "schema.table-field",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"schema BRAVO 10 liên kết chứng từ\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2475
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"schema BRAVO 10 liên kết chứng từ\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2492
+      }
+    },
+    {
+      "case_id": "schema.view",
+      "system_a_legacy": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"View database BRAVO 10 báo cáo\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2954
+      },
+      "system_b_consultant": {
+        "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"View database BRAVO 10 báo cáo\"}}",
+        "grounded": false,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3047
+      }
+    },
+    {
+      "case_id": "incident.ui",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về lỗi UI này không? Ví dụ: loại chứng từ nào, thông báo lỗi cụ thể, hoặc ngữ cảnh khi lỗi xảy ra?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3612
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin về lỗi UI không hiển thị khi mở chứng từ không? Ví dụ: loại chứng từ nào, thông báo lỗi cụ thể, hoặc ngữ cảnh sử dụng?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3531
+      }
+    },
+    {
+      "case_id": "incident.integration",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về lỗi tích hợp nào đang gặp phải không? Ví dụ: lỗi xảy ra khi tích hợp với hệ thống nào, có mã lỗi cụ thể không, và bạn đang sử dụng phiên bản BRAVO nào?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3168
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cho biết thêm chi tiết về lỗi tích hợp nào đang gặp phải không? Ví dụ: tên module, thời điểm xảy ra lỗi, hoặc bất kỳ thông tin cụ thể nào khác để tôi có thể hỗ trợ bạn tốt hơn.",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 3133
+      }
+    },
+    {
+      "case_id": "unknown.goal",
+      "system_a_legacy": {
+        "answer": "Bạn có thể cung cấp thêm thông tin chi tiết về yêu cầu này không? Ví dụ: yêu cầu liên quan đến module nào, có tài liệu hoặc mô tả cụ thể nào không?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2551
+      },
+      "system_b_consultant": {
+        "answer": "Bạn có thể cung cấp thêm thông tin chi tiết về yêu cầu này không? Ví dụ như yêu cầu liên quan đến module nào, hoặc có bất kỳ thông tin nào khác mà bạn có thể chia sẻ?",
+        "grounded": true,
+        "citations": [],
+        "workflow_id": null,
+        "current_node": null,
+        "state_revision": 0,
+        "latency_ms": 2574
+      }
+    }
+  ],
+  "payload_sha256": "cf000393293f1615b4a3375d22a4739fa0d6091466be4f2c54301c11812f4b7c"
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": "bravo-v2-runtime-baseline/v1",
-  "generated_at": "2026-07-31T04:19:15.682531+00:00",
+  "generated_at": "2026-07-31T06:30:17.572922+00:00",
   "secret_handling": {
     "reads_env_files": false,
     "renders_interpolated_compose": false,
@@ -8,9 +8,9 @@
     "records_credentials": false
   },
   "git": {
-    "head": "24209ab10535aba2f6facc0cc1bdc766e7eac079",
+    "head": "b6487f232e0fb93ea493a81bd0a41718f73dd9d6",
     "branch": "codex/v2-financial-close-core",
-    "conversation_code_baseline": "24209ab10535aba2f6facc0cc1bdc766e7eac079"
+    "conversation_code_baseline": "b6487f232e0fb93ea493a81bd0a41718f73dd9d6"
   },
   "alembic_heads": [
     "0017_native_rls_backstop"
@@ -20,7 +20,7 @@
     "frontend-react/package-lock.json": "b06ea86f13e3903d1262f21c1a9150fc643efb3efd747dc633e2ad361ac53030",
     "python_lockfile": "uv.lock:65ed1c4f5032ed0445f369f517458e50ef86ce7285f65f797e86d35fe6206bc4",
     "python_executable": "3.12.13",
-    "python_package_snapshot_sha256": "b275a43dfbac8cfdc46123368882d6559bfcd40541b7065093bbdf6c963da6da"
+    "python_package_snapshot_sha256": "c2624a8a57fe8d67784f3c9c28b428262fffea62a440913f40629aceee94ec40"
   },
   "corpus_manifest": {
     "path": "file_system/bravo_corpus_manifest.yaml",
@@ -32,11 +32,15 @@
     "compose_files": [
       {
         "path": "docker-compose.yml",
-        "sha256": "d377643da96b5d28dcd61113b46469f66cc2b26d6413848817b8b8f04decd47f"
+        "sha256": "32ba5152ecb56fbd092c9dfd61119e5a97e84b9480563673087575af89288d99"
       },
       {
         "path": "docker-compose.prod.yml",
         "sha256": "3c3925a217111f40a494edae01dee01f2b4e7b3f6775914a6b2b393fbbd00485"
+      },
+      {
+        "path": "deploy/docker-compose.rls-cutover.yml",
+        "sha256": "abcdebc7213b9670084173be9eacde0cb3ae69cc5fc8e74c5fe913d0e94b1347"
       }
     ],
     "services": {
@@ -46,9 +50,11 @@
         "environment_keys": [
           "APP_ROOT",
           "CORPUS_ROOT",
+          "DATABASE_URL",
           "DATA_ROOT",
           "DATA_RUNTIME_POLICY",
           "ENV",
+          "NATIVE_RLS_ENABLED",
           "PRIVATE_DATA_ROOT",
           "UPLOAD_ROOT"
         ],
@@ -89,8 +95,10 @@
         "environment_keys": [
           "APP_ROOT",
           "CORPUS_ROOT",
+          "DATABASE_URL",
           "DATA_ROOT",
           "DATA_RUNTIME_POLICY",
+          "NATIVE_RLS_ENABLED",
           "PRIVATE_DATA_ROOT",
           "UPLOAD_ROOT"
         ],
