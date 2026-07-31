@@ -20,7 +20,7 @@ _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 class StrictModel(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True, frozen=True)
 
 
 def _required(value: str) -> str:
