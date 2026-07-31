@@ -30,5 +30,9 @@ def downgrade() -> None:
     inspector = sa.inspect(op.get_bind())
     columns = {column["name"] for column in inspector.get_columns("memory_blocks")}
     if "updated_at" in columns:
-        op.drop_index("ix_memory_blocks_updated_at", table_name="memory_blocks")
+        indexes = {index["name"] for index in inspector.get_indexes("memory_blocks")}
+        # Earlier schemas may already contain updated_at. In that case upgrade deliberately does
+        # not create this migration's index, so downgrade must not assume it exists.
+        if "ix_memory_blocks_updated_at" in indexes:
+            op.drop_index("ix_memory_blocks_updated_at", table_name="memory_blocks")
         op.drop_column("memory_blocks", "updated_at")

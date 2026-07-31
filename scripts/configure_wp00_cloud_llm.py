@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import secrets
 from pathlib import Path
 
 
@@ -43,12 +44,17 @@ def configure(path: Path, *, cloud_embedding: bool = False) -> None:
     if missing:
         raise ValueError("cloud LLM configuration is incomplete: " + ", ".join(missing))
 
+    updates = dict(_CLOUD_EMBEDDING_UPDATES if cloud_embedding else _UPDATES)
+    weak = {"", "change-me", "change-me-in-production", "change-me-256-bit-random"}
+    for key in ("JWT_SECRET", "MCP_TOKEN_PEPPER"):
+        if values.get(key, "").strip() in weak or len(values.get(key, "")) < 16:
+            updates[key] = secrets.token_hex(32)
+
     written: set[str] = set()
     output: list[str] = []
     for line in lines:
         match = _ASSIGNMENT.match(line)
         key = match.group(1) if match else None
-        updates = _CLOUD_EMBEDDING_UPDATES if cloud_embedding else _UPDATES
         if key in updates:
             if key not in written:
                 output.append(f"{key}={updates[key]}")

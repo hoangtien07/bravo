@@ -65,3 +65,30 @@ operator must: commit the current changes; start the isolated `bravo-wp00` stack
 native RLS through HTTP/MCP/worker; complete isolated backup/restore; and freeze the synthetic A/B
 answer/trace artifact. Do not create Bank fixtures, Core V2, prompts, routing, retrieval, APIs, or
 case UI until those runtime and baseline records exist.
+
+## 2026-07-31 isolated runtime execution update
+
+The following evidence was collected on the isolated Docker Compose project `bravo-wp00`. It uses
+a new project volume, so it does not reuse a 1024-dimension database or the prior workstation
+container.
+
+- `0012 -> 0017_native_rls_backstop` clean migration passed on the fresh 1536-dimension database.
+- Downgrade to `0012` initially exposed a real defect in migration `0016`: it unconditionally
+  dropped an index that its conditional upgrade may not create. The migration was corrected to
+  drop the index only when it exists; a repeat downgrade to `0012` and re-upgrade to head passed.
+- The non-owner API/MCP and worker roles were provisioned. `chunks` RLS was enabled and forced;
+  `scripts/verify_native_rls_cutover.py` passed using the API runtime role.
+- API, worker, PostgreSQL and authenticated Redis booted. Internal `/readyz` returned database
+  `ok`, catalog count `19`, and `ready: true`.
+
+### Remaining WP-00 blockers after runtime execution
+
+1. The migration/router/configuration fixes from this execution are not yet committed. A fresh
+   clean baseline must name the new commit.
+2. The required two-department negative probes through real HTTP, MCP and worker paths have not
+   run. The catalog preflight is not a substitute.
+3. The isolated backup/restore drill and its redacted evidence have not run.
+4. No immutable synthetic A/B answer/trace capture exists. Provider credential rotation remains an
+   external operator assertion unless its redacted control-plane evidence is attached.
+
+**Gate result: WP-00 remains BLOCKED.** No downstream package may start from this artifact.

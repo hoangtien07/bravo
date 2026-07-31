@@ -28,8 +28,15 @@ _llm_sema = asyncio.Semaphore(max(1, _settings.llm_max_concurrency))
 
 # timeout/max_retries: một lời gọi đi lạc (vd fail-closed về local nhưng KHÔNG có LLM local)
 # phải FAIL NHANH + rõ, thay vì treo (mặc định client ~10 phút) khiến UI "không có response".
-_local = AsyncOpenAI(base_url=_settings.llm_local_base_url, api_key=_settings.llm_local_api_key,
+# A cloud-only deployment intentionally has no local endpoint or credential. Do not construct a
+# dormant local client at import time: the OpenAI SDK rejects its missing key before routing can
+# correctly select the configured cloud backend.
+_local = (
+    None
+    if _settings.egress_policy == "cloud_only"
+    else AsyncOpenAI(base_url=_settings.llm_local_base_url, api_key=_settings.llm_local_api_key,
                      timeout=30.0, max_retries=2)
+)
 _cloud = (
     AsyncOpenAI(base_url=_settings.cloud_base_url or None, api_key=_settings.cloud_api_key,
                 timeout=30.0, max_retries=2)
@@ -188,6 +195,8 @@ async def chat(messages: list[dict], *, context: list | None = None,
     d = decide(sensitive, allow_cloud_task)
     _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
+    if client is None:
+        raise RuntimeError("no configured LLM client for the selected backend")
     if d.backend == "cloud":
         await _audit_egress(db, d, messages, actor_id=actor_id, session_id=session_id)
     kwargs.update(_structured_kwargs(d, json_schema))
@@ -216,6 +225,8 @@ async def chat_stream(messages: list[dict], *, context: list | None = None,
     d = decide(sensitive, allow_cloud_task)
     _guard_vision(d, messages)                 # RC-BE1: fail loud before any blind image answer
     client = _cloud if d.backend == "cloud" else _local
+    if client is None:
+        raise RuntimeError("no configured LLM client for the selected backend")
     if d.backend == "cloud":
         await _audit_egress(db, d, messages, actor_id=actor_id, session_id=session_id)
     kwargs.update(_structured_kwargs(d, json_schema))
