@@ -5,14 +5,19 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
 ## Built and automated
 
 - Bank: durable synthetic case shell, scoped API, deterministic reconciliation, hash-bound
-  maker/checker review/export, read-only bounded conversation and Accounting Work UI.
+  maker/checker review/export, read-only bounded conversation and Accounting Work UI. The UI sends
+  the server revision and a fresh idempotency key for frozen-case creation, evidence, checks,
+  review and artifact export; authorization and transition decisions remain in the API/database.
 - Voucher: typed synthetic evidence, deterministic total/duplicate/three-way/lineage checks and a
   read-only API/UI preview. It does not post a voucher or create a parallel ledger.
 - Period Close: typed prerequisite/reconciliation inputs, deterministic fail-closed readiness
   projection and a read-only API/UI preview. It does not calculate close, generate reports or lock
   a period.
 - Demo configuration is versioned and fail-closed to synthetic-only with model egress denied until
-  the owner pins a model/version.
+  the owner pins a model/version. Runtime activation now requires both
+  `ACCOUNTING_CASE_V2_ENABLED=true` and the versioned
+  `ACCOUNTING_CASE_V2_DEMO_CONFIG`; boot rejects a missing, invalid, non-synthetic, or
+  capability-disabled manifest.
 - The FigmaMake prototype and `frontend-react` have an Accounting Work surface governed by the
   contract-first handoff.
 
@@ -28,9 +33,13 @@ Run on 2026-08-01:
   app/api/routes_accounting_cases_v2.py [focused Core V2 tests]
 All checks passed
 
+.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider \
+  tests/test_core_v2_demo_config.py tests/test_boot.py tests/test_core_v2_developer_track.py
+20 passed
+
 cd frontend-react
 npm.cmd test -- --run
-4 files, 8 tests passed
+5 files, 9 tests passed
 npm.cmd run build
 Production build passed
 ```
@@ -46,6 +55,10 @@ Only Bank currently has durable persisted case/review/export lifecycle. Voucher 
 are deliberately preview-only until their complete synthetic policy, golden fixture and review
 envelope semantics are approved. They must not be represented as a completed persisted workflow.
 This avoids adding a generic persistence abstraction from unspecified accounting policy.
+
+The configuration boot guard is a developer/synthetic containment control. It is not a substitute
+for an operator-managed non-owner RLS cutover, a model-owner decision, or production deployment
+approval.
 
 ## Deferred, not passed
 

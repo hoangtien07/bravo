@@ -22,7 +22,10 @@ export interface AccountingCaseView {
   evidence: { snapshot_id: string; source_type: string; source_version: string; complete: boolean }[];
   findings: { finding_id: string; finding_type: string; severity: string; status: string; check_result_ids: string[] }[];
   results: { check_id: string; reason_code: string; result: Record<string, string> }[];
+  review_dispositions?: Record<string, string>;
   draft_payload_hash: string | null;
+  evidence_hash?: string;
+  result_hash?: string | null;
   approval: Record<string, unknown> | null;
 }
 

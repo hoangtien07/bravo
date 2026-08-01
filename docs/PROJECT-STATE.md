@@ -3,7 +3,9 @@
 Status: `V2 SYNTHETIC THREE-CASE PLAN ACCEPTED — operational and evaluation gates remain open`
 Owner: project owner  
 As of: 2026-08-01
-Verified against Git: branch `codex/v2-financial-close-core`, commit `33421684541663e199d397d2f7db12388ccb170a`, clean worktree before this documentation update
+Evidence window: branch `codex/v2-financial-close-core`; see the dated reproducible commands in
+`evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`. Historical baseline hashes below are not a claim that
+the current development worktree is clean.
 
 ## Executive state
 
@@ -68,7 +70,7 @@ not proof of a clean dependency posture.
 | Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
 | Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
 | A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
-| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 durable command/review shell, SQL/HTTP authorization, and isolated native-RLS probe | Blind quality claim, customer-data authorization, production/operational claim, generic MCP/worker probes, and secondary-case implementation |
+| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 durable Bank command/review shell, SQL/HTTP authorization, isolated native-RLS probe; Bank UI/reasoning and read-only typed Voucher/Period previews are on the developer track | Blind quality claim, customer-data authorization, production/operational claim, generic MCP/worker probes, and persisted Voucher/Period lifecycle |
 | BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
 ## Gates still open
@@ -105,12 +107,12 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Execute the selected Bank-first synthetic three-case sequence in
-`evidence/v2/V2-COMPLETION-COUNCIL-DECISION-2026-08-01.md`. First obtain reproducible WP-00
-operational evidence and a frozen Bank evaluation packet; then build and evaluate bounded Bank
-conversation (WP-05), Bank UX (WP-06), Voucher (WP-07), Period Close (WP-08), configuration/mock
-(WP-09), and integrated evidence (WP-10). Keep legacy endpoints unchanged. Do not simulate
-operator, owner, SME, user, customer or pilot evidence when the required authority is unavailable.
+Continue the selected Bank-first synthetic three-case sequence in
+`evidence/v2/V2-COMPLETION-COUNCIL-DECISION-2026-08-01.md`. The developer track has Bank
+conversation/UI workflow controls, read-only Voucher/Period previews and a synthetic runtime
+manifest; next close the Bank automated fixtures/evaluation, contract-first FigmaMake states and
+synthetic integration evidence. Keep legacy endpoints unchanged. Do not simulate operator, owner,
+SME, user, customer or pilot evidence when the required authority is unavailable.
 
 For developer completion only, the owner has authorized implementation and automated synthetic
 end-to-end checks through the UI before real-user or blind-SME testing. The evaluation/release

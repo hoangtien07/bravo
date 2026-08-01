@@ -1,8 +1,7 @@
-"""Imperative WP-04 orchestration for the synthetic Bank case.
+"""Imperative WP-04 orchestration for the durable synthetic Bank case.
 
-The durable implementation is intentionally deferred: this adapter keeps the frozen demo
-headless while enforcing the Core V2 CAS/idempotency contracts and retaining only minimized
-result/trace references.
+The service keeps only privacy-minimised result and trace references while enforcing the Core V2
+CAS/idempotency contracts. SQL persistence is supplied by the outer adapter.
 """
 from __future__ import annotations
 

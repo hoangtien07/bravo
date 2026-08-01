@@ -29,11 +29,20 @@ The design work may prepare layout, tokens and navigation in parallel, but a cas
 not approved for implementation until its API grammar, authorization action, state transition,
 evidence/lineage fields and failure/abstention behavior are named below.
 
+## Synthetic runtime activation
+
+The V2 API remains off by default. A developer demo must explicitly set
+`ACCOUNTING_CASE_V2_ENABLED=true` and
+`ACCOUNTING_CASE_V2_DEMO_CONFIG=file_system/core_v2_synthetic_demo.yaml` (or another valid,
+versioned synthetic manifest). The boot guard rejects a missing, malformed, non-synthetic, or
+capability-disabled manifest. This only authorizes a synthetic developer demo; it does not enable
+model egress, use real data, or replace the deferred operator/release gates.
+
 ## Current contract inventory
 
 | Capability | Backend status | Design input | UI integration status |
 |---|---|---|---|
-| Bank case lifecycle | Typed V2 API, durable synthetic case store, maker/checker/export boundary | `GET/POST /api/v2/accounting-cases`; evidence, findings, state, revision, hash/approval fields | Accounting Work route exists in `frontend-react`; workflow controls remain next |
+| Bank case lifecycle | Typed V2 API, durable synthetic case store, maker/checker/export boundary | `GET/POST /api/v2/accounting-cases`; evidence, findings, state, revision, hash/approval fields | Accounting Work implements frozen-case creation, evidence/check actions, reviewer dispositions and review-artifact export; server retains authorization/state authority |
 | Bank conversation | Read-only bounded endpoint | `POST /api/v2/accounting-cases/{case_id}/conversation` with `question`; reply has `kind`, text, finding/evidence/rule references and `mutates_case=false` | Integrated in case dossier |
 | Voucher Review | Read-only synthetic deterministic preview | `POST /api/v2/accounting-cases/preview/voucher-review`; total, duplicate, three-way and lineage result states; missing evidence is `abstain` | No persisted case/review UI yet — do not design a posting action |
 | Period Close Readiness | Read-only synthetic deterministic preview | `POST /api/v2/accounting-cases/preview/period-close-readiness`; prerequisite, freshness and material reconciliation blockers | No persisted case/review UI yet — do not design a close action |
@@ -64,11 +73,11 @@ implementer maps those frames to `frontend-react` API types and adds E2E/a11y/vi
 
 ## Sequencing
 
-1. Finish Bank workflow controls and automated Bank evaluation/fixtures.
-2. Publish the Bank handoff package; update `FigmaMake_UI` from those exact contracts.
+1. Extend the Bank automated fixtures/evaluation and use the exact controls above in FigmaMake frames.
+2. Publish/update the Bank handoff package from those exact contracts.
 3. Finish Voucher policy/fixture/API contract, then its screens; do not add posting.
 4. Finish Period Close prerequisite policy/API contract, then its screens; do not add close engine.
-5. Add config/mock and integrated synthetic evidence.
+5. Add integrated synthetic evidence.
 
 ## Deferred gates
 

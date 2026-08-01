@@ -57,6 +57,13 @@ class Settings(BaseSettings):
     # Core V2 Bank API is deliberately fail-closed until the synthetic deployment explicitly
     # opts in.  This flag is not a production-readiness claim or an authorization bypass.
     accounting_case_v2_enabled: bool = False
+    # The V2 route flag is not sufficient on its own.  An enabled synthetic demonstrator must
+    # name a versioned, synthetic-only manifest so startup can reject accidental real-data or
+    # model-egress configurations before serving a request.
+    accounting_case_v2_demo_config: str = Field(
+        "",
+        validation_alias="ACCOUNTING_CASE_V2_DEMO_CONFIG",
+    )
 
     # Auth / security (SECURITY-RLS.md)
     jwt_secret: str = "change-me"
@@ -269,6 +276,30 @@ class Settings(BaseSettings):
         if self.site_config:
             from app.site_config import load_site_config
             load_site_config(self.site_config)
+        if self.accounting_case_v2_enabled:
+            if not self.accounting_case_v2_demo_config:
+                raise RuntimeError(
+                    "[boot-guard] accounting_case_v2_enabled=true requires "
+                    "ACCOUNTING_CASE_V2_DEMO_CONFIG (a synthetic-only manifest)."
+                )
+            from pathlib import Path
+
+            from app.core_v2.demo_config import DemoConfigError, load_synthetic_demo_config
+
+            demo_config_path = Path(self.accounting_case_v2_demo_config)
+            if not demo_config_path.is_absolute():
+                demo_config_path = Path(self.app_root or Path.cwd()) / demo_config_path
+            try:
+                demo_config = load_synthetic_demo_config(demo_config_path)
+            except (DemoConfigError, OSError) as exc:
+                raise RuntimeError(
+                    "[boot-guard] Accounting Case V2 synthetic demo manifest is invalid."
+                ) from exc
+            if not demo_config.capability_flags.get("accounting_case_v2", False):
+                raise RuntimeError(
+                    "[boot-guard] Accounting Case V2 is enabled but disabled by its synthetic "
+                    "demo manifest."
+                )
         self.validate_data_runtime_policy()
         if self.agent_runtime not in {"legacy", "openai", "canary"}:
             raise RuntimeError("[boot-guard] agent_runtime must be legacy, openai, or canary.")
