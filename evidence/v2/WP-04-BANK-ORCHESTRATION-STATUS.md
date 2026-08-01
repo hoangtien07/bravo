@@ -47,9 +47,13 @@ All checks passed
 ```
 
 The headless probe covers review/export lifecycle, cross-operation idempotency conflict,
-retry-tampering immutability, and evidence supersession/recheck with no LLM or BRAVO API. The
-HTTP/SQL integration test is skipped when PostgreSQL is unreachable; it is not evidence of an
-executed database/RLS probe.
+retry-tampering immutability, and evidence supersession/recheck with no LLM or BRAVO API.
+
+On 2026-08-01, an isolated base-compose PostgreSQL container was healthy; the current `test`
+image applied `0018_accounting_case_v2_shell` and ran
+`tests/test_core_v2_bank_orchestration.py`: **6 passed**. This proves the SQL persistence path
+for create/evidence/checks and cross-department HTTP denial in that container. It does not prove
+native RLS enforcement or MCP/worker isolation.
 
 ## Limits and next gate
 

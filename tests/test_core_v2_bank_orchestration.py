@@ -132,6 +132,8 @@ def test_evidence_supersession_invalidates_draft_review_and_forces_fresh_checks(
 @pytest.mark.skipif(not db_available(), reason="Postgres not reachable")
 def test_http_routes_enforce_server_identity_scope_and_complete_headlessly(monkeypatch):
     from app.api import routes_accounting_cases_v2 as routes
+    from app.database import async_session_factory
+    from app.database.models import Department, Employee, EmployeeDepartment
     from app.main import app
     from app.security.auth import get_current_identity
 
@@ -145,6 +147,14 @@ def test_http_routes_enforce_server_identity_scope_and_complete_headlessly(monke
         return identity
 
     async def run():
+        async with async_session_factory() as db:
+            department_id = identity.department_ids[0]
+            db.add(Department(id=department_id, name=f"case-test-{department_id}"))
+            db.add(Employee(id=identity.employee_id, email=f"case-test-{identity.employee_id}@example.invalid",
+                            full_name="Case API test", password_hash="test", permissions=list(identity.permissions)))
+            await db.flush()
+            db.add(EmployeeDepartment(employee_id=identity.employee_id, department_id=department_id))
+            await db.commit()
         app.dependency_overrides[get_current_identity] = override_identity
         try:
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
