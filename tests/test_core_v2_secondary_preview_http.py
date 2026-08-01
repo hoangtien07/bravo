@@ -50,19 +50,23 @@ def test_secondary_preview_routes_require_case_read_and_return_bounded_output(mo
     asyncio.run(run())
 
 
-def test_secondary_preview_capability_flag_is_a_route_backstop(monkeypatch, tmp_path):
+@pytest.mark.parametrize(
+    ("capability", "guard_name"),
+    (("voucher_review", "_require_voucher_preview"), ("period_close_readiness", "_require_period_close_preview")),
+)
+def test_secondary_preview_capability_flag_is_a_route_backstop(monkeypatch, tmp_path, capability, guard_name):
     from fastapi import HTTPException
 
     from app.api import routes_accounting_cases_v2 as routes
 
-    disabled = tmp_path / "disabled-voucher.yaml"
+    disabled = tmp_path / f"disabled-{capability}.yaml"
     source = Path("file_system/core_v2_synthetic_demo.yaml").read_text(encoding="utf-8")
-    disabled.write_text(source.replace("voucher_review: true", "voucher_review: false"), encoding="utf-8")
+    disabled.write_text(source.replace(f"{capability}: true", f"{capability}: false"), encoding="utf-8")
     monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(
         accounting_case_v2_enabled=True,
         accounting_case_v2_demo_config=str(disabled),
     ))
 
     with pytest.raises(HTTPException) as raised:
-        routes._require_voucher_preview()
+        getattr(routes, guard_name)()
     assert raised.value.status_code == 404

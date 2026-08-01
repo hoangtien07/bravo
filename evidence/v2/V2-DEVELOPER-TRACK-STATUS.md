@@ -44,7 +44,7 @@ All checks passed
 .venv\Scripts\python.exe -m pytest -q -p no:cacheprovider \
   tests/test_core_v2_demo_config.py tests/test_core_v2_secondary_preview_http.py \
   tests/test_core_v2_bank_orchestration.py
-12 passed, 1 skipped (the durable Bank HTTP proof requires reachable PostgreSQL)
+13 passed, 1 skipped (the durable Bank HTTP proof requires reachable PostgreSQL)
 
 cd frontend-react
 npm.cmd test -- --run
