@@ -107,12 +107,13 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Continue the selected Bank-first synthetic three-case sequence in
-`evidence/v2/V2-COMPLETION-COUNCIL-DECISION-2026-08-01.md`. The developer track has Bank
-conversation/UI workflow controls, read-only Voucher/Period previews and a synthetic runtime
-manifest; next close the Bank automated fixtures/evaluation, contract-first FigmaMake states and
-synthetic integration evidence. Keep legacy endpoints unchanged. Do not simulate operator, owner,
-SME, user, customer or pilot evidence when the required authority is unavailable.
+The developer synthetic scaffold is complete: Bank has the durable case workflow; Voucher and
+Period Close are intentionally preview-only; the contract-first FigmaMake/frontend integration and
+isolated durable database proof are recorded. The next work is the authorized external gates in
+`plan-rebuild/15-V2-EXTERNAL-GATE-EXECUTION-PACKET.md`: non-owner runtime containment, owner-pinned
+model/evaluation configuration, and independent SME/manual-baseline evidence. Keep legacy
+endpoints unchanged. Do not simulate operator, owner, SME, user, customer or pilot evidence when
+the required authority is unavailable.
 
 For developer completion only, the owner has authorized implementation and automated synthetic
 end-to-end checks through the UI before real-user or blind-SME testing. The evaluation/release

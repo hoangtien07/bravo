@@ -38,6 +38,8 @@ research, raw conversations, or obsolete progress as current truth.
 14. `plan-rebuild/05-BRAVO-ENGINEERING-WORKBENCH-CONTRACT.md` and
    `plan-rebuild/06-RESEARCH-AND-IMPLEMENTATION-ROUNDS.md` only when the independent track or
    shared contract is in scope.
+15. `plan-rebuild/15-V2-EXTERNAL-GATE-EXECUTION-PACKET.md` when assessing completion, runtime
+    cutover, model/evaluation, SME or user-baseline evidence.
 
 ### Tier 2 — open only for a specific claim
 

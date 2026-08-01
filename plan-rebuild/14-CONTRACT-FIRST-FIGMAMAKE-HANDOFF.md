@@ -89,3 +89,12 @@ implementer maps those frames to `frontend-react` API types and adds E2E/a11y/vi
 Blind SME review, reviewer-time baseline, non-owner operational RLS cutover, generic MCP/worker
 runtime probes and all pilot/production decisions remain deferred. Their absence is recorded as a
 gate, never rendered as a completed UI state or release claim.
+
+## Completion boundary
+
+The developer sequence above delivers a synthetic demonstrator scaffold. It does not close WP-05,
+WP-07, WP-08 or WP-10: Bank still needs the owner-pinned model/evaluation gate; Voucher and Period
+Close still need approved policy/golden/held-out truth before their preview-only surfaces can become
+durable workflows; and all cases still need independent SME and manual-baseline evidence. The
+authorized next actions and required evidence are consolidated in
+`15-V2-EXTERNAL-GATE-EXECUTION-PACKET.md`.
