@@ -5,6 +5,7 @@ import AppShell from "./components/AppShell";
 import NewConversation from "./components/NewConversation";
 import ActiveConversation from "./components/ActiveConversation";
 import FinancialCloseReadiness from "./components/FinancialCloseReadiness";
+import AccountingWork from "./components/AccountingWork";
 import FinancialCloseGraph from "./components/FinancialCloseGraph";
 import DraftApproval from "./components/DraftApproval";
 import KnowledgeLibrary from "./components/KnowledgeLibrary";
@@ -26,6 +27,7 @@ const SCREEN_PATH: Record<Screen, string> = {
   "active-conversation": "/c/fixture:current",
   conversations: "/conversations",
   "financial-close": "/financial-close",
+  "accounting-work": "/accounting-work",
   "financial-graph": "/financial-close/graph",
   "draft-approval": "/approvals",
   knowledge: "/knowledge",
@@ -96,6 +98,7 @@ function AppRoutes() {
       <Route path="/c/:id" element={<ShellRoute><ActiveConversation /></ShellRoute>} />
       <Route path="/conversations" element={<ShellRoute><ConversationHistory /></ShellRoute>} />
       <Route path="/financial-close" element={<ShellRoute><FinancialCloseReadiness /></ShellRoute>} />
+      <Route path="/accounting-work" element={<ShellRoute><AccountingWork /></ShellRoute>} />
       <Route path="/financial-close/graph" element={<ShellRoute><FinancialCloseGraph /></ShellRoute>} />
       <Route path="/approvals" element={<ShellRoute><DraftApproval /></ShellRoute>} />
       <Route path="/knowledge" element={<ShellRoute><KnowledgeLibrary /></ShellRoute>} />

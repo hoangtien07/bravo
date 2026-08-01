@@ -7,6 +7,7 @@ import bravoLogo from "../imports/bravo-logo.png";
 import { useNavigate } from "react-router-dom";
 
 export type Screen = "new-conversation" | "active-conversation" | "financial-close"
+  | "accounting-work"
   | "financial-graph" | "draft-approval" | "knowledge" | "admin" | "conversations"
   | "money-engine" | "anomaly" | "tax" | "knowledge-graph" | "review-index";
 
@@ -14,6 +15,7 @@ interface NavItem { id: Screen; label: string; icon: string; adminOnly?: boolean
 const NAV_ITEMS: NavItem[] = [
   { id: "new-conversation",    label: "Cuộc hội thoại mới",  icon: "✦" },
   { id: "financial-close",     label: "Đóng kỳ tài chính",   icon: "⊟" },
+  { id: "accounting-work",      label: "Công việc AI",         icon: "▣" },
   { id: "active-conversation", label: "Hội thoại",           icon: "◷" },
   { id: "knowledge",           label: "Kho tri thức",         icon: "☰" },
   { id: "draft-approval",      label: "Phê duyệt",           icon: "✎", approvalOnly: true },
@@ -33,6 +35,7 @@ const SCREEN_TITLES: Partial<Record<Screen, string>> = {
   "new-conversation":    "Cuộc hội thoại mới",
   "active-conversation": "Hội thoại",
   "financial-close":     "Đóng kỳ tài chính",
+  "accounting-work":     "Công việc AI",
   "financial-graph":     "Sơ đồ bằng chứng",
   "draft-approval":      "Phê duyệt bản nháp",
   "knowledge":           "Kho tri thức",
@@ -42,6 +45,7 @@ const SCREEN_TITLES: Partial<Record<Screen, string>> = {
 const SCREEN_ROUTES: Record<Screen, string> = {
   "new-conversation": "/", "active-conversation": "/c/fixture:current", conversations: "/conversations",
   "financial-close": "/financial-close", "financial-graph": "/financial-close/graph",
+  "accounting-work": "/accounting-work",
   "draft-approval": "/approvals", knowledge: "/knowledge", admin: "/admin",
   "money-engine": "/tools/money-engine", anomaly: "/tools/anomaly", tax: "/tools/tax",
   "knowledge-graph": "/tools/knowledge-graph", "review-index": "/review",

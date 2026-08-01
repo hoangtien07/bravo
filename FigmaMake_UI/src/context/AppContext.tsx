@@ -10,6 +10,7 @@ import { fixtureId, fixtureNow } from "../fixtures/runtime";
 // ── App state ─────────────────────────────────────────────────────────────
 
 export type Screen = "new-conversation" | "active-conversation" | "conversations" | "financial-close"
+  | "accounting-work"
   | "financial-graph" | "draft-approval" | "knowledge" | "admin" | "money-engine"
   | "anomaly" | "tax" | "knowledge-graph" | "review-index";
 
