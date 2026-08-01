@@ -13,6 +13,28 @@ export interface ConversationSummary {
   created_at: string;
 }
 
+export interface AccountingCaseView {
+  case_id: string;
+  case_type: string;
+  state: string;
+  revision: number;
+  scope: Record<string, unknown>;
+  evidence: { snapshot_id: string; source_type: string; source_version: string; complete: boolean }[];
+  findings: { finding_id: string; finding_type: string; severity: string; status: string; check_result_ids: string[] }[];
+  results: { check_id: string; reason_code: string; result: Record<string, string> }[];
+  draft_payload_hash: string | null;
+  approval: Record<string, unknown> | null;
+}
+
+export interface AccountingConversationReply {
+  kind: "explanation" | "clarification" | "abstention";
+  text: string;
+  finding_ids: string[];
+  evidence_snapshot_ids: string[];
+  rule_ids: string[];
+  mutates_case: false;
+}
+
 // Durable, caller-scoped workflow state exposed by Consultant Intelligence.
 // It intentionally contains no transcript, source payload, or tool credentials.
 export interface ConsultantState {

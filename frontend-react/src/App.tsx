@@ -14,6 +14,7 @@ import { DocumentsPage } from "@/features/documents/DocumentsPage";
 import { AdminPage } from "@/features/admin/AdminPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SharedPage } from "@/features/shared/SharedPage";
+import { AccountingWorkPage } from "@/features/accounting/AccountingWorkPage";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { identity, loading } = useAuth();
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/graph" element={<GraphView />} />
         <Route path="/anomaly" element={<AnomalyPage />} />
         <Route path="/tax" element={<TaxPage />} />
+        <Route path="/accounting-work" element={<AccountingWorkPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

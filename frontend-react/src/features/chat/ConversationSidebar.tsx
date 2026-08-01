@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, FileCheck2, FileText, Inbox, MessageSquarePlus, Receipt, Share2, Shield, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, BriefcaseBusiness, FileCheck2, FileText, Inbox, MessageSquarePlus, Receipt, Share2, Shield, Trash2, Upload } from "lucide-react";
 import { api } from "@/api/client";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -38,6 +38,9 @@ export function ConversationSidebar() {
         </Button>
       </div>
       <nav className="px-2 pb-2">
+        <Link to="/accounting-work" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
+          <BriefcaseBusiness className="h-4 w-4" /> Công việc AI
+        </Link>
         <Link to="/money-engine" className="flex items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-muted">
           <Receipt className="h-4 w-4" /> Hoá đơn → bút toán
         </Link>
