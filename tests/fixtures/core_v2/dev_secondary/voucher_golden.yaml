@@ -1,0 +1,33 @@
+fixture_version: bravo-v2-dev-voucher/v1
+truth_status: developer_synthetic_only_not_sme_approved
+synthetic_only: true
+must_not_claims:
+  - no voucher posting
+  - no BRAVO ledger write
+cases:
+  - id: voucher-pass
+    evidence:
+      invoice_total: '110'
+      invoice_tax: '10'
+      invoice_net: '100'
+      po_amount: '110'
+      received: true
+      bravo_document_id: synthetic-draft-001
+      duplicate_document_ids: []
+    expected:
+      document_total: pass
+      duplicate_candidate: pass
+      three_way_evidence: pass
+      lineage: pass
+  - id: voucher-missing-evidence
+    evidence:
+      invoice_total: '110'
+      invoice_tax: '10'
+      invoice_net: '100'
+      po_amount: null
+      received: null
+      bravo_document_id: null
+      duplicate_document_ids: []
+    expected:
+      three_way_evidence: abstain
+      lineage: abstain
