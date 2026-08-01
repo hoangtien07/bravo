@@ -119,6 +119,8 @@ gates remain deferred and must never be reported as passed from this developer t
 The next design/dev handoff is contract-first: see
 `plan-rebuild/14-CONTRACT-FIRST-FIGMAMAKE-HANDOFF.md`. `FigmaMake_UI` is a design/prototype input;
 `frontend-react` integrates only frozen backend/agent contracts and their synthetic examples.
+The reproducible developer-track boundary and deferred gates are recorded in
+`evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`.
 
 ## Source of truth and precedence
 
