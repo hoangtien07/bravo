@@ -7,7 +7,8 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
 - Bank: durable synthetic case shell, scoped API, deterministic reconciliation, hash-bound
   maker/checker review/export, read-only bounded conversation and Accounting Work UI. The UI sends
   the server revision and a fresh idempotency key for frozen-case creation, evidence, checks,
-  review and artifact export; authorization and transition decisions remain in the API/database.
+  review and artifact export; review/export tests also bind every current disposition and envelope
+  hash. Authorization and transition decisions remain in the API/database.
 - Voucher: typed synthetic evidence, deterministic total/duplicate/three-way/lineage checks and a
   read-only API/UI workbench. It preserves missing inputs for the API to return `abstain`; it does
   not post a voucher or create a parallel ledger.
@@ -47,7 +48,7 @@ All checks passed
 
 cd frontend-react
 npm.cmd test -- --run
-6 files, 11 tests passed
+6 files, 13 tests passed
 npm.cmd run build
 Production build passed
 
