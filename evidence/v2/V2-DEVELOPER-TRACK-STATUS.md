@@ -19,7 +19,8 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
   `ACCOUNTING_CASE_V2_DEMO_CONFIG`; boot rejects a missing, invalid, non-synthetic, or
   capability-disabled manifest.
 - The FigmaMake prototype and `frontend-react` have an Accounting Work surface governed by the
-  contract-first handoff.
+  contract-first handoff. The FigmaMake Bank frame now mirrors the controlled evidence/check/
+  reviewer-disposition/artifact sequence, while remaining a non-executing visual prototype.
 
 ## Reproducible developer verification
 
@@ -42,6 +43,12 @@ npm.cmd test -- --run
 5 files, 9 tests passed
 npm.cmd run build
 Production build passed
+
+cd FigmaMake_UI
+pnpm.cmd test -- --run src/test/accountingWork.test.tsx
+4 files, 8 tests passed
+pnpm.cmd run typecheck
+Typecheck passed
 ```
 
 The skipped backend test needs reachable PostgreSQL for the durable Bank HTTP path. It has separate
