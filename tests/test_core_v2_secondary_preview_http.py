@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from types import SimpleNamespace
 import uuid
 
 import httpx
+import pytest
 
 from app.security.rls import Identity
 
@@ -15,7 +17,10 @@ def test_secondary_preview_routes_require_case_read_and_return_bounded_output(mo
     from app.main import app
     from app.security.auth import get_current_identity
 
-    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(accounting_case_v2_enabled=True))
+    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(
+        accounting_case_v2_enabled=True,
+        accounting_case_v2_demo_config="file_system/core_v2_synthetic_demo.yaml",
+    ))
     allowed = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
                        permissions=frozenset({"accounting_case:read:own_dept"}))
 
@@ -43,3 +48,21 @@ def test_secondary_preview_routes_require_case_read_and_return_bounded_output(mo
             app.dependency_overrides.pop(get_current_identity, None)
 
     asyncio.run(run())
+
+
+def test_secondary_preview_capability_flag_is_a_route_backstop(monkeypatch, tmp_path):
+    from fastapi import HTTPException
+
+    from app.api import routes_accounting_cases_v2 as routes
+
+    disabled = tmp_path / "disabled-voucher.yaml"
+    source = Path("file_system/core_v2_synthetic_demo.yaml").read_text(encoding="utf-8")
+    disabled.write_text(source.replace("voucher_review: true", "voucher_review: false"), encoding="utf-8")
+    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(
+        accounting_case_v2_enabled=True,
+        accounting_case_v2_demo_config=str(disabled),
+    ))
+
+    with pytest.raises(HTTPException) as raised:
+        routes._require_voucher_preview()
+    assert raised.value.status_code == 404

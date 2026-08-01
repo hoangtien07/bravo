@@ -38,6 +38,11 @@ versioned synthetic manifest). The boot guard rejects a missing, malformed, non-
 capability-disabled manifest. This only authorizes a synthetic developer demo; it does not enable
 model egress, use real data, or replace the deferred operator/release gates.
 
+The route-level backstop also consumes the manifest: Bank lifecycle requires
+`accounting_case_v2`, Voucher preview requires `voucher_review`, and Period Close preview requires
+`period_close_readiness`. A false flag returns 404 even when the caller has an accounting-case
+read capability; a UI must render this as unavailable rather than attempt a fallback.
+
 ## Current contract inventory
 
 | Capability | Backend status | Design input | UI integration status |

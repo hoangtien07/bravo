@@ -18,7 +18,8 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
   the owner pins a model/version. Runtime activation now requires both
   `ACCOUNTING_CASE_V2_ENABLED=true` and the versioned
   `ACCOUNTING_CASE_V2_DEMO_CONFIG`; boot rejects a missing, invalid, non-synthetic, or
-  capability-disabled manifest.
+  capability-disabled manifest. Bank/Voucher/Period routes separately enforce their named manifest
+  capability flags, so a UI/API caller cannot widen an unavailable feature.
 - The FigmaMake prototype and `frontend-react` have an Accounting Work surface governed by the
   contract-first handoff. The FigmaMake Bank frame now mirrors the controlled evidence/check/
   reviewer-disposition/artifact sequence, while remaining a non-executing visual prototype.
@@ -38,6 +39,11 @@ All checks passed
 .venv\Scripts\python.exe -m pytest -q -p no:cacheprovider \
   tests/test_core_v2_demo_config.py tests/test_boot.py tests/test_core_v2_developer_track.py
 20 passed
+
+.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider \
+  tests/test_core_v2_demo_config.py tests/test_core_v2_secondary_preview_http.py \
+  tests/test_core_v2_bank_orchestration.py
+12 passed, 1 skipped (the durable Bank HTTP proof requires reachable PostgreSQL)
 
 cd frontend-react
 npm.cmd test -- --run

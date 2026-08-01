@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
+from app.core_v2.demo_config import DemoConfigError, load_synthetic_demo_config
 from app.adapters.accounting_case_store import SqlSyntheticBankCaseStore
 from app.core_v2.bank_orchestration import CaseAccessError, SyntheticBankCaseService
 from app.core_v2.case_state import CaseStateError, IdempotencyConflict, RevisionConflict
@@ -102,9 +103,27 @@ def _error(exc: Exception) -> HTTPException:
     return HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Accounting case operation failed")
 
 
-def _require_enabled() -> None:
-    if not get_settings().accounting_case_v2_enabled:
+def _require_enabled(capability: str = "accounting_case_v2") -> None:
+    settings = get_settings()
+    if not settings.accounting_case_v2_enabled:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 synthetic API is disabled")
+    config_path = getattr(settings, "accounting_case_v2_demo_config", "")
+    if not config_path:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 synthetic API is disabled")
+    try:
+        config = load_synthetic_demo_config(config_path)
+    except (DemoConfigError, OSError):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 synthetic API is disabled") from None
+    if not config.capability_flags.get(capability, False):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 capability is disabled")
+
+
+def _require_voucher_preview() -> None:
+    _require_enabled("voucher_review")
+
+
+def _require_period_close_preview() -> None:
+    _require_enabled("period_close_readiness")
 
 
 @router.get("")
@@ -124,14 +143,14 @@ async def create_case(body: CreateCaseIn, _: None = Depends(_require_enabled), i
 
 
 @router.post("/preview/voucher-review", response_model=list[DeterministicCheckView])
-async def preview_voucher(body: VoucherEvidenceInput, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity)) -> tuple[DeterministicCheckView, ...]:
+async def preview_voucher(body: VoucherEvidenceInput, _: None = Depends(_require_voucher_preview), identity: Identity = Depends(get_current_identity)) -> tuple[DeterministicCheckView, ...]:
     """Synthetic, read-only deterministic preview; never posts a voucher or touches BRAVO."""
     _require_capability(identity, "read")
     return preview_voucher_review(body)
 
 
 @router.post("/preview/period-close-readiness")
-async def preview_period_close_readiness(body: PeriodClosePreviewIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity)) -> dict:
+async def preview_period_close_readiness(body: PeriodClosePreviewIn, _: None = Depends(_require_period_close_preview), identity: Identity = Depends(get_current_identity)) -> dict:
     """Synthetic readiness projection; never runs BRAVO close, calculation, report, or lock."""
     _require_capability(identity, "read")
     return preview_period_close(body.prerequisites, body.reconciliations).model_dump()

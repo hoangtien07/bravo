@@ -139,7 +139,10 @@ def test_http_routes_enforce_server_identity_scope_and_complete_headlessly(monke
 
     service = SyntheticBankCaseService()
     routes._service = service
-    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(accounting_case_v2_enabled=True))
+    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(
+        accounting_case_v2_enabled=True,
+        accounting_case_v2_demo_config="file_system/core_v2_synthetic_demo.yaml",
+    ))
     identity = Identity(employee_id=uuid.uuid4(), department_ids=[uuid.uuid4()],
                         permissions=frozenset({"accounting_case:create:own_dept"}))
 
