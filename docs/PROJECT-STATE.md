@@ -1,6 +1,6 @@
 # BRAVO AI Copilot — current project state
 
-Status: `WP-04 SQL/HTTP/NATIVE-RLS REMEDIATION VERIFIED — broader operational gates remain open`
+Status: `V2 SYNTHETIC THREE-CASE PLAN ACCEPTED — operational and evaluation gates remain open`
 Owner: project owner  
 As of: 2026-08-01
 Verified against Git: branch `codex/v2-financial-close-core`, commit `33421684541663e199d397d2f7db12388ccb170a`, clean worktree before this documentation update
@@ -105,11 +105,12 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Preserve the WP-04 isolated SQL/HTTP/native-RLS artifact as synthetic-demo evidence. Before a
-broader operational claim, complete the applicable generic MCP/worker two-user/two-department,
-network/credential, and native-RLS cutover probes. Keep legacy endpoints unchanged. Do not start
-WP-05 conversation work or Bank UX until the frozen evaluation and applicable operational gates
-have evidence.
+Execute the selected Bank-first synthetic three-case sequence in
+`evidence/v2/V2-COMPLETION-COUNCIL-DECISION-2026-08-01.md`. First obtain reproducible WP-00
+operational evidence and a frozen Bank evaluation packet; then build and evaluate bounded Bank
+conversation (WP-05), Bank UX (WP-06), Voucher (WP-07), Period Close (WP-08), configuration/mock
+(WP-09), and integrated evidence (WP-10). Keep legacy endpoints unchanged. Do not simulate
+operator, owner, SME, user, customer or pilot evidence when the required authority is unavailable.
 
 ## Source of truth and precedence
 
