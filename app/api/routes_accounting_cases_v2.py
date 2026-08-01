@@ -10,6 +10,7 @@ from app.core_v2.bank_orchestration import CaseAccessError, SyntheticBankCaseSer
 from app.core_v2.case_state import CaseStateError, IdempotencyConflict, RevisionConflict
 from app.core_v2.contracts import CaseActor
 from app.core_v2.wp01_schema import ScopeKey
+from app.core_v2.bank_reasoning import SyntheticBankReasoning
 from app.security.auth import get_current_identity
 from app.security.rls import Identity
 from app.database import get_db
@@ -46,6 +47,10 @@ class ExportIn(MutationIn):
     payload_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     evidence_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     review_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class ConversationIn(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
 
 
 def _actor(identity: Identity) -> tuple[CaseActor, frozenset[str]]:
@@ -111,6 +116,16 @@ async def get_case(case_id: str, _: None = Depends(_require_enabled), identity: 
     _require_capability(identity, "read")
     try:
         return await _store.get(db, identity, case_id)
+    except Exception as exc:
+        raise _error(exc) from None
+
+
+@router.post("/{case_id}/conversation")
+async def conversation(case_id: str, body: ConversationIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
+    """Read-only explanation/clarification surface; no model or case mutation in developer mode."""
+    _require_capability(identity, "read")
+    try:
+        return SyntheticBankReasoning().respond(await _store.get(db, identity, case_id), body.question).model_dump()
     except Exception as exc:
         raise _error(exc) from None
 
