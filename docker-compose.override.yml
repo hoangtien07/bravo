@@ -9,7 +9,9 @@
 # whole point of the split — prod cannot accidentally inherit a published database port.
 services:
   postgres:
-    ports: ["127.0.0.1:5432:5432"]
+    # Set BRAVO_POSTGRES_HOST_PORT (for example 55432) for an isolated local test stack when
+    # another developer-owned PostgreSQL instance already occupies 5432.
+    ports: ["127.0.0.1:${BRAVO_POSTGRES_HOST_PORT:-5432}:5432"]
   redis:
     ports: ["127.0.0.1:6379:6379"]
   api:

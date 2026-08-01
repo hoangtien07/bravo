@@ -61,21 +61,37 @@ pnpm.cmd run build
 Production build passed
 ```
 
-The skipped backend test needs reachable PostgreSQL for the durable Bank HTTP path. It has separate
-isolated-container evidence in `WP-04-BANK-ORCHESTRATION-STATUS.md`; this local run is not a
-replacement. Frontend build emits existing large-chunk warnings and React Router future-flag
-warnings; neither is treated as a release acceptance.
+The skipped backend test in the ordinary focused run needs reachable PostgreSQL for the durable
+Bank HTTP path. It is superseded for the developer track by the isolated-container proof below.
+Frontend build emits existing large-chunk warnings and React Router future-flag warnings; neither
+is treated as a release acceptance.
 
 ### 2026-08-02 controlled local durable-HTTP probe
 
 The Docker operator context can read Compose and has the `pgvector/pgvector:pg16` image. The
 repository-local Postgres container could not start because `127.0.0.1:5432` is already held by a
-non-Compose `postgres` process; the test harness also reports its configured PostgreSQL as
-unreachable. The temporary Compose container and network were removed with `docker compose down`
-without a volume removal. No `.env` value or credential of the unrelated process was read or
-tried. Therefore `test_http_routes_enforce_server_identity_scope_and_complete_headlessly` remains
-an explicit local skip, not a passed E2E result. An operator must provide an approved isolated
-database endpoint or free/map the local port before rerunning it.
+non-Compose `postgres` process. No `.env` value or credential of that unrelated process was read
+or tried.
+
+The developer Compose override now permits an explicitly selected loopback host port. An isolated
+`bravo-v2-e2e` project was created at `127.0.0.1:55432` with explicit development-only values,
+migrated from an empty database through `0019_case_v2_defaults`, and checked with:
+
+```text
+pytest -q -p no:cacheprovider --basetemp <workspace temp> \
+  tests/test_core_v2_bank_orchestration.py \
+  tests/test_core_v2_secondary_preview_http.py \
+  tests/test_accounting_case_native_rls.py
+10 passed
+ruff check app/database/models.py alembic/versions/0018_accounting_case_v2_shell.py \
+  alembic/versions/0019_accounting_case_v2_server_defaults.py [the same tests]
+All checks passed
+```
+
+The test project container, network and its named volume were then removed. This proves only the
+synthetic durable Bank HTTP path, fresh migration compatibility and the native AccountingCase RLS
+probe on an isolated local database. It does not arm RLS for a non-owner runtime role or replace
+the required HTTP/MCP/worker operator probes.
 
 ## Known developer-track boundary
 

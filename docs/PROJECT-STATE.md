@@ -2,7 +2,7 @@
 
 Status: `V2 SYNTHETIC THREE-CASE PLAN ACCEPTED — operational and evaluation gates remain open`
 Owner: project owner  
-As of: 2026-08-01
+As of: 2026-08-02
 Evidence window: branch `codex/v2-financial-close-core`; see the dated reproducible commands in
 `evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`. Historical baseline hashes below are not a claim that
 the current development worktree is clean.
@@ -50,7 +50,7 @@ material only and must not be combined with the phase-demo topology.
 | Item | Verified state | Evidence / limit |
 |---|---|---|
 | Git baseline | Remediation worktree follows `7edcbde` | Current branch is `codex/v2-financial-close-core`; see WP-04 remediation decision/evidence |
-| Alembic | `0018_accounting_case_v2_shell` is the single head | `.venv\\Scripts\\alembic.exe heads`, 2026-08-01 |
+| Alembic | `0019_case_v2_defaults` is the single head | Fresh isolated PostgreSQL migration through head, 2026-08-02 |
 | Python test suite | 404 passed, 41 skipped | `python -m pytest -q -p no:cacheprovider`, 2026-07-24; skipped tests are not a DB/production pass |
 | Focused containment/evaluation tests | 17 passed, 5 skipped | Owner authorization, answer-guard parity, CAS state, native-RLS, replay/C0/SME/release-gate contracts |
 | Markdown documentation | 259 Markdown files inventoried, 0 broken relative-link occurrences | `docs/documentation/MARKDOWN-INVENTORY.md`; 254 tracked plus plans 10–12 and ADR-0032/0033 untracked during this documentation pass; two intentional import duplicates remain review signals |

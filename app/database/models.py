@@ -25,6 +25,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -366,14 +367,14 @@ class AccountingCaseRecord(Base):
     case_id: Mapped[str] = mapped_column(String(160), primary_key=True)
     case_type: Mapped[str] = mapped_column(String(80), index=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), index=True)
-    department_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
-    scope: Mapped[dict] = mapped_column(JSONB, default=dict)
+    department_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list, server_default=text("'{}'::uuid[]"))
+    scope: Mapped[dict] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     state: Mapped[str] = mapped_column(String(32), index=True)
-    revision: Mapped[int] = mapped_column(Integer, default=0)
-    evidence: Mapped[list[dict]] = mapped_column(JSONB, default=list)
-    results: Mapped[list[dict]] = mapped_column(JSONB, default=list)
-    findings: Mapped[list[dict]] = mapped_column(JSONB, default=list)
-    review_dispositions: Mapped[dict] = mapped_column(JSONB, default=dict)
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
+    evidence: Mapped[list[dict]] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    results: Mapped[list[dict]] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    findings: Mapped[list[dict]] = mapped_column(JSONB, default=list, server_default=text("'[]'::jsonb"))
+    review_dispositions: Mapped[dict] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     draft_action: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     approval: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -397,7 +398,7 @@ class AccountingCaseCommand(Base):
     idempotency_key: Mapped[str] = mapped_column(String(128))
     request_hash: Mapped[str] = mapped_column(String(64))
     outcome_case_id: Mapped[str] = mapped_column(String(160), index=True)
-    outcome: Mapped[dict] = mapped_column(JSONB, default=dict)
+    outcome: Mapped[dict] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
