@@ -1,6 +1,6 @@
 # WP-04 Bank orchestration status
 
-Status: `REMEDIATED IN CODE — RUNTIME DB/RLS PROOF STILL REQUIRED`
+Status: `SQL/HTTP/NATIVE-RLS REMEDIATION VERIFIED IN ISOLATED POSTGRES`
 
 Baseline at start: clean `9998d5a9a4b1f0c3b020fcd0bddbb39e5cf8ab69` on
 `codex/v2-financial-close-core`. The documented pre-handoff Core V2 baseline was `3342168`;
@@ -50,15 +50,22 @@ The headless probe covers review/export lifecycle, cross-operation idempotency c
 retry-tampering immutability, and evidence supersession/recheck with no LLM or BRAVO API.
 
 On 2026-08-01, an isolated base-compose PostgreSQL container was healthy; the current `test`
-image applied `0018_accounting_case_v2_shell` and ran
-`tests/test_core_v2_bank_orchestration.py`: **6 passed**. This proves the SQL persistence path
-for create/evidence/checks and cross-department HTTP denial in that container. It does not prove
-native RLS enforcement or MCP/worker isolation.
+image ran `alembic upgrade head` and the focused suite: **7 passed**.
+
+- `tests/test_core_v2_bank_orchestration.py` contributes six tests proving the SQL persistence path
+  for create/evidence/checks and cross-department HTTP denial in that container.
+- `tests/test_accounting_case_native_rls.py` enables and forces RLS on `accounting_cases_v2`, then
+  queries through a non-superuser role. A maker with only
+  `accounting_case:create:own_dept` and Department A saw Case A but not Case B. This also proves
+  the native GUC uses the most permissive scope already authorized for the request (including
+  `create`), rather than incorrectly deriving case visibility only from `read`.
 
 ## Limits and next gate
 
 This remains synthetic-only and makes no production, pilot, customer-data, live-bank, BRAVO
-execution, or offline-readiness claim. The persistent adapter and ready-to-arm RLS policy are
-code/migration evidence only until a non-owner runtime role, `0018` migration, and HTTP/MCP/worker
-two-user/two-department probes pass. WP-05 remains gated on those proofs plus the separate frozen
-evaluation work; do not start frontend, Voucher, or Period Close work from this evidence alone.
+execution, or offline-readiness claim. The isolated proof is not a production RLS cutover or an
+operational network/credential proof. There is no AccountingCase MCP or worker entry point in this
+scope; generic platform MCP/worker two-user/two-department probes therefore remain open and must
+not be inferred from these API/SQL tests. WP-05 remains gated on the separate frozen evaluation
+work and the applicable platform operational proofs; do not start frontend, Voucher, or Period
+Close work from this evidence alone.

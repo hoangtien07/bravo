@@ -40,6 +40,9 @@ used as evidence that WP-04 passed.
    department access is revoked.
 6. The route is feature-flagged off by default. Enabling it still proves only the synthetic demo;
    native RLS activation and runtime HTTP/MCP/worker probes remain separately recorded gates.
+7. The native case-scope GUC resolves the most permissive already-authorized scoped action among
+   `read`, `create`, and `review`. This prevents a create-only maker from being denied by the
+   database backstop while preserving route-level action authorization.
 
 ## Verification decision
 
@@ -47,3 +50,8 @@ The remediation is not complete until focused tests demonstrate: cross-operation
 conflict; retry/stale-review immutability; same-department/no-capability denial; maker/checker
 separation and exact payload binding; evidence supersession/recheck; SQL-scoped list/get; and
 explicit `artifact produced; BRAVO did not execute anything.` output.
+
+An isolated PostgreSQL verification on 2026-08-01 additionally forced native RLS under a
+non-superuser role and proved Department A visibility excludes a Department B AccountingCase for a
+create-scoped maker. This closes the WP-04 SQL/HTTP/native-RLS remediation proof; it does not
+close generic MCP/worker or production operational gates.

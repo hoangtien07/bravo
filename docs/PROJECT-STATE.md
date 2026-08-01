@@ -1,6 +1,6 @@
 # BRAVO AI Copilot — current project state
 
-Status: `WP-04 REMEDIATION IN CODE — DB/RLS runtime proof is next`
+Status: `WP-04 SQL/HTTP/NATIVE-RLS REMEDIATION VERIFIED — broader operational gates remain open`
 Owner: project owner  
 As of: 2026-08-01
 Verified against Git: branch `codex/v2-financial-close-core`, commit `33421684541663e199d397d2f7db12388ccb170a`, clean worktree before this documentation update
@@ -24,7 +24,7 @@ WP-00 is passed for the synthetic demo: a 30-case System A/B baseline is frozen 
 WP-01 synthetic fixture truth is owner-accepted; WP-02 implements the framework-independent
 AccountingCase Core V2; and WP-03 implements and golden-tests the LLM-free Bank reconciliation
 engine. WP-04 has a remediated synthetic orchestration/API implementation, including durable
-case-command shell migrations, but runtime database/RLS proof remains open. The
+case-command shell migrations and isolated SQL/HTTP/native-RLS runtime proof. The
 24-trajectory blind evaluation and all production/pilot claims remain open. The Engineering
 Workbench and frontend prototype tracks remain independent and are not evidence that conversation
 quality has improved.
@@ -68,7 +68,7 @@ not proof of a clean dependency posture.
 | Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
 | Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
 | A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
-| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 remediation code for command/review binding and durable shell | Database migration/RLS runtime probe, blind quality claim, customer-data authorization, production claim, and secondary-case implementation |
+| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 durable command/review shell, SQL/HTTP authorization, and isolated native-RLS probe | Blind quality claim, customer-data authorization, production/operational claim, generic MCP/worker probes, and secondary-case implementation |
 | BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
 ## Gates still open
@@ -105,11 +105,11 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Run WP-04 remediation runtime proof: apply `0018` to an isolated database with a non-owner
-runtime role, arm/probe the RLS backstop, and execute HTTP/MCP/worker two-user/two-department
-negative tests. Keep legacy endpoints unchanged. Do not start WP-05 conversation work or Bank UX
-until the runtime proof, idempotency/concurrency, supersession/recheck and “export is not ERP
-execution” gates have evidence.
+Preserve the WP-04 isolated SQL/HTTP/native-RLS artifact as synthetic-demo evidence. Before a
+broader operational claim, complete the applicable generic MCP/worker two-user/two-department,
+network/credential, and native-RLS cutover probes. Keep legacy endpoints unchanged. Do not start
+WP-05 conversation work or Bank UX until the frozen evaluation and applicable operational gates
+have evidence.
 
 ## Source of truth and precedence
 

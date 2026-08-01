@@ -36,7 +36,11 @@ async def apply_rls_gucs(session: "AsyncSession", identity: "Identity") -> None:
     (the caller gates on ``settings.native_rls_enabled``)."""
     dept_csv = ",".join(str(d) for d in identity.department_ids)
     level = identity.scope_level("doc", "read") or "none"
-    accounting_case_level = identity.scope_level("accounting_case", "read") or "none"
+    # A mutation is authorized by its own scoped capability.  The DB backstop needs the most
+    # permissive *already-authorized* AccountingCase scope for this request; deriving it only
+    # from ``read`` would incorrectly deny a maker with create-only permission.
+    case_levels = {identity.scope_level("accounting_case", action) for action in ("read", "create", "review")}
+    accounting_case_level = "all" if "all" in case_levels else "own_dept" if "own_dept" in case_levels else "none"
     await session.execute(
         text("SELECT set_config(:k, :v, true)"),
         {"k": GUC_EMPLOYEE, "v": str(identity.employee_id)})
