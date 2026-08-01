@@ -16,6 +16,30 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
 - The FigmaMake prototype and `frontend-react` have an Accounting Work surface governed by the
   contract-first handoff.
 
+## Reproducible developer verification
+
+Run on 2026-08-01:
+
+```text
+.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider [focused Core V2 tests]
+44 passed, 1 skipped
+
+.venv\Scripts\ruff.exe check app/core_v2 app/adapters/accounting_case_store.py \
+  app/api/routes_accounting_cases_v2.py [focused Core V2 tests]
+All checks passed
+
+cd frontend-react
+npm.cmd test -- --run
+4 files, 8 tests passed
+npm.cmd run build
+Production build passed
+```
+
+The skipped backend test needs reachable PostgreSQL for the durable Bank HTTP path. It has separate
+isolated-container evidence in `WP-04-BANK-ORCHESTRATION-STATUS.md`; this local run is not a
+replacement. Frontend build emits existing large-chunk warnings and React Router future-flag
+warnings; neither is treated as a release acceptance.
+
 ## Known developer-track boundary
 
 Only Bank currently has durable persisted case/review/export lifecycle. Voucher and Period Close
