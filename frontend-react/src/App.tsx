@@ -15,6 +15,7 @@ import { AdminPage } from "@/features/admin/AdminPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { SharedPage } from "@/features/shared/SharedPage";
 import { AccountingWorkPage } from "@/features/accounting/AccountingWorkPage";
+import { GovernanceIntegrationMockPage } from "@/features/accounting/GovernanceIntegrationMockPage";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { identity, loading } = useAuth();
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="/anomaly" element={<AnomalyPage />} />
         <Route path="/tax" element={<TaxPage />} />
         <Route path="/accounting-work" element={<AccountingWorkPage />} />
+        <Route path="/governance-integration" element={<GovernanceIntegrationMockPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ClipboardList, MessageCircleQuestion, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ClipboardList, MessageCircleQuestion, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "@/api/client";
 import { Badge, Button, Card, Input, Spinner } from "@/components/ui";
 import type { AccountingCaseView, AccountingConversationReply } from "@/api/types";
@@ -41,7 +42,7 @@ export function AccountingWorkPage() {
   return <div className="flex-1 min-h-0 bg-background flex flex-col">
     <header className="px-6 py-4 border-b bg-card flex items-center justify-between">
       <div><p className="text-xs uppercase tracking-[0.18em] text-primary font-semibold">Accounting operations</p><h1 className="text-xl font-semibold">Công việc AI</h1></div>
-      <Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw className="h-4 w-4" /> Làm mới</Button>
+      <div className="flex gap-2"><Link to="/governance-integration"><Button variant="outline" size="sm"><Settings2 className="h-4 w-4" /> Governance mock</Button></Link><Button variant="outline" size="sm" onClick={() => void load()}><RefreshCw className="h-4 w-4" /> Làm mới</Button></div>
     </header>
     <div className="p-4 bg-warning-bg/40 text-sm border-b"><ShieldCheck className="h-4 w-4 inline mr-2 text-warning" />Dữ liệu synthetic. Mọi export chỉ tạo artifact review; BRAVO không thực thi thao tác nào.</div>
     <div className="flex-1 min-h-0 grid grid-cols-[18rem_minmax(0,1fr)]">
