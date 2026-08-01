@@ -66,6 +66,17 @@ isolated-container evidence in `WP-04-BANK-ORCHESTRATION-STATUS.md`; this local 
 replacement. Frontend build emits existing large-chunk warnings and React Router future-flag
 warnings; neither is treated as a release acceptance.
 
+### 2026-08-02 controlled local durable-HTTP probe
+
+The Docker operator context can read Compose and has the `pgvector/pgvector:pg16` image. The
+repository-local Postgres container could not start because `127.0.0.1:5432` is already held by a
+non-Compose `postgres` process; the test harness also reports its configured PostgreSQL as
+unreachable. The temporary Compose container and network were removed with `docker compose down`
+without a volume removal. No `.env` value or credential of the unrelated process was read or
+tried. Therefore `test_http_routes_enforce_server_identity_scope_and_complete_headlessly` remains
+an explicit local skip, not a passed E2E result. An operator must provide an approved isolated
+database endpoint or free/map the local port before rerunning it.
+
 ## Known developer-track boundary
 
 Only Bank currently has durable persisted case/review/export lifecycle. Voucher and Period Close
