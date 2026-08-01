@@ -1,0 +1,14 @@
+schema_version: bravo-core-v2-synthetic-demo/v1
+demo_id: bravo-accounting-intelligence-synthetic
+synthetic_only: true
+enabled_case_types:
+  - bank_reconciliation
+  - voucher_evidence_review
+  - period_close_readiness
+capability_flags:
+  accounting_case_v2: true
+  bank_reasoning: true
+  voucher_review: true
+  period_close_readiness: true
+model_egress_policy: deny_until_owner_pins_model
+audit_export: privacy_minimized_json
