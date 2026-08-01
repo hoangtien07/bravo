@@ -104,6 +104,15 @@ The configuration boot guard is a developer/synthetic containment control. It is
 for an operator-managed non-owner RLS cutover, a model-owner decision, or production deployment
 approval.
 
+## Workspace hygiene note
+
+`.tmp-pytest/` remains an untracked workspace artifact whose child directory is inaccessible to
+the current development identity because of its ACL. It was not read, deleted, staged, ignored or
+otherwise altered. The safe resolution is for the filesystem owner/operator to inspect and remove
+or reset ACLs on that exact artifact; it is not a repository-code change. Developer durable tests
+use an explicit `--basetemp` directory and remove their own `.pytest-e2e-temp-*` directories after
+the run, so this artifact is not used as test evidence.
+
 ## Deferred, not passed
 
 - independent SME truth, sealed held-out answer key and blind review;
