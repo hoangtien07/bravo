@@ -112,6 +112,10 @@ conversation (WP-05), Bank UX (WP-06), Voucher (WP-07), Period Close (WP-08), co
 (WP-09), and integrated evidence (WP-10). Keep legacy endpoints unchanged. Do not simulate
 operator, owner, SME, user, customer or pilot evidence when the required authority is unavailable.
 
+For developer completion only, the owner has authorized implementation and automated synthetic
+end-to-end checks through the UI before real-user or blind-SME testing. The evaluation/release
+gates remain deferred and must never be reported as passed from this developer track.
+
 ## Source of truth and precedence
 
 1. Reproducible code, tests, migrations and runtime evidence override prose claims.

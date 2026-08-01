@@ -7,6 +7,23 @@ Scope: completion of the accepted **synthetic three-case demonstrator** in ADR-0
 `plan-rebuild/12-THREE-CASE-DEMO-DEV-BACKLOG.md`. This is explicitly not a pilot or production
 plan.
 
+## Developer-track amendment
+
+The owner authorized a developer-completion track that defers real-user and blind-SME testing at
+development time. Council accepts this only with two explicit milestones:
+
+1. **Developer-complete synthetic demonstrator:** typed contracts, deterministic checks, bounded
+   reasoning guards, UI, fixtures, automated tests and reproducible synthetic evidence are
+   complete.
+2. **Evaluation/release acceptance:** operator runtime proof, independent SME truth and blind
+   review, user-time baseline, and OD-09 evaluation are still required. No quality, usability,
+   security cutover, pilot or production claim may use milestone 1 as a substitute.
+
+This permits the engineering order `contract -> deterministic backend -> bounded reasoning -> UI
+-> synthetic end-to-end tests` without waiting for people to test. It does not permit UI contracts
+to be invented independently of the backend, nor permit an LLM or UI action to mutate accounting
+truth.
+
 ## Council conclusion
 
 The council compared three completion scopes:
