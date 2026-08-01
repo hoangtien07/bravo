@@ -116,6 +116,10 @@ For developer completion only, the owner has authorized implementation and autom
 end-to-end checks through the UI before real-user or blind-SME testing. The evaluation/release
 gates remain deferred and must never be reported as passed from this developer track.
 
+The next design/dev handoff is contract-first: see
+`plan-rebuild/14-CONTRACT-FIRST-FIGMAMAKE-HANDOFF.md`. `FigmaMake_UI` is a design/prototype input;
+`frontend-react` integrates only frozen backend/agent contracts and their synthetic examples.
+
 ## Source of truth and precedence
 
 1. Reproducible code, tests, migrations and runtime evidence override prose claims.
