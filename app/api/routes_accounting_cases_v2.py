@@ -11,6 +11,13 @@ from app.core_v2.case_state import CaseStateError, IdempotencyConflict, Revision
 from app.core_v2.contracts import CaseActor
 from app.core_v2.wp01_schema import ScopeKey
 from app.core_v2.bank_reasoning import SyntheticBankReasoning
+from app.core_v2.secondary_case_contracts import (
+    DeterministicCheckView,
+    PeriodPrerequisiteInput,
+    ReconciliationReferenceInput,
+    VoucherEvidenceInput,
+)
+from app.core_v2.secondary_case_orchestration import preview_period_close, preview_voucher_review
 from app.security.auth import get_current_identity
 from app.security.rls import Identity
 from app.database import get_db
@@ -51,6 +58,11 @@ class ExportIn(MutationIn):
 
 class ConversationIn(BaseModel):
     question: str = Field(min_length=1, max_length=1000)
+
+
+class PeriodClosePreviewIn(BaseModel):
+    prerequisites: tuple[PeriodPrerequisiteInput, ...]
+    reconciliations: tuple[ReconciliationReferenceInput, ...]
 
 
 def _actor(identity: Identity) -> tuple[CaseActor, frozenset[str]]:
@@ -109,6 +121,20 @@ async def create_case(body: CreateCaseIn, _: None = Depends(_require_enabled), i
         return await _store.create(db, identity, actor, body.scope, body.idempotency_key)
     except Exception as exc:
         raise _error(exc) from None
+
+
+@router.post("/preview/voucher-review", response_model=list[DeterministicCheckView])
+async def preview_voucher(body: VoucherEvidenceInput, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity)) -> tuple[DeterministicCheckView, ...]:
+    """Synthetic, read-only deterministic preview; never posts a voucher or touches BRAVO."""
+    _require_capability(identity, "read")
+    return preview_voucher_review(body)
+
+
+@router.post("/preview/period-close-readiness")
+async def preview_period_close_readiness(body: PeriodClosePreviewIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity)) -> dict:
+    """Synthetic readiness projection; never runs BRAVO close, calculation, report, or lock."""
+    _require_capability(identity, "read")
+    return preview_period_close(body.prerequisites, body.reconciliations).model_dump()
 
 
 @router.get("/{case_id}")

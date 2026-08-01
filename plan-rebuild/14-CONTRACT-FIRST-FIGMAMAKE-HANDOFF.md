@@ -35,8 +35,8 @@ evidence/lineage fields and failure/abstention behavior are named below.
 |---|---|---|---|
 | Bank case lifecycle | Typed V2 API, durable synthetic case store, maker/checker/export boundary | `GET/POST /api/v2/accounting-cases`; evidence, findings, state, revision, hash/approval fields | Accounting Work route exists in `frontend-react`; workflow controls remain next |
 | Bank conversation | Read-only bounded endpoint | `POST /api/v2/accounting-cases/{case_id}/conversation` with `question`; reply has `kind`, text, finding/evidence/rule references and `mutates_case=false` | Integrated in case dossier |
-| Voucher Review | Deterministic developer checks only | total, duplicate, three-way and lineage result states; missing evidence is `abstain` | No case/API/UI yet — do not design a posting action |
-| Period Close Readiness | Not implemented | prerequisite, evidence freshness and blocker contract pending | No case/API/UI yet |
+| Voucher Review | Read-only synthetic deterministic preview | `POST /api/v2/accounting-cases/preview/voucher-review`; total, duplicate, three-way and lineage result states; missing evidence is `abstain` | No persisted case/review UI yet — do not design a posting action |
+| Period Close Readiness | Read-only synthetic deterministic preview | `POST /api/v2/accounting-cases/preview/period-close-readiness`; prerequisite, freshness and material reconciliation blockers | No persisted case/review UI yet — do not design a close action |
 
 ## Required screen behavior
 
