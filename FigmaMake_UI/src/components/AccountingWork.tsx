@@ -27,6 +27,14 @@ export default function AccountingWork() {
           <div style={workflowStep}><strong>04 · Review artifact</strong><span style={muted}>Chỉ reviewer khác maker mới gửi được; export tạo artifact, không thực thi ERP.</span></div>
         </div>
       </section>
+      <section aria-labelledby="secondary-preview-title" style={{ marginTop: 18 }}>
+        <p style={{ color: T.interactive, fontSize: 11, fontWeight: 700, letterSpacing: ".08em", margin: 0 }}>SECONDARY CASES · READ-ONLY DEVELOPER PREVIEW</p>
+        <h2 id="secondary-preview-title" style={{ ...heading, marginTop: 6 }}>Voucher & Period Close states</h2>
+        <div className="review-grid">
+          <article style={panel}><h3 style={heading}>Voucher Evidence Review</h3><p style={muted}>Thiếu PO hoặc receipt trả về <strong>ABSTAIN</strong>, không suy đoán đủ evidence.</p><div style={row}><span>Three-way evidence</span><StatusBadge status="missing" compact /></div><p style={{ ...muted, marginTop: 10 }}>Không post voucher, không tạo sổ phụ.</p></article>
+          <article style={panel}><h3 style={heading}>Period Close Readiness</h3><p style={muted}>Required prerequisite pending hoặc reconciliation material unresolved trả về <strong>BLOCKED</strong>.</p><div style={row}><span>bank-reconciliation</span><StatusBadge status="conflict" compact /></div><p style={{ ...muted, marginTop: 10 }}>Không close kỳ, tính toán, report hoặc lock period.</p></article>
+        </div>
+      </section>
     </div>
   </section>;
 }

@@ -9,10 +9,11 @@ Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEF
   the server revision and a fresh idempotency key for frozen-case creation, evidence, checks,
   review and artifact export; authorization and transition decisions remain in the API/database.
 - Voucher: typed synthetic evidence, deterministic total/duplicate/three-way/lineage checks and a
-  read-only API/UI preview. It does not post a voucher or create a parallel ledger.
+  read-only API/UI workbench. It preserves missing inputs for the API to return `abstain`; it does
+  not post a voucher or create a parallel ledger.
 - Period Close: typed prerequisite/reconciliation inputs, deterministic fail-closed readiness
-  projection and a read-only API/UI preview. It does not calculate close, generate reports or lock
-  a period.
+  projection and a read-only API/UI workbench. It renders every blocker; it does not calculate
+  close, generate reports or lock a period.
 - Demo configuration is versioned and fail-closed to synthetic-only with model egress denied until
   the owner pins a model/version. Runtime activation now requires both
   `ACCOUNTING_CASE_V2_ENABLED=true` and the versioned
@@ -40,7 +41,7 @@ All checks passed
 
 cd frontend-react
 npm.cmd test -- --run
-5 files, 9 tests passed
+6 files, 11 tests passed
 npm.cmd run build
 Production build passed
 
@@ -49,6 +50,8 @@ pnpm.cmd test -- --run src/test/accountingWork.test.tsx
 4 files, 8 tests passed
 pnpm.cmd run typecheck
 Typecheck passed
+pnpm.cmd run build
+Production build passed
 ```
 
 The skipped backend test needs reachable PostgreSQL for the durable Bank HTTP path. It has separate

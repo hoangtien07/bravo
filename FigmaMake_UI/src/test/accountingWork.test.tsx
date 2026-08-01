@@ -9,6 +9,7 @@ describe("Accounting Work contract-first prototype", () => {
     render(<MemoryRouter><AccountingWork /></MemoryRouter>);
     expect(screen.getByRole("heading", { name: /review/ })).toBeTruthy();
     expect(screen.getByLabelText("Disposition finding-001")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: /Voucher & Period Close/ })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Công việc AI" })).toBeTruthy();
     expect(screen.getByText(/Không có thao tác nào được thực thi trên BRAVO ERP/)).toBeTruthy();
     expect(screen.getByText(/Voucher Review và Period Close/)).toBeTruthy();
