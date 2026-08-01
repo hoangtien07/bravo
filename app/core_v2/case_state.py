@@ -59,12 +59,16 @@ class AccountingCase:
     scope: ScopeKey
     state: CaseState = CaseState.NEW
     revision: int = 0
+    required_evidence_sources: frozenset[str] = frozenset()
     evidence: tuple[EvidenceSnapshot, ...] = ()
     draft_action: DraftAction | None = None
     approval: ApprovalEnvelope | None = None
 
     def evidence_complete(self) -> bool:
-        return bool(self.evidence) and all(item.complete for item in self.evidence)
+        if not self.evidence or not all(item.complete for item in self.evidence):
+            return False
+        sources = {item.source_type for item in self.evidence}
+        return not self.required_evidence_sources or self.required_evidence_sources.issubset(sources)
 
 
 @dataclass(frozen=True)
@@ -174,13 +178,22 @@ class InMemoryCaseRepository:
     @staticmethod
     def _attach_evidence(case: AccountingCase, snapshot: EvidenceSnapshot) -> AccountingCase:
         InMemoryCaseRepository.assert_scope(case.scope, snapshot.scope)
-        existing = tuple(item for item in case.evidence if item.snapshot_id != snapshot.supersedes)
+        if case.state in {CaseState.EXPORTED, CaseState.CLOSED, *_SIDE_STATES}:
+            raise CaseStateError("terminal case evidence cannot be changed")
+        if case.required_evidence_sources and snapshot.source_type not in case.required_evidence_sources:
+            raise CaseStateError("evidence source is not required by this case")
+        prior = tuple(item for item in case.evidence if item.source_type == snapshot.source_type)
+        if prior and snapshot.supersedes != prior[0].snapshot_id:
+            raise CaseStateError("replacement evidence must supersede the current same-source snapshot")
+        if not prior and snapshot.supersedes is not None:
+            raise CaseStateError("evidence cannot supersede an absent same-source snapshot")
+        existing = tuple(item for item in case.evidence if item.source_type != snapshot.source_type)
         if any(item.snapshot_id == snapshot.snapshot_id for item in existing):
             raise CaseStateError("evidence snapshot ID already exists")
         next_evidence = (*existing, snapshot)
         next_state = CaseState.EVIDENCE_READY if all(item.complete for item in next_evidence) else CaseState.EVIDENCE_PENDING
         return replace(case, evidence=next_evidence, state=next_state, revision=case.revision + 1,
-                       approval=None)
+                       draft_action=None, approval=None)
 
     @staticmethod
     def _bind_draft_action(case: AccountingCase, action: DraftAction) -> AccountingCase:

@@ -355,6 +355,52 @@ class AuditLog(Base):
     at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+# --- AccountingCase Core V2 shell persistence (WP-04) ---
+class AccountingCaseRecord(Base):
+    """Durable, privacy-minimised shell state for a Core V2 accounting case.
+
+    Domain objects remain in ``app.core_v2``.  This adapter stores only typed scope, hashes,
+    classifications, review decisions, and trace references — never the Bank/BRAVO source rows.
+    """
+    __tablename__ = "accounting_cases_v2"
+    case_id: Mapped[str] = mapped_column(String(160), primary_key=True)
+    case_type: Mapped[str] = mapped_column(String(80), index=True)
+    owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"), index=True)
+    department_ids: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), default=list)
+    scope: Mapped[dict] = mapped_column(JSONB, default=dict)
+    state: Mapped[str] = mapped_column(String(32), index=True)
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+    evidence: Mapped[list[dict]] = mapped_column(JSONB, default=list)
+    results: Mapped[list[dict]] = mapped_column(JSONB, default=list)
+    findings: Mapped[list[dict]] = mapped_column(JSONB, default=list)
+    review_dispositions: Mapped[dict] = mapped_column(JSONB, default=dict)
+    draft_action: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    approval: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class AccountingCaseCommand(Base):
+    """One immutable idempotency record per command subject/key.
+
+    The unique subject/key constraint deliberately catches cross-operation idempotency reuse.
+    ``outcome_case_id`` allows an equal retry to load the durable current outcome without keeping
+    a process-local response cache.
+    """
+    __tablename__ = "accounting_case_commands_v2"
+    __table_args__ = (UniqueConstraint("subject", "idempotency_key", name="uq_accounting_case_command_subject_key"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    subject: Mapped[str] = mapped_column(String(200), index=True)
+    operation: Mapped[str] = mapped_column(String(80))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    outcome_case_id: Mapped[str] = mapped_column(String(160), index=True)
+    outcome: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ToolCallAttempt(Base):
     """Nhật ký tool-call (compliance/observability — pattern DocsGPT tool_executor).
 

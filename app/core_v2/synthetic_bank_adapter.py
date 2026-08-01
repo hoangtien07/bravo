@@ -36,20 +36,24 @@ class SyntheticBankEvidenceSource:
     def scope(self) -> ScopeKey:
         return self._scope
 
-    def capture(self, kind: EvidenceKind, scope: ScopeKey) -> EvidenceSnapshot:
+    def capture(self, kind: EvidenceKind, scope: ScopeKey, *, reissued: bool = False) -> EvidenceSnapshot:
         if scope != self._scope:
             raise ValueError("synthetic fixture scope does not match the locked case scope")
         rows = self._rows(kind)
-        canonical = json.dumps(rows, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        snapshot_id = "BANK-SNAPSHOT-001" if kind == "bank_statement" else "BRAVO-SNAPSHOT-001"
+        source_version = "bank-reconciliation-golden/v1.0.0-reissued" if reissued else "bank-reconciliation-golden/v1.0.0"
+        canonical = json.dumps({"source_version": source_version, "rows": rows}, ensure_ascii=False,
+                               sort_keys=True, separators=(",", ":"))
+        base_id = "BANK-SNAPSHOT-001" if kind == "bank_statement" else "BRAVO-SNAPSHOT-001"
+        snapshot_id = f"{base_id}-R1" if reissued else base_id
         cutoff = datetime.combine(scope.cutoff, datetime.max.time(), tzinfo=timezone.utc)
         return EvidenceSnapshot(
             snapshot_id=snapshot_id,
             source_type=kind,
-            source_version="bank-reconciliation-golden/v1.0.0",
+            source_version=source_version,
             cutoff=cutoff,
             captured_at=cutoff,
             content_hash=hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+            supersedes=base_id if reissued else None,
             complete=True,
             scope=scope,
         )

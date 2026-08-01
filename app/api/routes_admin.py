@@ -25,6 +25,9 @@ router = APIRouter()
 ASSIGNABLE_PERMISSIONS = [
     "doc:read:own_dept", "doc:read:all", "doc:create", "doc:create:all",
     "metric:read", "draft:create", "draft:approve", "draft:approve:own_dept",
+    "accounting_case:read:own_dept", "accounting_case:read:all",
+    "accounting_case:create:own_dept", "accounting_case:create:all",
+    "accounting_case:review:own_dept", "accounting_case:review:all",
 ]
 
 

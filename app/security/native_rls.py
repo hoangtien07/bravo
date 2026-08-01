@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 GUC_EMPLOYEE = "bravo.employee_id"
 GUC_DEPTS = "bravo.dept_ids"
 GUC_DOC_LEVEL = "bravo.doc_read_level"
+GUC_ACCOUNTING_CASE_LEVEL = "bravo.accounting_case_level"
 
 
 async def apply_rls_gucs(session: "AsyncSession", identity: "Identity") -> None:
@@ -35,6 +36,7 @@ async def apply_rls_gucs(session: "AsyncSession", identity: "Identity") -> None:
     (the caller gates on ``settings.native_rls_enabled``)."""
     dept_csv = ",".join(str(d) for d in identity.department_ids)
     level = identity.scope_level("doc", "read") or "none"
+    accounting_case_level = identity.scope_level("accounting_case", "read") or "none"
     await session.execute(
         text("SELECT set_config(:k, :v, true)"),
         {"k": GUC_EMPLOYEE, "v": str(identity.employee_id)})
@@ -42,3 +44,6 @@ async def apply_rls_gucs(session: "AsyncSession", identity: "Identity") -> None:
         text("SELECT set_config(:k, :v, true)"), {"k": GUC_DEPTS, "v": dept_csv})
     await session.execute(
         text("SELECT set_config(:k, :v, true)"), {"k": GUC_DOC_LEVEL, "v": level})
+    await session.execute(
+        text("SELECT set_config(:k, :v, true)"),
+        {"k": GUC_ACCOUNTING_CASE_LEVEL, "v": accounting_case_level})

@@ -198,6 +198,27 @@ def conversation_scope_filter(identity: Identity) -> "ColumnElement[bool]":
     return Conversation.employee_id == identity.employee_id
 
 
+def accounting_case_scope_filter(identity: Identity, action: str = "read") -> "ColumnElement[bool]":
+    """SQL predicate for durable AccountingCase V2 metadata.
+
+    Cases are department-scoped; creator identity is audit metadata only and never bypasses a
+    revoked department membership.  The native-RLS policy mirrors this predicate once armed.
+    """
+    from sqlalchemy import cast, false, true
+    from sqlalchemy.dialects.postgresql import ARRAY, array
+    from sqlalchemy.dialects.postgresql import UUID as PGUUID
+
+    from app.database.models import AccountingCaseRecord
+
+    level = identity.scope_level("accounting_case", action)
+    if level == "all":
+        return true()
+    if level != "own_dept" or not identity.department_ids:
+        return false()
+    departments = cast(array(identity.department_ids), ARRAY(PGUUID(as_uuid=True)))
+    return AccountingCaseRecord.department_ids.op("&&")(departments)
+
+
 def can_access_source_departments(identity: Identity, source_department_ids: list[uuid.UUID],
                                   action: str = "read") -> bool:
     """In-memory check for a single already-loaded source (detail endpoints).

@@ -4,16 +4,21 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.config import get_settings
+from app.adapters.accounting_case_store import SqlSyntheticBankCaseStore
 from app.core_v2.bank_orchestration import CaseAccessError, SyntheticBankCaseService
 from app.core_v2.case_state import CaseStateError, IdempotencyConflict, RevisionConflict
 from app.core_v2.contracts import CaseActor
 from app.core_v2.wp01_schema import ScopeKey
 from app.security.auth import get_current_identity
 from app.security.rls import Identity
+from app.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 router = APIRouter(prefix="/v2/accounting-cases")
 _service = SyntheticBankCaseService()
+_store = SqlSyntheticBankCaseStore()
 
 
 class CreateCaseIn(BaseModel):
@@ -26,16 +31,33 @@ class MutationIn(BaseModel):
     idempotency_key: str = Field(min_length=1, max_length=128)
 
 
+class EvidenceIn(MutationIn):
+    replacement_source_type: str | None = Field(default=None, pattern=r"^(bank_statement|bravo_bank_ledger)$")
+
+
 class ReviewIn(MutationIn):
     dispositions: dict[str, str]
+    payload_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    evidence_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    result_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class ExportIn(MutationIn):
+    payload_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    evidence_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+    review_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 
 def _actor(identity: Identity) -> tuple[CaseActor, frozenset[str]]:
     departments = frozenset(str(item) for item in identity.department_ids)
     if identity.is_admin:
         role = "admin"
-    elif "draft:approve" in identity.permissions or "accounting_case:review" in identity.permissions:
+    elif identity.scope_level("accounting_case", "review") == "all":
+        role = "reviewer_all"
+    elif identity.scope_level("accounting_case", "review") == "own_dept":
         role = "reviewer"
+    elif identity.scope_level("accounting_case", "create") == "all":
+        role = "preparer_all"
     else:
         role = "preparer"
     return CaseActor(user_id=str(identity.employee_id), role=role, scope_ref=",".join(sorted(departments)) or "admin"), departments
@@ -44,13 +66,8 @@ def _actor(identity: Identity) -> tuple[CaseActor, frozenset[str]]:
 def _require_capability(identity: Identity, action: str) -> None:
     if identity.is_admin:
         return
-    accepted = {
-        "create": {"accounting_case:create", "draft:create"},
-        "write": {"accounting_case:create", "draft:create"},
-        "review": {"accounting_case:review", "draft:approve"},
-        "export": {"accounting_case:review", "draft:approve"},
-    }[action]
-    if not (accepted & identity.permissions):
+    required_action = {"write": "create", "export": "review"}.get(action, action)
+    if identity.scope_level("accounting_case", required_action) is None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"Missing accounting-case capability: {action}")
 
 
@@ -68,76 +85,85 @@ def _error(exc: Exception) -> HTTPException:
     return HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Accounting case operation failed")
 
 
+def _require_enabled() -> None:
+    if not get_settings().accounting_case_v2_enabled:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 synthetic API is disabled")
+
+
 @router.get("")
-async def list_cases(identity: Identity = Depends(get_current_identity)) -> list[dict]:
-    actor, departments = _actor(identity)
-    return [_service.view(case) for case in _service.list_accessible(actor=actor, department_ids=departments)]
+async def list_cases(_: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> list[dict]:
+    _require_capability(identity, "read")
+    return await _store.list(db, identity)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_case(body: CreateCaseIn, identity: Identity = Depends(get_current_identity)) -> dict:
+async def create_case(body: CreateCaseIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     _require_capability(identity, "create")
-    actor, departments = _actor(identity)
+    actor, _ = _actor(identity)
     try:
-        case = _service.create(actor=actor, scope=body.scope, department_ids=departments, idempotency_key=body.idempotency_key)
-        return _service.view(case)
+        return await _store.create(db, identity, actor, body.scope, body.idempotency_key)
     except Exception as exc:
         raise _error(exc) from None
 
 
 @router.get("/{case_id}")
-async def get_case(case_id: str, identity: Identity = Depends(get_current_identity)) -> dict:
-    actor, departments = _actor(identity)
+async def get_case(case_id: str, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
+    _require_capability(identity, "read")
     try:
-        return _service.view(_service.get(case_id, actor=actor, department_ids=departments))
+        return await _store.get(db, identity, case_id)
     except Exception as exc:
         raise _error(exc) from None
 
 
 @router.post("/{case_id}/evidence")
-async def attach_evidence(case_id: str, body: MutationIn, identity: Identity = Depends(get_current_identity)) -> dict:
+async def attach_evidence(case_id: str, body: EvidenceIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     _require_capability(identity, "write")
     actor, departments = _actor(identity)
     try:
-        case = _service.attach_evidence(case_id, actor=actor, department_ids=departments,
-                                        expected_revision=body.expected_revision, idempotency_key=body.idempotency_key)
-        return _service.view(case)
+        if body.replacement_source_type:
+            return await _store.mutate(db, identity, actor, case_id, "supersede_evidence", body.idempotency_key,
+                body.model_dump(mode="json"), lambda service, _: service.supersede_evidence(case_id, actor=actor, department_ids=departments,
+                expected_revision=body.expected_revision, idempotency_key=body.idempotency_key, source_type=body.replacement_source_type))
+        else:
+            return await _store.mutate(db, identity, actor, case_id, "attach_evidence", body.idempotency_key,
+                body.model_dump(mode="json"), lambda service, _: service.attach_evidence(case_id, actor=actor, department_ids=departments,
+                expected_revision=body.expected_revision, idempotency_key=body.idempotency_key))
     except Exception as exc:
         raise _error(exc) from None
 
 
 @router.post("/{case_id}/run-checks")
-async def run_checks(case_id: str, body: MutationIn, identity: Identity = Depends(get_current_identity)) -> dict:
+async def run_checks(case_id: str, body: MutationIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     _require_capability(identity, "write")
     actor, departments = _actor(identity)
     try:
-        case = _service.run_checks(case_id, actor=actor, department_ids=departments,
-                                   expected_revision=body.expected_revision, idempotency_key=body.idempotency_key)
-        return _service.view(case)
+        return await _store.mutate(db, identity, actor, case_id, "run_checks", body.idempotency_key, body.model_dump(mode="json"),
+            lambda service, _: service.run_checks(case_id, actor=actor, department_ids=departments, expected_revision=body.expected_revision, idempotency_key=body.idempotency_key))
     except Exception as exc:
         raise _error(exc) from None
 
 
 @router.post("/{case_id}/review")
-async def review(case_id: str, body: ReviewIn, identity: Identity = Depends(get_current_identity)) -> dict:
+async def review(case_id: str, body: ReviewIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     _require_capability(identity, "review")
     actor, departments = _actor(identity)
     try:
-        case = _service.review(case_id, actor=actor, department_ids=departments,
+        return await _store.mutate(db, identity, actor, case_id, "review", body.idempotency_key, body.model_dump(mode="json"), lambda service, _: service.review(case_id, actor=actor, department_ids=departments,
                                expected_revision=body.expected_revision, idempotency_key=body.idempotency_key,
-                               dispositions=body.dispositions)
-        return _service.view(case)
+                               dispositions=body.dispositions, payload_hash_value=body.payload_hash,
+                               evidence_hash=body.evidence_hash, result_hash=body.result_hash))
     except Exception as exc:
         raise _error(exc) from None
 
 
 @router.post("/{case_id}/export")
-async def export(case_id: str, body: MutationIn, identity: Identity = Depends(get_current_identity)) -> dict:
+async def export(case_id: str, body: ExportIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     _require_capability(identity, "export")
     actor, departments = _actor(identity)
     try:
-        case, artifact = _service.export(case_id, actor=actor, department_ids=departments,
-                                         expected_revision=body.expected_revision, idempotency_key=body.idempotency_key)
-        return {"case": _service.view(case), "artifact": artifact}
+        return await _store.mutate(db, identity, actor, case_id, "export", body.idempotency_key, body.model_dump(mode="json"), lambda service, _: service.export(case_id, actor=actor, department_ids=departments,
+                                         expected_revision=body.expected_revision, idempotency_key=body.idempotency_key,
+                                         payload_hash_value=body.payload_hash, evidence_hash=body.evidence_hash,
+                                         review_hash=body.review_hash))
     except Exception as exc:
         raise _error(exc) from None

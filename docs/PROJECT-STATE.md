@@ -1,8 +1,8 @@
 # BRAVO AI Copilot — current project state
 
-Status: `WP-04 READY — synthetic Bank-case orchestration is next`
+Status: `WP-04 REMEDIATION IN CODE — DB/RLS runtime proof is next`
 Owner: project owner  
-As of: 2026-07-31
+As of: 2026-08-01
 Verified against Git: branch `codex/v2-financial-close-core`, commit `33421684541663e199d397d2f7db12388ccb170a`, clean worktree before this documentation update
 
 ## Executive state
@@ -23,7 +23,8 @@ platform.
 WP-00 is passed for the synthetic demo: a 30-case System A/B baseline is frozen with checksums.
 WP-01 synthetic fixture truth is owner-accepted; WP-02 implements the framework-independent
 AccountingCase Core V2; and WP-03 implements and golden-tests the LLM-free Bank reconciliation
-engine. WP-04 (synthetic orchestration, authorized API and payload-bound export) is next. The
+engine. WP-04 has a remediated synthetic orchestration/API implementation, including durable
+case-command shell migrations, but runtime database/RLS proof remains open. The
 24-trajectory blind evaluation and all production/pilot claims remain open. The Engineering
 Workbench and frontend prototype tracks remain independent and are not evidence that conversation
 quality has improved.
@@ -46,8 +47,8 @@ material only and must not be combined with the phase-demo topology.
 
 | Item | Verified state | Evidence / limit |
 |---|---|---|
-| Git baseline | Clean at `3342168` before this documentation pass | Current branch is `codex/v2-financial-close-core`; WP-04 has not begun |
-| Alembic | `0017_native_rls_backstop` is the single head | `python -m alembic heads` |
+| Git baseline | Remediation worktree follows `7edcbde` | Current branch is `codex/v2-financial-close-core`; see WP-04 remediation decision/evidence |
+| Alembic | `0018_accounting_case_v2_shell` is the single head | `.venv\\Scripts\\alembic.exe heads`, 2026-08-01 |
 | Python test suite | 404 passed, 41 skipped | `python -m pytest -q -p no:cacheprovider`, 2026-07-24; skipped tests are not a DB/production pass |
 | Focused containment/evaluation tests | 17 passed, 5 skipped | Owner authorization, answer-guard parity, CAS state, native-RLS, replay/C0/SME/release-gate contracts |
 | Markdown documentation | 259 Markdown files inventoried, 0 broken relative-link occurrences | `docs/documentation/MARKDOWN-INVENTORY.md`; 254 tracked plus plans 10–12 and ADR-0032/0033 untracked during this documentation pass; two intentional import duplicates remain review signals |
@@ -67,7 +68,7 @@ not proof of a clean dependency posture.
 | Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
 | Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
 | A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
-| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine | No independent blind quality claim, customer-data authorization, production claim, or secondary-case implementation |
+| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 remediation code for command/review binding and durable shell | Database migration/RLS runtime probe, blind quality claim, customer-data authorization, production claim, and secondary-case implementation |
 | BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
 ## Gates still open
@@ -104,11 +105,11 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Begin WP-04 from the clean commit: synthetic file evidence adapter; scope → snapshot → checks →
-findings → review transitions; authorized V2 Bank-case endpoints; payload-bound export; and
-privacy-minimized audit/trace references. Keep legacy endpoints unchanged. Pass authorization,
-negative-scope, idempotency/concurrency, supersession/recheck and “export is not ERP execution”
-tests before starting WP-05 conversation work or Bank UX.
+Run WP-04 remediation runtime proof: apply `0018` to an isolated database with a non-owner
+runtime role, arm/probe the RLS backstop, and execute HTTP/MCP/worker two-user/two-department
+negative tests. Keep legacy endpoints unchanged. Do not start WP-05 conversation work or Bank UX
+until the runtime proof, idempotency/concurrency, supersession/recheck and “export is not ERP
+execution” gates have evidence.
 
 ## Source of truth and precedence
 

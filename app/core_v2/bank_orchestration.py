@@ -7,13 +7,16 @@ result/trace references.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+import hashlib
+import json
 import uuid
 
 from app.core_v2.bank_engine import BankResultClass
 from app.core_v2.case_state import AccountingCase, CaseStateError, InMemoryCaseRepository, payload_hash
 from app.core_v2.contracts import (
     AccountingCaseId, CaseActor, CaseState, CaseTransition, CaseType, DeterministicCheckResult,
-    DraftAction, Finding, FindingSeverity,
+    ApprovalEnvelope, DraftAction, Finding, FindingSeverity,
 )
 from app.core_v2.synthetic_bank_adapter import SyntheticBankEvidenceSource
 from app.core_v2.wp01_schema import ScopeKey
@@ -33,6 +36,13 @@ class _RuntimeCase:
     exports: dict[str, dict] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class _CommandOutcome:
+    operation: str
+    request_hash: str
+    outcome: object
+
+
 def _severity(kind: BankResultClass) -> FindingSeverity:
     if kind in {BankResultClass.BANK_ONLY, BankResultClass.BRAVO_ONLY}:
         return FindingSeverity.HIGH
@@ -48,7 +58,7 @@ class SyntheticBankCaseService:
         self.evidence = evidence or SyntheticBankEvidenceSource()
         self.repo = InMemoryCaseRepository()
         self._runtime: dict[str, _RuntimeCase] = {}
-        self._requests: dict[tuple[str, str], object] = {}
+        self._commands: dict[tuple[str, str], _CommandOutcome] = {}
 
     def create(self, *, actor: CaseActor, scope: ScopeKey, department_ids: frozenset[str],
                idempotency_key: str) -> AccountingCase:
@@ -56,15 +66,17 @@ class SyntheticBankCaseService:
         self._authorize(actor, department_ids, "create")
         if scope != self.evidence.scope:
             raise CaseAccessError("only the frozen synthetic Bank scope is enabled")
-        cached = self._cached(actor.user_id, idempotency_key)
+        fingerprint = self._hash({"scope": scope.model_dump(mode="json")})
+        cached = self._replay(actor.user_id, "create", idempotency_key, fingerprint)
         if cached is not None:
             return cached  # type: ignore[return-value]
-        case = AccountingCase(AccountingCaseId(value=f"case_{uuid.uuid4().hex}"), CaseType.BANK_RECONCILIATION, scope)
+        case = AccountingCase(AccountingCaseId(value=f"case_{uuid.uuid4().hex}"), CaseType.BANK_RECONCILIATION, scope,
+                              required_evidence_sources=frozenset({"bank_statement", "bravo_bank_ledger"}))
         case = self.repo.create(case)
         self._runtime[case.case_id.value] = _RuntimeCase(actor.user_id, department_ids)
         case = self._transition(case, actor, CaseState.SCOPE_LOCKED, f"{idempotency_key}:scope")
         case = self._transition(case, actor, CaseState.EVIDENCE_PENDING, f"{idempotency_key}:pending")
-        self._remember(actor.user_id, idempotency_key, case)
+        self._record(actor.user_id, "create", idempotency_key, fingerprint, case)
         return case
 
     def get(self, case_id: str, *, actor: CaseActor, department_ids: frozenset[str]) -> AccountingCase:
@@ -86,7 +98,8 @@ class SyntheticBankCaseService:
         self._require(idempotency_key)
         case = self.get(case_id, actor=actor, department_ids=department_ids)
         self._authorize_case(case, actor, department_ids, "write")
-        cached = self._cached(case_id, idempotency_key)
+        fingerprint = self._hash({"expected_revision": expected_revision, "sources": ["bank_statement", "bravo_bank_ledger"]})
+        cached = self._replay(case_id, "attach_evidence", idempotency_key, fingerprint)
         if cached is not None:
             return cached  # type: ignore[return-value]
         for kind in ("bank_statement", "bravo_bank_ledger"):
@@ -94,7 +107,29 @@ class SyntheticBankCaseService:
             case = self.repo.attach_evidence(case.case_id, snapshot, expected_revision=expected_revision,
                                              idempotency_key=f"{idempotency_key}:{kind}")
             expected_revision = case.revision
-        self._remember(case_id, idempotency_key, case)
+        self._record(case_id, "attach_evidence", idempotency_key, fingerprint, case)
+        return case
+
+    def supersede_evidence(self, case_id: str, *, actor: CaseActor, department_ids: frozenset[str],
+                            expected_revision: int, idempotency_key: str, source_type: str) -> AccountingCase:
+        self._require(idempotency_key)
+        if source_type not in {"bank_statement", "bravo_bank_ledger"}:
+            raise CaseStateError("unsupported synthetic evidence source")
+        case = self.get(case_id, actor=actor, department_ids=department_ids)
+        self._authorize_case(case, actor, department_ids, "write")
+        fingerprint = self._hash({"expected_revision": expected_revision, "source_type": source_type,
+                                  "replacement": "reissued-v1"})
+        cached = self._replay(case_id, "supersede_evidence", idempotency_key, fingerprint)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
+        snapshot = self.evidence.capture(source_type, case.scope, reissued=True)  # type: ignore[arg-type]
+        case = self.repo.attach_evidence(case.case_id, snapshot, expected_revision=expected_revision,
+                                         idempotency_key=f"{idempotency_key}:replacement")
+        runtime = self._runtime[case_id]
+        runtime.results = ()
+        runtime.findings = ()
+        runtime.review_dispositions = {}
+        self._record(case_id, "supersede_evidence", idempotency_key, fingerprint, case)
         return case
 
     def run_checks(self, case_id: str, *, actor: CaseActor, department_ids: frozenset[str],
@@ -102,7 +137,8 @@ class SyntheticBankCaseService:
         self._require(idempotency_key)
         case = self.get(case_id, actor=actor, department_ids=department_ids)
         self._authorize_case(case, actor, department_ids, "write")
-        cached = self._cached(case_id, idempotency_key)
+        fingerprint = self._hash({"expected_revision": expected_revision})
+        cached = self._replay(case_id, "run_checks", idempotency_key, fingerprint)
         if cached is not None:
             return cached  # type: ignore[return-value]
         if case.state is not CaseState.EVIDENCE_READY:
@@ -120,50 +156,88 @@ class SyntheticBankCaseService:
             severity=_severity(result.classification), status="open", evidence_snapshot_ids=snapshots,
             check_result_ids=(typed[index - 1].check_id,),
         ) for index, result in enumerate(results, 1) if result.classification not in {BankResultClass.EXACT_MATCH, BankResultClass.TOLERANCE_MATCH})
+        case = self._transition(case, actor, CaseState.CHECKED, f"{idempotency_key}:checked", expected_revision)
+        evidence_hash = self._evidence_hash(case)
+        result_hash = self._hash([item.model_dump(mode="json") for item in typed])
+        draft_payload = {"artifact_type": "bank-reconciliation-packet", "case_id": case_id,
+                         "evidence_hash": evidence_hash, "result_hash": result_hash,
+                         "result_ids": [item.check_id for item in typed],
+                         "execution": "artifact produced; BRAVO did not execute anything."}
+        action = DraftAction(action_type="export", target_capability="bank_reconciliation_packet",
+                             payload=draft_payload, source_snapshot_ids=tuple(item.snapshot_id for item in case.evidence),
+                             payload_hash=payload_hash(draft_payload))
+        case = self.repo.bind_draft_action(case.case_id, action, expected_revision=case.revision,
+                                           idempotency_key=f"{idempotency_key}:draft")
+        case = self._transition(case, actor, CaseState.NEEDS_REVIEW, f"{idempotency_key}:review", case.revision)
         runtime = self._runtime[case_id]
         runtime.results, runtime.findings = typed, findings
-        case = self._transition(case, actor, CaseState.CHECKED, f"{idempotency_key}:checked", expected_revision)
-        case = self._transition(case, actor, CaseState.NEEDS_REVIEW, f"{idempotency_key}:review", case.revision)
-        self._remember(case_id, idempotency_key, case)
+        self._record(case_id, "run_checks", idempotency_key, fingerprint, case)
         return case
 
     def review(self, case_id: str, *, actor: CaseActor, department_ids: frozenset[str], expected_revision: int,
-               idempotency_key: str, dispositions: dict[str, str]) -> AccountingCase:
+               idempotency_key: str, dispositions: dict[str, str], payload_hash_value: str,
+               evidence_hash: str, result_hash: str) -> AccountingCase:
         self._require(idempotency_key)
         case = self.get(case_id, actor=actor, department_ids=department_ids)
         runtime = self._runtime[case_id]
         self._authorize_case(case, actor, department_ids, "review")
+        fingerprint = self._hash({"expected_revision": expected_revision, "dispositions": dispositions,
+                                  "payload_hash": payload_hash_value, "evidence_hash": evidence_hash,
+                                  "result_hash": result_hash})
+        cached = self._replay(case_id, "review", idempotency_key, fingerprint)
+        if cached is not None:
+            return cached  # type: ignore[return-value]
         if actor.user_id == runtime.owner_id:
             raise CaseAccessError("maker cannot review their own Bank case")
         if set(dispositions) != {item.finding_id for item in runtime.findings}:
             raise CaseStateError("every current finding requires one reviewer disposition")
+        if set(dispositions.values()) - {"investigate", "resolved", "accepted_exception", "escalate"}:
+            raise CaseStateError("review disposition is not allowed")
+        if case.draft_action is None or case.draft_action.payload_hash != payload_hash_value:
+            raise CaseStateError("review payload hash does not match the current draft")
+        if evidence_hash != self._evidence_hash(case):
+            raise CaseStateError("review evidence hash does not match current evidence")
+        if result_hash != self._hash([item.model_dump(mode="json") for item in runtime.results]):
+            raise CaseStateError("review result hash does not match current checks")
+        review_hash = self._hash({"dispositions": dispositions, "reviewer": actor.user_id, "revision": case.revision})
+        approval = ApprovalEnvelope(maker_id=runtime.owner_id, checker_id=actor.user_id,
+                                    payload_hash=case.draft_action.payload_hash, policy_version="bank-review/v1",
+                                    approved_at=datetime.now(timezone.utc), evidence_hash=evidence_hash,
+                                    result_hash=result_hash, review_hash=review_hash)
+        case = self.repo.approve(case.case_id, approval, expected_revision=expected_revision,
+                                 idempotency_key=f"{idempotency_key}:approval")
+        case = self._transition(case, actor, CaseState.REVIEWED, f"{idempotency_key}:review", case.revision)
         runtime.review_dispositions = dict(dispositions)
-        return self._transition(case, actor, CaseState.REVIEWED, idempotency_key, expected_revision)
+        self._record(case_id, "review", idempotency_key, fingerprint, case)
+        return case
 
     def export(self, case_id: str, *, actor: CaseActor, department_ids: frozenset[str], expected_revision: int,
-               idempotency_key: str) -> tuple[AccountingCase, dict]:
+               idempotency_key: str, payload_hash_value: str, evidence_hash: str,
+               review_hash: str) -> tuple[AccountingCase, dict]:
         self._require(idempotency_key)
         case = self.get(case_id, actor=actor, department_ids=department_ids)
         self._authorize_case(case, actor, department_ids, "export")
-        cached = self._cached(case_id, idempotency_key)
+        fingerprint = self._hash({"expected_revision": expected_revision, "payload_hash": payload_hash_value,
+                                  "evidence_hash": evidence_hash, "review_hash": review_hash})
+        cached = self._replay(case_id, "export", idempotency_key, fingerprint)
         if cached is not None:
             return cached  # type: ignore[return-value]
         runtime = self._runtime[case_id]
         if case.state is not CaseState.REVIEWED:
             raise CaseStateError("a reviewed case is required before export")
-        payload = {"artifact_type": "bank-reconciliation-packet", "case_id": case_id,
-                   "evidence_hashes": {item.snapshot_id: item.content_hash for item in case.evidence},
-                   "result_ids": [item.check_id for item in runtime.results], "review": runtime.review_dispositions,
-                   "execution": "artifact produced; BRAVO did not execute anything."}
-        action = DraftAction(action_type="export", target_capability="bank_reconciliation_packet", payload=payload,
-                             source_snapshot_ids=tuple(item.snapshot_id for item in case.evidence), payload_hash=payload_hash(payload))
-        case = self.repo.bind_draft_action(case.case_id, action, expected_revision=expected_revision,
-                                           idempotency_key=f"{idempotency_key}:bind")
-        case = self._transition(case, actor, CaseState.EXPORTED, f"{idempotency_key}:export", case.revision)
-        artifact = {"payload_hash": action.payload_hash, "status": "artifact_produced_not_executed", **payload}
-        runtime.exports[action.payload_hash] = artifact
+        if case.draft_action is None or case.approval is None:
+            raise CaseStateError("reviewed and approved export draft is required")
+        approval = case.approval
+        if (payload_hash_value != case.draft_action.payload_hash or approval.payload_hash != payload_hash_value
+                or evidence_hash != approval.evidence_hash or review_hash != approval.review_hash):
+            raise CaseStateError("export envelope does not match approved draft/evidence/review")
+        payload = {**case.draft_action.payload, "review": runtime.review_dispositions,
+                   "review_hash": approval.review_hash, "checker_id": approval.checker_id}
+        case = self._transition(case, actor, CaseState.EXPORTED, f"{idempotency_key}:export", expected_revision)
+        artifact = {"payload_hash": case.draft_action.payload_hash, "status": "artifact_produced_not_executed", **payload}
+        runtime.exports[case.draft_action.payload_hash] = artifact
         result = (case, artifact)
-        self._remember(case_id, idempotency_key, result)
+        self._record(case_id, "export", idempotency_key, fingerprint, result)
         return result
 
     def view(self, case: AccountingCase) -> dict:
@@ -174,6 +248,10 @@ class SyntheticBankCaseService:
                 "results": [item.model_dump(mode="json") for item in runtime.results],
                 "findings": [item.model_dump(mode="json") for item in runtime.findings],
                 "review_dispositions": runtime.review_dispositions,
+                "draft_payload_hash": case.draft_action.payload_hash if case.draft_action else None,
+                "evidence_hash": self._evidence_hash(case),
+                "result_hash": self._hash([item.model_dump(mode="json") for item in runtime.results]) if runtime.results else None,
+                "approval": case.approval.model_dump(mode="json") if case.approval else None,
                 "trace": {"contract_version": "wp04/v1", "source_snapshot_ids": [item.snapshot_id for item in case.evidence],
                           "result_ids": [item.check_id for item in runtime.results], "raw_evidence_retained": False}}
 
@@ -188,23 +266,37 @@ class SyntheticBankCaseService:
 
     def _authorize_case(self, case: AccountingCase, actor: CaseActor, departments: frozenset[str], action: str) -> None:
         runtime = self._runtime[case.case_id.value]
-        if actor.user_id != runtime.owner_id and not (departments & runtime.department_ids) and actor.role != "admin":
+        if not (departments & runtime.department_ids) and actor.role not in {"admin", "preparer_all", "reviewer_all"}:
             raise CaseAccessError("case is outside the caller's authorized department scope")
         self._authorize(actor, departments, action)
 
     @staticmethod
     def _authorize(actor: CaseActor, departments: frozenset[str], action: str) -> None:
-        if actor.role not in {"preparer", "reviewer", "admin"}:
+        if actor.role not in {"preparer", "reviewer", "preparer_all", "reviewer_all", "admin"}:
             raise CaseAccessError("unrecognized accounting-case role")
         if not departments and actor.role != "admin":
             raise CaseAccessError("department scope is required")
-        if action == "review" and actor.role not in {"reviewer", "admin"}:
+        if action == "review" and actor.role not in {"reviewer", "reviewer_all", "admin"}:
             raise CaseAccessError("reviewer role is required")
-        if action == "export" and actor.role not in {"reviewer", "admin"}:
+        if action == "export" and actor.role not in {"reviewer", "reviewer_all", "admin"}:
             raise CaseAccessError("reviewer role is required for export")
 
-    def _cached(self, subject: str, key: str) -> object | None:
-        return self._requests.get((subject, key))
+    def _replay(self, subject: str, operation: str, key: str, request_hash: str) -> object | None:
+        previous = self._commands.get((subject, key))
+        if previous is None:
+            return None
+        if previous.operation == operation and previous.request_hash == request_hash:
+            return previous.outcome
+        from app.core_v2.case_state import IdempotencyConflict
+        raise IdempotencyConflict("idempotency key was already used for another command or request")
 
-    def _remember(self, subject: str, key: str, value: object) -> None:
-        self._requests[(subject, key)] = value
+    def _record(self, subject: str, operation: str, key: str, request_hash: str, outcome: object) -> None:
+        self._commands[(subject, key)] = _CommandOutcome(operation, request_hash, outcome)
+
+    @staticmethod
+    def _hash(value: object) -> str:
+        return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
+                                         separators=(",", ":"), default=str).encode("utf-8")).hexdigest()
+
+    def _evidence_hash(self, case: AccountingCase) -> str:
+        return self._hash({item.snapshot_id: item.content_hash for item in case.evidence})

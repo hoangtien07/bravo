@@ -54,6 +54,10 @@ class Settings(BaseSettings):
     # docs/SECURITY-DB-BACKSTOP.md. Arming without a role cutover would be a no-op for the owner.
     native_rls_enabled: bool = False
 
+    # Core V2 Bank API is deliberately fail-closed until the synthetic deployment explicitly
+    # opts in.  This flag is not a production-readiness claim or an authorization bypass.
+    accounting_case_v2_enabled: bool = False
+
     # Auth / security (SECURITY-RLS.md)
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"

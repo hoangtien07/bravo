@@ -142,6 +142,12 @@ class ApprovalEnvelope(ContractModel):
     payload_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     policy_version: str
     approved_at: datetime
+    # WP-04: the checker approves one immutable export payload together with the exact
+    # evidence/result/review-decision hashes used to produce it.  Optional preserves WP-02
+    # contract fixtures; the Bank orchestration requires all three values.
+    evidence_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    result_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    review_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     invalidation_reason: str | None = None
 
     _required = field_validator("maker_id", "checker_id", "policy_version")(_nonblank)
