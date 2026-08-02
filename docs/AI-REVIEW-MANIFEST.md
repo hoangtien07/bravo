@@ -1,7 +1,7 @@
 # AI review manifest
 
 Status: `ACTIVE — review entrypoint`  
-Last verified: 2026-07-31
+Last verified: 2026-08-02
 
 ## Purpose
 
@@ -40,6 +40,9 @@ research, raw conversations, or obsolete progress as current truth.
    shared contract is in scope.
 15. `plan-rebuild/15-V2-EXTERNAL-GATE-EXECUTION-PACKET.md` when assessing completion, runtime
     cutover, model/evaluation, SME or user-baseline evidence.
+16. `evidence/v2/V2-BRAVO10-BUSINESS-FLOW-COUNCIL-DECISION-2026-08-02.md` and
+    `plan-rebuild/16-BRAVO10-BUSINESS-FLOW-REMEDIATION-PLAN.md` before assessing backend business
+    adequacy, secondary-case functionality, FigmaMake admission or local-demo readiness.
 
 ### Tier 2 — open only for a specific claim
 
@@ -99,6 +102,8 @@ The next project review should answer:
    transaction, calculation, approval, task, reporting or system function?
 9. Which user, buyer, liability, data contract and success metric support the first Accounting
    Work capability, independently of Knowledge Chat?
+10. Can any positive accounting verdict be produced from caller-asserted status, completeness,
+    policy, lineage or materiality rather than a server-resolved immutable evidence snapshot?
 
 ## Required review output
 

@@ -4,6 +4,11 @@ Status: `READY FOR AUTHORIZED EXECUTION — NO EXTERNAL GATE HAS PASSED`
 
 Date: 2026-08-02
 
+Relation to Plan 16: the later 2026-08-02 BRAVO 10 business-flow audit found deterministic and
+evidence-contract gaps that must be remediated before FE admission. This packet still governs the
+external operator/model/SME/user gates, but those gates do not replace or waive Plan 16's backend
+business-correctness work.
+
 ## Purpose and council decision
 
 This packet continues the accepted synthetic three-case plan after the developer delivery. It

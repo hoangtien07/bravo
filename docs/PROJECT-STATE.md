@@ -1,6 +1,6 @@
 # BRAVO AI Copilot — current project state
 
-Status: `V2 SYNTHETIC THREE-CASE PLAN ACCEPTED — operational and evaluation gates remain open`
+Status: `V2 BUSINESS-FLOW REMEDIATION REQUIRED — FE admission and external gates remain open`
 Owner: project owner  
 As of: 2026-08-02
 Evidence window: branch `codex/v2-financial-close-core`; see the dated reproducible commands in
@@ -30,6 +30,30 @@ case-command shell migrations and isolated SQL/HTTP/native-RLS runtime proof. Th
 24-trajectory blind evaluation and all production/pilot claims remain open. The Engineering
 Workbench and frontend prototype tracks remain independent and are not evidence that conversation
 quality has improved.
+
+## BRAVO 10 business-flow audit (2026-08-02)
+
+The accounting/domain, API and security council compared the V2 implementation with the BRAVO 10
+Accounting, Documents, Purchases, Managements and System guides plus the WP-01 contracts. The
+developer scaffold is **not yet business-adequate for FigmaMake contract freeze**.
+
+Reproduced blockers:
+
+- Period Close returns `ready=true` for an empty prerequisite/reconciliation set because the caller,
+  not an approved policy, defines completeness.
+- Voucher can return all-pass/lineage from caller scalars and an arbitrary non-empty BRAVO document
+  ID without immutable evidence.
+- Bank matching consumes unresolved candidates and can arbitrarily exact-match one of two competing
+  Bank rows; its `EXACT_REFERENCE_AMOUNT_DATE` rule does not compare references.
+- Voucher and Period remain stateless previews; they do not satisfy ADR-0033's functional-case
+  lifecycle requirement.
+- The Bank conversation surface remains deterministic canned developer text, not an owner-pinned or
+  evaluated model path.
+
+The selected response is Plan 16: correct source authority, Bank conflict/scope/status logic,
+server-authoritative secondary evidence, durable shared lifecycles, bounded reasoning and V2
+RLS/audit backstops before opening FE admission. The complete evidence and decision are recorded in
+`evidence/v2/V2-BRAVO10-BUSINESS-FLOW-COUNCIL-DECISION-2026-08-02.md`.
 
 ## Phase-demo topology decision
 
@@ -107,23 +131,14 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-The developer synthetic scaffold is complete: Bank has the durable case workflow; Voucher and
-Period Close are intentionally preview-only; the contract-first FigmaMake/frontend integration and
-isolated durable database proof are recorded. The next work is the authorized external gates in
-`plan-rebuild/15-V2-EXTERNAL-GATE-EXECUTION-PACKET.md`: non-owner runtime containment, owner-pinned
-model/evaluation configuration, and independent SME/manual-baseline evidence. Keep legacy
-endpoints unchanged. Do not simulate operator, owner, SME, user, customer or pilot evidence when
-the required authority is unavailable.
+Execute `plan-rebuild/16-BRAVO10-BUSINESS-FLOW-REMEDIATION-PLAN.md`. New FigmaMake productization is
+paused until BF-00 through BF-05 automated exits pass and council explicitly records
+`FE ADMISSION OPEN`. Keep the existing prototype and `frontend-react` rollback shell unchanged
+while backend contracts are corrected.
 
-For developer completion only, the owner has authorized implementation and automated synthetic
-end-to-end checks through the UI before real-user or blind-SME testing. The evaluation/release
-gates remain deferred and must never be reported as passed from this developer track.
-
-The next design/dev handoff is contract-first: see
-`plan-rebuild/14-CONTRACT-FIRST-FIGMAMAKE-HANDOFF.md`. `FigmaMake_UI` is a design/prototype input;
-`frontend-react` integrates only frozen backend/agent contracts and their synthetic examples.
-The reproducible developer-track boundary and deferred gates are recorded in
-`evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`.
+Plan 15 still governs the deferred operator, model-owner, independent SME and manual-baseline
+evidence. Do not simulate those authorities during developer remediation, and do not use their
+absence to weaken deterministic or security gates. Legacy endpoints remain unchanged.
 
 ## Source of truth and precedence
 
@@ -132,7 +147,9 @@ The reproducible developer-track boundary and deferred gates are recorded in
 3. Accepted ADRs own existing platform invariants. ADR-0032 selects the primary demonstrator;
    ADR-0033 accepts the three-case scope and owner package. Its pilot target does not supersede
    ADR-0019/0022 until a future real-data ADR and enforcement evidence exist.
-4. The `plan-rebuild/04–12` documents own the V2 decision design, dev backlog and gates.
+4. The `plan-rebuild/04–12` documents own the original V2 decision design and backlog; Plan 16 owns
+   the 2026-08-02 business-flow remediation and FE admission gate where newer code evidence exposed
+   gaps in the original synthetic truth set.
 5. `docs/research/**`, `docs/reviews/**`, `docs/work-packages/**`, `plan-rebuild/bravogen-p0/**`,
    `file_system/**` Markdown, and archive directories are retained evidence/reference only. Do
    not treat them as current progress without fresh verification.

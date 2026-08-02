@@ -1,6 +1,6 @@
 # V2 contract-first design and development handoff
 
-Status: `ACTIVE — BACKEND/AGENT FIRST, FIGMAMAKE DESIGN FOLLOWS FROZEN CONTRACTS`
+Status: `PAUSED — PLAN 16 BUSINESS-FLOW REMEDIATION MUST OPEN FE ADMISSION`
 
 Date: 2026-08-01
 Authority: owner developer-track amendment in
@@ -11,6 +11,11 @@ Authority: owner developer-track amendment in
 This handoff governs the next Design + Development work. `FigmaMake_UI` remains the visual
 prototype source, while `frontend-react` remains the production integration shell. Do not deploy
 the current prototype as a completed product, and do not invent API behavior from screens.
+
+The 2026-08-02 BRAVO 10 business-flow audit found reproducible false-positive paths in Voucher and
+Period previews and candidate-settlement gaps in Bank matching. Plan 16 therefore pauses this
+handoff. Existing frames/tests may be retained, but no new interaction is frozen or productized
+until council records `FE ADMISSION OPEN` after BF-00 through BF-05 automated exits.
 
 ## Selected flow
 

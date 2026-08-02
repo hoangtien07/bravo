@@ -1,6 +1,11 @@
 # V2 synthetic developer-track status
 
-Status: `IN PROGRESS — INTEGRATED AUTOMATION PARTIAL, HUMAN/OPERATOR GATES DEFERRED`
+Status: `HISTORICAL SCAFFOLD EVIDENCE — PLAN 16 BUSINESS REMEDIATION REQUIRED`
+
+The 2026-08-02 BRAVO 10 business-flow audit reproduced false-positive paths in both secondary
+previews and candidate-settlement gaps in Bank matching. The automated results below remain valid
+for the narrow contracts that were tested, but they no longer support FE admission or a claim that
+the three-case business flow is adequate. See the dated council decision and Plan 16.
 
 ## Built and automated
 
