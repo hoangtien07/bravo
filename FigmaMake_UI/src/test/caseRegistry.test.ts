@@ -3,9 +3,10 @@ import { REVIEW_CASES, reviewUrl } from "../fixtures/caseRegistry";
 import { assertFixtureIdentifier, fixtureId, fixtureNow, installFixtureNetworkGuard, mockStreamSchedule, resetFixtureSequence } from "../fixtures/runtime";
 
 describe("UI-first fixture contracts", () => {
-  it("publishes exactly 171 unique tracker case IDs", () => {
-    expect(REVIEW_CASES).toHaveLength(171);
-    expect(new Set(REVIEW_CASES.map(item => item.id)).size).toBe(171);
+  it("publishes exactly 174 unique tracker case IDs including all three Accounting Work cases", () => {
+    expect(REVIEW_CASES).toHaveLength(174);
+    expect(new Set(REVIEW_CASES.map(item => item.id)).size).toBe(174);
+    expect(REVIEW_CASES.filter(item => item.family === "WORK").map(item => item.id)).toEqual(["WORK-01", "WORK-02", "WORK-03"]);
   });
 
   it("publishes a deterministic QA URL for every case", () => {
@@ -29,4 +30,3 @@ describe("UI-first fixture contracts", () => {
     restore();
   });
 });
-

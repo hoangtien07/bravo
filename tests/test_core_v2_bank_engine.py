@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from app.core_v2.bank_engine import BankEngineError, BankReconciliationEngine, BankReconciliationPolicy
-from app.core_v2.wp01_schema import BankStatementRow, BravoBankLedgerRow
+from app.core_v2.wp01_schema import BankStatementRow, BravoBankLedgerRow, ScopeKey
 
 
 _ROOT = Path(__file__).parent / "fixtures" / "core_v2" / "wp01"
@@ -67,3 +67,41 @@ def test_engine_has_no_llm_dependency_or_llm_input():
     _, bank_rows, ledger_rows = _rows()
     result = _engine().reconcile(bank_rows, ledger_rows)
     assert all(item.policy_id == "bank-reconciliation/v1.0.0" for item in result)
+
+
+def test_competing_bank_rows_remain_ambiguous_and_do_not_emit_false_bank_only():
+    _, bank_rows, ledger_rows = _rows()
+    competing = bank_rows[0].model_copy(update={"source_row_id": "BANK-001-COMPETING"})
+
+    results = _engine().reconcile((bank_rows[0], competing), (ledger_rows[0],))
+
+    assert {(item.bank_row_ids, item.classification.value, item.reason_code) for item in results} == {
+        (("BANK-001",), "AMBIGUOUS", "COMPETING_BANK_ROWS_NO_TIE_BREAK"),
+        (("BANK-001-COMPETING",), "AMBIGUOUS", "COMPETING_BANK_ROWS_NO_TIE_BREAK"),
+    }
+    assert all(item.classification.value != "BANK_ONLY" for item in results)
+    assert all(item.classification.value != "BRAVO_ONLY" for item in results)
+
+
+def test_mismatched_reference_cannot_claim_exact_reference_amount_date():
+    _, bank_rows, ledger_rows = _rows()
+    wrong_reference = bank_rows[0].model_copy(update={"bank_reference": "WRONG-REFERENCE"})
+
+    result = _engine().reconcile((wrong_reference,), (ledger_rows[0],))
+
+    assert len(result) == 1
+    assert result[0].classification.value == "TOLERANCE_MATCH"
+    assert result[0].reason_code == "WITHIN_APPROVED_TOLERANCE"
+
+
+def test_scope_and_document_status_mismatch_cannot_match():
+    fixture, bank_rows, ledger_rows = _rows()
+    scope = ScopeKey.model_validate(fixture["scope"])
+    cancelled = ledger_rows[0].model_copy(update={"document_status": "cancelled"})
+    foreign_entity = ledger_rows[0].model_copy(update={"legal_entity_id": "other-entity"})
+
+    cancelled_result = _engine().reconcile((bank_rows[0],), (cancelled,), scope)
+    foreign_result = _engine().reconcile((bank_rows[0],), (foreign_entity,), scope)
+
+    assert cancelled_result[0].classification.value == "BANK_ONLY"
+    assert foreign_result[0].classification.value == "BANK_ONLY"

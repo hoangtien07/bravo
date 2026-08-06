@@ -63,6 +63,15 @@ def test_scope_is_single_tenant_vnd_and_rejects_unknown_fields():
         ScopeKey.model_validate({**scope.model_dump(mode="json"), "tenant_ids": ["other"]})
 
 
+def test_scope_allows_absent_bank_account_for_non_bank_cases_but_not_blank_value():
+    raw = _load("bank_golden.yaml")["scope"]
+    scope = ScopeKey.model_validate({**raw, "bank_account_ref": None})
+
+    assert scope.bank_account_ref is None
+    with pytest.raises(ValidationError):
+        ScopeKey.model_validate({**raw, "bank_account_ref": ""})
+
+
 def test_golden_pack_covers_every_locked_bank_result_class_once_or_more():
     fixture = _load("bank_golden.yaml")
     classes = {result["classification"] for result in fixture["golden_results"]}
@@ -93,7 +102,8 @@ def test_fixture_manifest_hashes_every_declared_artifact():
     }
     assert {item["path"] for item in manifest["artifacts"]} == {
         "bank_golden.yaml", "held_out_manifest.json", "bank_policy.yaml", "voucher_schema.yaml",
-        "period_close_schema.yaml", "must_not_claims.md", "glossary.md",
+        "voucher_golden.yaml", "period_close_schema.yaml", "period_close_golden.yaml",
+        "must_not_claims.md", "glossary.md",
     }
     for artifact in manifest["artifacts"]:
         digest = hashlib.sha256((_ROOT / artifact["path"]).read_bytes()).hexdigest()

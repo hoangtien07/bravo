@@ -20,6 +20,8 @@ class SyntheticDemoConfig(BaseModel):
     demo_id: str = Field(min_length=1)
     synthetic_only: bool
     enabled_case_types: tuple[CaseType, ...]
+    functional_case_types: tuple[CaseType, ...]
+    developer_preview_case_types: tuple[CaseType, ...]
     capability_flags: dict[str, bool]
     model_egress_policy: str = Field(pattern=r"^deny_until_owner_pins_model$")
     audit_export: str = Field(pattern=r"^privacy_minimized_json$")
@@ -30,6 +32,10 @@ class SyntheticDemoConfig(BaseModel):
             raise ValueError("the developer demonstrator must be synthetic-only")
         if set(self.enabled_case_types) != set(CaseType):
             raise ValueError("all and only approved V2 case types must be declared")
+        functional = set(self.functional_case_types)
+        previews = set(self.developer_preview_case_types)
+        if functional & previews or functional | previews != set(self.enabled_case_types):
+            raise ValueError("functional and developer-preview case types must partition enabled case types")
         if not all(isinstance(value, bool) for value in self.capability_flags.values()):
             raise ValueError("capability flags must be booleans")
         return self

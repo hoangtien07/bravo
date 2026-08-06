@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models import Chunk
 from app.rag.bravo_intent import boost_for_bravo_intent
 from app.rag.filters import RetrievalFilters
-from app.rag.kb_lifecycle import apply_version_policy
+from app.rag.kb_lifecycle import ExactClaimRequirement, apply_version_policy, exact_claim_evidence
 from app.rag import rerank as _rerank
 from app.rag.embedding import embed_one
 from app.security.rls import Identity, chunk_scope_filter
@@ -250,7 +250,8 @@ async def _maybe_expand(db: AsyncSession, identity: Identity,
 async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int = 20,
                    candidate_k: int = 150, use_rerank: bool | None = None,
                    min_score: float | None = None,
-                   filters: RetrievalFilters | None = None) -> list[Retrieved]:
+                   filters: RetrievalFilters | None = None,
+                   exact_claim: ExactClaimRequirement | None = None) -> list[Retrieved]:
     """Full hybrid pipeline (findings/J): vector + lexical -> RRF -> cross-encoder rerank.
 
     All branches enforce RLS in-query. Rerank defaults to settings.rerank_enabled
@@ -282,7 +283,10 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
         return []   # không đủ căn cứ -> để loop trả "không tìm thấy" (zero-hallucination)
 
     if not use_rerank:
-        return await _maybe_expand(db, identity, fused[:top_n])
+        selected = fused[:top_n]
+        if exact_claim:
+            selected = exact_claim_evidence(selected, exact_claim)
+        return await _maybe_expand(db, identity, selected)
 
     from app.config import get_settings
     _rs = get_settings()
@@ -297,25 +301,35 @@ async def retrieve(db: AsyncSession, identity: Identity, query: str, top_n: int 
             # rerank cho cả câu hỏi mà không ai biết -> log để lộ ra ở /metrics-log.
             _log.warning("llm_rerank skipped: %d/%d candidates sensitive/unknown",
                          sum(1 for r in pool if r.is_sensitive), len(pool))
-            return await _maybe_expand(db, identity, pool[:top_n])
+            selected = pool[:top_n]
+            if exact_claim:
+                selected = exact_claim_evidence(selected, exact_claim)
+            return await _maybe_expand(db, identity, selected)
         order = await _rerank.llm_rerank(
             query, [r.content for r in pool], top_n, sensitive=False,
         )
-        return await _maybe_expand(db, identity, [pool[i] for i in order][:top_n])
+        selected = [pool[i] for i in order][:top_n]
+        if exact_claim:
+            selected = exact_claim_evidence(selected, exact_claim)
+        return await _maybe_expand(db, identity, selected)
 
     # Cross-encoder rerank (ViRanker, local) over the fused candidates.
     scores = _rerank.rerank(query, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
     fused = apply_version_policy(boost_for_bravo_intent(query, fused))
-    return await _maybe_expand(db, identity, fused[:top_n])
+    selected = fused[:top_n]
+    if exact_claim:
+        selected = exact_claim_evidence(selected, exact_claim)
+    return await _maybe_expand(db, identity, selected)
 
 
 async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str],
                          top_n: int = 20, candidate_k: int = 150,
                          use_rerank: bool | None = None,
                          min_score: float | None = None,
-                         filters: RetrievalFilters | None = None) -> list[Retrieved]:
+                         filters: RetrievalFilters | None = None,
+                         exact_claim: ExactClaimRequirement | None = None) -> list[Retrieved]:
     """Multi-query hybrid retrieval (Q2): run each query's dense+lexical branches, RRF-fuse
     ALL branches together, then boost/version/rerank ONCE against the primary query.
 
@@ -327,7 +341,7 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
     if len(qs) <= 1:
         return await retrieve(db, identity, qs[0] if qs else "", top_n=top_n,
                               candidate_k=candidate_k, use_rerank=use_rerank, min_score=min_score,
-                              filters=filters)
+                              filters=filters, exact_claim=exact_claim)
 
     from app.config import get_settings
     from app.rag.vn_terms import expand_abbreviations
@@ -350,7 +364,10 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
         _record_zero_hit()   # F9
         return []
     if not use_rerank:
-        return await _maybe_expand(db, identity, fused[:top_n])
+        selected = fused[:top_n]
+        if exact_claim:
+            selected = exact_claim_evidence(selected, exact_claim)
+        return await _maybe_expand(db, identity, selected)
 
     provider = _s.rerank_provider
     if provider == "llm":
@@ -358,12 +375,21 @@ async def retrieve_multi(db: AsyncSession, identity: Identity, queries: list[str
         if any(r.is_sensitive for r in pool):
             _log.warning("llm_rerank skipped (multi): %d/%d sensitive",
                          sum(1 for r in pool if r.is_sensitive), len(pool))
-            return await _maybe_expand(db, identity, pool[:top_n])
+            selected = pool[:top_n]
+            if exact_claim:
+                selected = exact_claim_evidence(selected, exact_claim)
+            return await _maybe_expand(db, identity, selected)
         order = await _rerank.llm_rerank(primary, [r.content for r in pool], top_n, sensitive=False)
-        return await _maybe_expand(db, identity, [pool[i] for i in order][:top_n])
+        selected = [pool[i] for i in order][:top_n]
+        if exact_claim:
+            selected = exact_claim_evidence(selected, exact_claim)
+        return await _maybe_expand(db, identity, selected)
 
     scores = _rerank.rerank(primary, [r.content for r in fused])
     for r, s in zip(fused, scores, strict=True):
         r.score = s
     fused = apply_version_policy(boost_for_bravo_intent(primary, fused))
-    return await _maybe_expand(db, identity, fused[:top_n])
+    selected = fused[:top_n]
+    if exact_claim:
+        selected = exact_claim_evidence(selected, exact_claim)
+    return await _maybe_expand(db, identity, selected)

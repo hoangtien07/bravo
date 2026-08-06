@@ -12,6 +12,9 @@ Thư mục này là nguồn sự thật cho quyết định rebuild BRAVO AI Cop
 
 ## Cấu trúc
 
+- `18-FIGMAMAKE-UI-INTERNAL-DEMO-COMPLETION-PLAN.md`: plan hoàn thiện candidate demo nội bộ
+  gồm Knowledge Chat live, Accounting Operations ba case, product shell thống nhất, hai danh tính
+  maker/reviewer, kiểm thử live local API và gói rehearsal/rollback; không suy rộng sang production.
 - `10-FRONTIER-BRAVO-ACCOUNTING-AGENT-PLAN.md`: product north star hiện tại cho Knowledge Chat
   và Accounting Operations Hub, ranh giới không làm lại chức năng BRAVO 10, portfolio capability,
   deterministic/LLM contract, demo/pilot topology và các owner decision gate còn mở.
@@ -44,6 +47,10 @@ Thư mục này là nguồn sự thật cho quyết định rebuild BRAVO AI Cop
 - Tự thuật của chatbot về tool/graph/router chỉ là `UNVERIFIED` cho tới khi có kiểm thử hành vi hỗ trợ.
 
 ## Current gate status
+
+Plan 18 is technically demo-complete and ready for owner evaluation. Its bounded local-synthetic
+completion evidence is `evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md`; blind SME, A/B/C/D quality,
+customer-data, pilot and production gates remain open.
 
 The permitted black-box collection and formal R0 gate are complete. `P0-20-exit-criteria-audit.md` records 34+ prior independent cases plus the P0-21 strict closure set: five identical anchors across all three modes (15/15 valid observations) and two completed independent Insight repeats. Fabricated-entity, citation, graph and memory coverage are present with historical quota/error attempts preserved separately. This authorizes the rebuild-design decision phase; it does not prove BravoGen's internal GraphRAG, workflow engine, self-learning or authorization implementation.
 

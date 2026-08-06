@@ -43,6 +43,13 @@ research, raw conversations, or obsolete progress as current truth.
 16. `evidence/v2/V2-BRAVO10-BUSINESS-FLOW-COUNCIL-DECISION-2026-08-02.md` and
     `plan-rebuild/16-BRAVO10-BUSINESS-FLOW-REMEDIATION-PLAN.md` before assessing backend business
     adequacy, secondary-case functionality, FigmaMake admission or local-demo readiness.
+17. `evidence/v2/V2-BRAVO10-FE-ADMISSION-REVIEW-PACKET-2026-08-02.md`,
+    `evidence/v2/V2-BRAVO10-FE-ADMISSION-COUNCIL-DECISION-2026-08-02.md` and
+    `plan-rebuild/17-FIGMAMAKE-UI-THREE-CASE-FE-IMPLEMENTATION-PLAN.md` before implementing or
+    reviewing the admitted FigmaMake three-case frontend.
+18. `plan-rebuild/18-FIGMAMAKE-UI-INTERNAL-DEMO-COMPLETION-PLAN.md` before changing normal
+    FigmaMake routes, live Knowledge Chat, the final two-module shell, demo identities or the
+    Plan 17 local-demo handoff claim.
 
 ### Tier 2 — open only for a specific claim
 
@@ -78,13 +85,23 @@ the canonical document; do not recursively load an evidence tree.
 1. Reproducible code/test/runtime evidence overrides prose implementation claims.
 2. `PROJECT-STATE.md` owns the current snapshot.
 3. Accepted ADRs own existing architectural invariants.
-4. `plan-rebuild/04–12` own the current product/decision design, execution gates and dev backlog.
+4. `plan-rebuild/04–12` own the product/decision design and original dev backlog; Plan 16 owns the
+   backend business-flow remediation/FE admission gate, Plan 17 owns the admitted FigmaMake
+   three-case frontend execution, and Plan 18 owns completion of the two-module local internal-demo
+   shell, including live Knowledge Chat and the Plan 17 handoff exit.
    ADR-0032 now selects Reconciliation & Exception Investigator as the first deep V2 demonstrator
    and supersedes the earlier AP/Close demonstrator conflict. ADR-0033 accepts the three-case
    scope and target pilot guardrails. Plan 12 owns implementation sequencing. Target architecture
    is not runtime/production evidence.
 5. Historical research and council reports do not become current merely because they are detailed.
 6. A structural/synthetic green test does not prove conversational task quality.
+
+## Plan 18 local-demo status
+
+Plan 18 is `TECHNICAL DEMO-COMPLETE — READY FOR OWNER EVALUATION` as recorded in
+[`DEMO18-FINAL-PACKET-2026-08-03.md`](../evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md). This only
+closes the local synthetic UI handoff: it does not close blind SME review, A/B/C/D conversation
+quality, customer-data authority, pilot, recovery/deployment or production gates.
 
 ## Review questions
 

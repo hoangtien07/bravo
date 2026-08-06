@@ -12,7 +12,7 @@ import pytest
 from app.security.rls import Identity
 
 
-def test_secondary_preview_routes_require_case_read_and_return_bounded_output(monkeypatch):
+def test_secondary_preview_routes_are_disabled_until_functional_case_evidence_exists(monkeypatch):
     from app.api import routes_accounting_cases_v2 as routes
     from app.main import app
     from app.security.auth import get_current_identity
@@ -35,15 +35,12 @@ def test_secondary_preview_routes_require_case_read_and_return_bounded_output(mo
                     "invoice_total": "110", "invoice_tax": "10", "invoice_net": "100",
                     "po_amount": "110", "received": True, "bravo_document_id": "synthetic-draft-1",
                 })
-                assert voucher.status_code == 200, voucher.text
-                assert {item["status"] for item in voucher.json()} == {"pass"}
+                assert voucher.status_code == 404, voucher.text
                 close = await client.post("/api/v2/accounting-cases/preview/period-close-readiness", json={
                     "prerequisites": [{"prerequisite_id": "bank", "required": True, "status": "pending", "evidence_fresh": True}],
                     "reconciliations": [],
                 })
-                assert close.status_code == 200, close.text
-                assert close.json()["ready"] is False
-                assert "did not execute" in close.json()["execution"]
+                assert close.status_code == 404, close.text
         finally:
             app.dependency_overrides.pop(get_current_identity, None)
 
@@ -69,4 +66,22 @@ def test_secondary_preview_capability_flag_is_a_route_backstop(monkeypatch, tmp_
 
     with pytest.raises(HTTPException) as raised:
         getattr(routes, guard_name)()
+    assert raised.value.status_code == 404
+
+
+def test_bank_reasoning_has_its_own_manifest_backstop(monkeypatch, tmp_path):
+    from fastapi import HTTPException
+
+    from app.api import routes_accounting_cases_v2 as routes
+
+    disabled = tmp_path / "disabled-bank-reasoning.yaml"
+    source = Path("file_system/core_v2_synthetic_demo.yaml").read_text(encoding="utf-8")
+    disabled.write_text(source.replace("bank_reasoning: true", "bank_reasoning: false"), encoding="utf-8")
+    monkeypatch.setattr(routes, "get_settings", lambda: SimpleNamespace(
+        accounting_case_v2_enabled=True,
+        accounting_case_v2_demo_config=str(disabled),
+    ))
+
+    with pytest.raises(HTTPException) as raised:
+        routes._require_bank_reasoning()
     assert raised.value.status_code == 404

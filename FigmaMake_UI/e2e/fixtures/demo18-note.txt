@@ -1,0 +1,2 @@
+Synthetic internal-demo note for Plan 18 attachment lifecycle verification.
+This file is not BRAVO customer data and does not authorize any ERP mutation.

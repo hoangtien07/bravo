@@ -10,7 +10,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 import re
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
@@ -83,8 +83,11 @@ class ScopeKey(StrictModel):
 
     _nonblank = field_validator(
         "tenant_id", "legal_entity_id", "ledger_id", "period", "environment",
-        "bravo_version", "config_version", "bank_account_ref",
+        "bravo_version", "config_version",
     )(_required)
+    _optional_bank_account = field_validator("bank_account_ref")(
+        lambda value: None if value is None else _required(value)
+    )
     _cutoff = field_validator("cutoff", mode="before")(_iso_date)
 
 
@@ -132,6 +135,7 @@ class BravoBankLedgerRow(StrictModel):
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     document_id: str
     voucher_id: str
+    document_status: Literal["completed", "locked", "cancelled", "incomplete"]
     reference_id: str | None = None
     description: str | None = None
     counterparty: str | None = None

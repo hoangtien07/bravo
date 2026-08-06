@@ -4,6 +4,11 @@ Status: `DECIDED - BACKEND/AI REMEDIATION REQUIRED BEFORE FIGMAMAKE PRODUCTIZATI
 
 Date: 2026-08-02
 
+Subsequent disposition: Plan 16 BF-00 through BF-05 automated exits were later accepted on the
+same date. See the separate
+[`FE ADMISSION OPEN` decision](V2-BRAVO10-FE-ADMISSION-COUNCIL-DECISION-2026-08-02.md).
+This document remains the historical record of the defects and remediation selection.
+
 ## Question reviewed
 
 Is the current Backend and AI path sufficiently faithful to the BRAVO 10 accounting workflows in

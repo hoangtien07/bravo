@@ -1,0 +1,37 @@
+schema_version: bravo-accounting-case-wp01-period-close-fixture/v1
+fixture_id: period-close-readiness-golden/v1.0.0
+truth_status: owner_accepted_synthetic
+synthetic_only: true
+scope:
+  tenant_id: synthetic-demo-tenant
+  legal_entity_id: synthetic-bravo-co
+  ledger_id: general-ledger-vnd
+  period: 2026-07
+  cutoff: "2026-07-31"
+  currency: VND
+  environment: synthetic-demo
+  bravo_version: B10R1-synthetic
+  config_version: period-close-readiness/v1.0.0
+evidence:
+  prerequisite_policy:
+    source_id: CLOSE-POLICY-SYN-001
+    policy_id: period-close-readiness/v1.0.0
+    required_processes: [posting_integrity, bank_reconciliation, depreciation]
+    required_approvals: [close_preparer, close_reviewer]
+  process_status:
+    source_id: CLOSE-PROCESS-SYN-001
+    statuses:
+      posting_integrity: complete
+      bank_reconciliation: complete
+      depreciation: complete
+    as_of: "2026-07-31"
+  reconciliation_reference:
+    source_id: CLOSE-RECON-SYN-001
+    case_id: case_bank_20260701
+    status: reviewed
+    material: true
+  approval_record:
+    source_id: CLOSE-APPROVAL-SYN-001
+    approvals:
+      close_preparer: {maker_id: close-maker, checker_id: close-checker}
+      close_reviewer: {maker_id: close-maker, checker_id: close-checker}

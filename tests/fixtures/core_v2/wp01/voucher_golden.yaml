@@ -1,0 +1,50 @@
+schema_version: bravo-accounting-case-wp01-voucher-fixture/v1
+fixture_id: voucher-evidence-review-golden/v1.0.0
+truth_status: owner_accepted_synthetic
+synthetic_only: true
+scope:
+  tenant_id: synthetic-demo-tenant
+  legal_entity_id: synthetic-bravo-co
+  ledger_id: purchase-ledger-vnd
+  period: 2026-07
+  cutoff: "2026-07-31"
+  currency: VND
+  environment: synthetic-demo
+  bravo_version: B10R1-synthetic
+  config_version: voucher-evidence-review/v1.0.0
+evidence:
+  invoice:
+    source_id: INV-SYN-001
+    supplier_id: SUP-001
+    invoice_number: INV-001
+    issue_date: "2026-07-15"
+    net: "100"
+    tax_rate: "0.10"
+    tax: "10"
+    total: "110"
+  purchase_order_or_contract:
+    source_id: PO-SYN-001
+    supplier_id: SUP-001
+    approved_amount: "110"
+    currency: VND
+  receipt_or_qc:
+    source_id: RECEIPT-SYN-001
+    accepted: true
+  bravo_draft_voucher:
+    source_id: BRAVO-DRAFT-SYN-001
+    document_id: BRAVO-DRAFT-001
+    voucher_id: PN-001
+    supplier_id: SUP-001
+    currency: VND
+    account_code: "1561"
+    dimension_code: "PURCHASE"
+  duplicate_registry:
+    source_id: DUPLICATE-REGISTRY-SYN-001
+    invoice_numbers: []
+  tax_master_policy:
+    source_id: TAX-POLICY-SYN-001
+    allowed_tax_rates: ["0.10"]
+  account_dimension_policy:
+    source_id: ACCOUNT-DIMENSION-POLICY-SYN-001
+    allowed_account_codes: ["1561"]
+    allowed_dimension_codes: ["PURCHASE"]

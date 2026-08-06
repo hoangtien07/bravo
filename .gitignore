@@ -23,6 +23,7 @@ venv/
 
 # Node / frontend
 node_modules/
+.pnpm-store/
 dist/
 .next/
 out/

@@ -5,10 +5,17 @@ enabled_case_types:
   - bank_reconciliation
   - voucher_evidence_review
   - period_close_readiness
+functional_case_types:
+  - bank_reconciliation
+  - voucher_evidence_review
+  - period_close_readiness
+# Voucher and Period Close remain developer scaffolds until their immutable
+# evidence and durable AccountingCase flows pass BF-02/BF-03.
+developer_preview_case_types: []
 capability_flags:
   accounting_case_v2: true
   bank_reasoning: true
-  voucher_review: true
-  period_close_readiness: true
+  voucher_review: false
+  period_close_readiness: false
 model_egress_policy: deny_until_owner_pins_model
 audit_export: privacy_minimized_json

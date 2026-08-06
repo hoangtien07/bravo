@@ -1,6 +1,6 @@
 # BRAVO AI Copilot — current project state
 
-Status: `V2 BUSINESS-FLOW REMEDIATION REQUIRED — FE admission and external gates remain open`
+Status: `FE ADMISSION OPEN — local synthetic FigmaMake three-case integration authorized; external gates remain open`
 Owner: project owner  
 As of: 2026-08-02
 Evidence window: branch `codex/v2-financial-close-core`; see the dated reproducible commands in
@@ -25,35 +25,36 @@ platform.
 WP-00 is passed for the synthetic demo: a 30-case System A/B baseline is frozen with checksums.
 WP-01 synthetic fixture truth is owner-accepted; WP-02 implements the framework-independent
 AccountingCase Core V2; and WP-03 implements and golden-tests the LLM-free Bank reconciliation
-engine. WP-04 has a remediated synthetic orchestration/API implementation, including durable
-case-command shell migrations and isolated SQL/HTTP/native-RLS runtime proof. The
-24-trajectory blind evaluation and all production/pilot claims remain open. The Engineering
-Workbench and frontend prototype tracks remain independent and are not evidence that conversation
-quality has improved.
+engine. Plan 16 BF-00 through BF-05 automated exits now pass: Bank business-flow defects were
+corrected, Voucher and Period Close use server-authoritative immutable evidence and durable shared
+lifecycles, bounded reasoning remains non-mutating, and migration `0020_case_v2_audit` adds the V2
+RLS/audit backstops. The owner accepted the FE admission packet and recorded `FE ADMISSION OPEN`
+for local synthetic FigmaMake three-case integration. The 24-trajectory blind evaluation and all
+production/pilot claims remain open. The Engineering Workbench and frontend tracks remain
+independent and are not evidence that conversation quality has improved.
 
-## BRAVO 10 business-flow audit (2026-08-02)
+## BRAVO 10 business-flow remediation and FE admission (2026-08-02)
 
 The accounting/domain, API and security council compared the V2 implementation with the BRAVO 10
 Accounting, Documents, Purchases, Managements and System guides plus the WP-01 contracts. The
-developer scaffold is **not yet business-adequate for FigmaMake contract freeze**.
+initial audit reproduced false-positive Bank, Voucher and Period Close paths and selected Plan 16.
 
-Reproduced blockers:
+The developer remediation now provides:
 
-- Period Close returns `ready=true` for an empty prerequisite/reconciliation set because the caller,
-  not an approved policy, defines completeness.
-- Voucher can return all-pass/lineage from caller scalars and an arbitrary non-empty BRAVO document
-  ID without immutable evidence.
-- Bank matching consumes unresolved candidates and can arbitrarily exact-match one of two competing
-  Bank rows; its `EXACT_REFERENCE_AMOUNT_DATE` rule does not compare references.
-- Voucher and Period remain stateless previews; they do not satisfy ADR-0033's functional-case
-  lifecycle requirement.
-- The Bank conversation surface remains deterministic canned developer text, not an owner-pinned or
-  evaluated model path.
+- source-authority enforcement and a three-case business-flow traceability matrix;
+- global Bank candidate/conflict handling, truthful reference matching and scope/status/cutoff
+  enforcement;
+- server-authoritative immutable Voucher and Period Close evidence with durable
+  create → evidence → checks → review → export lifecycles;
+- a bounded deterministic reasoning fallback that cannot change findings or perform ERP actions;
+- case/command/audit RLS plus an append-only audit database backstop at Alembic head
+  `0020_case_v2_audit`.
 
-The selected response is Plan 16: correct source authority, Bank conflict/scope/status logic,
-server-authoritative secondary evidence, durable shared lifecycles, bounded reasoning and V2
-RLS/audit backstops before opening FE admission. The complete evidence and decision are recorded in
-`evidence/v2/V2-BRAVO10-BUSINESS-FLOW-COUNCIL-DECISION-2026-08-02.md`.
+The recorded developer run is `493 passed, 35 skipped, 2 warnings`. The owner accepted the
+[FE admission packet](../evidence/v2/V2-BRAVO10-FE-ADMISSION-REVIEW-PACKET-2026-08-02.md) and
+[recorded `FE ADMISSION OPEN`](../evidence/v2/V2-BRAVO10-FE-ADMISSION-COUNCIL-DECISION-2026-08-02.md).
+This opens Plan 16 BF-06 only; independent SME, live-model, operator, user-time, pilot and
+production gates remain deferred.
 
 ## Phase-demo topology decision
 
@@ -73,11 +74,11 @@ material only and must not be combined with the phase-demo topology.
 
 | Item | Verified state | Evidence / limit |
 |---|---|---|
-| Git baseline | Remediation worktree follows `7edcbde` | Current branch is `codex/v2-financial-close-core`; see WP-04 remediation decision/evidence |
-| Alembic | `0019_case_v2_defaults` is the single head | Fresh isolated PostgreSQL migration through head, 2026-08-02 |
-| Python test suite | 404 passed, 41 skipped | `python -m pytest -q -p no:cacheprovider`, 2026-07-24; skipped tests are not a DB/production pass |
+| Git baseline | Current observed commit `c41255635bee7e594e4b867cf26f5691b98097cc`; remediation worktree is dirty | Dirty state is explicit and contains the admitted V2 remediation/evidence; it is not a clean-baseline claim |
+| Alembic | `0020_case_v2_audit` is the single head | Verified through workspace `.venv`, 2026-08-02 |
+| Python test suite | 493 passed, 35 skipped, 2 warnings | Admission packet run after migration; skipped/external gates are not inferred as passed |
 | Focused containment/evaluation tests | 17 passed, 5 skipped | Owner authorization, answer-guard parity, CAS state, native-RLS, replay/C0/SME/release-gate contracts |
-| Markdown documentation | 259 Markdown files inventoried, 0 broken relative-link occurrences | `docs/documentation/MARKDOWN-INVENTORY.md`; 254 tracked plus plans 10–12 and ADR-0032/0033 untracked during this documentation pass; two intentional import duplicates remain review signals |
+| Markdown documentation | 286 Markdown files inventoried, 0 broken relative-link occurrences | Fresh `scripts/audit_markdown_docs.py` admission audit, 2026-08-02; two exact duplicate groups remain review signals |
 | Static lint | Not green repository-wide | `ruff check app tests scripts` reports 10 pre-existing test-file findings; no code was changed in this documentation pass |
 
 The suite emitted two dependency/deprecation warnings (Starlette HTTP 422 alias and
@@ -94,7 +95,8 @@ not proof of a clean dependency posture.
 | Native Postgres RLS backstop | Migration `0017` and preflight exist; feature is OFF by default | Runtime enforcement: the current owner/superuser connection bypasses RLS until separate non-owner roles and cutover probes are completed |
 | Worker/default-credential and Compose containment | Code/config safeguards were added | Effective deployed network exposure, credential rotation, or operational approval |
 | A/B capture, C0 arm and SME/release-gate tooling | Code and contract tests exist | An immutable answer/trace baseline, calibrated SME score, or any quality win |
-| Conversation/AccountingCase Core V2 three-case demo | WP-01 owner-accepted synthetic schemas/fixtures; WP-02 core contracts/CAS/state machine; WP-03 deterministic Bank engine; WP-04 durable Bank command/review shell, SQL/HTTP authorization, isolated native-RLS probe; Bank UI/reasoning and read-only typed Voucher/Period previews are on the developer track | Blind quality claim, customer-data authorization, production/operational claim, generic MCP/worker probes, and persisted Voucher/Period lifecycle |
+| Conversation/AccountingCase Core V2 three-case backend | Plan 16 BF-00..05 automated exits accepted; all three cases use server-authoritative evidence and durable create/evidence/check/review/export flows; `0020` adds V2 RLS/audit backstops | Independent SME truth, owner-pinned live-model quality, non-owner HTTP/MCP/worker cutover, customer-data, pilot or production claim |
+| FigmaMake three-case frontend | `FE ADMISSION OPEN`; candidate typecheck, 4 files/8 tests and production build pass at admission baseline | Integrated API lifecycle, full E2E/a11y/visual evidence, local-demo completion, conversation-quality or release claim |
 | BravoGen R0 collection | Complete as black-box behavioral evidence | BravoGen internals or BRAVO knowledge truth |
 
 ## Gates still open
@@ -131,14 +133,22 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Execute `plan-rebuild/16-BRAVO10-BUSINESS-FLOW-REMEDIATION-PLAN.md`. New FigmaMake productization is
-paused until BF-00 through BF-05 automated exits pass and council explicitly records
-`FE ADMISSION OPEN`. Keep the existing prototype and `frontend-react` rollback shell unchanged
-while backend contracts are corrected.
+Plan 18 is technically demo-complete and is ready for owner evaluation. The completion packet is
+[`evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md`](../evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md):
+it records live Knowledge Chat POST-SSE, normal-route containment, three maker/reviewer AccountingCase
+lifecycles, synthetic-only packaging, responsive/a11y evidence, hashes and rollback. Plan 17 FEV2-10
+is therefore reconciled for the local synthetic handoff. Product work remains in `FigmaMake_UI`;
+`frontend-react` remains an unchanged comparator/rollback shell. Do not infer accounting truth or
+evidence in the browser, and do not substitute QA fixture success for a live Chat/case exit.
 
 Plan 15 still governs the deferred operator, model-owner, independent SME and manual-baseline
 evidence. Do not simulate those authorities during developer remediation, and do not use their
 absence to weaken deterministic or security gates. Legacy endpoints remain unchanged.
+
+For the next owner-led walkthrough, use
+[`DEMO18-OWNER-EVALUATION-RECORD-TEMPLATE.md`](../evidence/v2/DEMO18-OWNER-EVALUATION-RECORD-TEMPLATE.md)
+to record an explicit acceptance, rejection or deferral without converting developer evidence into
+an owner decision.
 
 ## Source of truth and precedence
 
@@ -148,8 +158,9 @@ absence to weaken deterministic or security gates. Legacy endpoints remain uncha
    ADR-0033 accepts the three-case scope and owner package. Its pilot target does not supersede
    ADR-0019/0022 until a future real-data ADR and enforcement evidence exist.
 4. The `plan-rebuild/04–12` documents own the original V2 decision design and backlog; Plan 16 owns
-   the 2026-08-02 business-flow remediation and FE admission gate where newer code evidence exposed
-   gaps in the original synthetic truth set.
+   the 2026-08-02 business-flow remediation and FE admission gate; Plan 17 owns the admitted
+   FigmaMake three-case frontend execution; Plan 18 owns completion of the two-module local
+   internal-demo shell and the Plan 17 handoff exit.
 5. `docs/research/**`, `docs/reviews/**`, `docs/work-packages/**`, `plan-rebuild/bravogen-p0/**`,
    `file_system/**` Markdown, and archive directories are retained evidence/reference only. Do
    not treat them as current progress without fresh verification.

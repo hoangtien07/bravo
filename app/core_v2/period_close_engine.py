@@ -32,6 +32,12 @@ def assess_period_close(prerequisites: tuple[ClosePrerequisite, ...],
     """Fail closed: a required pending/stale item or material unresolved recon blocks readiness."""
     blockers: list[str] = []
     reasons: list[str] = []
+    if not prerequisites:
+        return PeriodCloseReadiness(
+            False,
+            ("prerequisite-policy",),
+            ("MISSING_APPROVED_PREREQUISITE_POLICY_OR_EVIDENCE",),
+        )
     for item in prerequisites:
         if item.required and item.status != "complete":
             blockers.append(item.prerequisite_id)

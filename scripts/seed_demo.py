@@ -39,10 +39,12 @@ DEPARTMENTS: list[tuple[str, bool]] = [
 EMPLOYEES: list[tuple[str, str, bool, list[str], list[str]]] = [
     ("giamdoc@bravo.vn", "Giám đốc", True, ["Ban Giám đốc"], []),  # admin bypass
     ("ketoan@bravo.vn", "Kế toán viên (maker)", False, ["Phòng Kế toán"],
-     ["doc:read:own_dept", "doc:create", "metric:read", "draft:create:own_dept"]),
+     ["doc:read:own_dept", "doc:create", "metric:read", "draft:create:own_dept",
+      "accounting_case:read:own_dept", "accounting_case:create:own_dept"]),
     ("ketoantruong@bravo.vn", "Kế toán trưởng (checker)", False, ["Phòng Kế toán"],
      ["doc:read:own_dept", "doc:create", "metric:read", "draft:create:own_dept",
-      "draft:approve:own_dept"]),
+      "draft:approve:own_dept", "accounting_case:read:own_dept",
+      "accounting_case:review:own_dept"]),
     ("kinhdoanh@bravo.vn", "Nhân viên Kinh doanh", False, ["Phòng Kinh doanh"],
      ["doc:read:own_dept", "metric:read"]),
     ("nhansu@bravo.vn", "Nhân viên Nhân sự", False, ["Phòng Nhân sự"],
@@ -97,11 +99,11 @@ async def main() -> None:
             await db.commit()
 
         print(f"Seeded {len(DEPARTMENTS)} departments + {len(EMPLOYEES)} employees "
-              f"(mật khẩu demo: '{PASSWORD}').")
+              "(demo credential value not logged).")
         for email, full_name, is_admin, depts, perms in EMPLOYEES:
             tag = "ADMIN" if is_admin else ",".join(perms)
             print(f"  - {email:24} [{','.join(depts)}]  {tag}")
-        print(f"MCP demo token cho {MCP_DEMO_EMAIL}: '{MCP_DEMO_TOKEN}' (bearer khi nối /mcp).")
+        print(f"MCP demo token configured for {MCP_DEMO_EMAIL}; value not logged.")
 
 
 if __name__ == "__main__":

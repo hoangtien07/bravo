@@ -16,6 +16,10 @@ defaults:
   doc_version: B10R1
   owner: bravo_product
   approved_status: approved         # approved | draft | superseded | deprecated
+  # `null` means the source has no verified effective date.  Exact claims that
+  # need an as-of date must abstain unless a source overrides this explicitly.
+  effective_date: null
+  customer_scope: global
 
 sources:
   # --- User guide chapters -------------------------------------------------------
@@ -358,6 +362,13 @@ sources:
     path: KQPT_PTNV/02_NB_MB2023_011_KQPT_QLCV_B8R4_v1_1.pdf
     knowledge_type: "KQPT/PTNV - QLCV"
     source_type: kqpt_ptnv
+    # Filename identifies an older product version. It is retained as unapproved
+    # BA evidence and must never inherit the B10R1/approved manifest defaults.
+    doc_version: B8R4
+    owner: source_owner_unverified
+    approved_status: draft
+    effective_date: null
+    customer_scope: unknown
     module: task
     lifecycle_stage: ba_analysis
     audience: [ba, developer, qa, implementation_engineer, consultant, support]
@@ -458,6 +469,13 @@ sources:
     path: KQPT_PTNV/14_NB_MB2024_014_KQPT_B8R4_FileAttached.pdf
     knowledge_type: "KQPT/PTNV - FileAttached"
     source_type: kqpt_ptnv
+    # Filename identifies an older product version. It is retained as unapproved
+    # BA evidence and must never inherit the B10R1/approved manifest defaults.
+    doc_version: B8R4
+    owner: source_owner_unverified
+    approved_status: draft
+    effective_date: null
+    customer_scope: unknown
     module: platform
     lifecycle_stage: ba_analysis
     audience: [ba, developer, qa, implementation_engineer, support]

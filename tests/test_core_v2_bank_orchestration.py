@@ -9,7 +9,7 @@ import pytest
 
 from app.core_v2.bank_orchestration import CaseAccessError, SyntheticBankCaseService
 from app.core_v2.case_state import CaseStateError, IdempotencyConflict, RevisionConflict
-from app.core_v2.contracts import CaseActor, CaseState
+from app.core_v2.contracts import CaseActor, CaseState, ReviewDecision, ReviewDisposition
 from app.security.rls import Identity
 from tests.db_support import db_available
 
@@ -30,6 +30,16 @@ def _prepared(service: SyntheticBankCaseService):
     return maker, case
 
 
+def _decisions(service: SyntheticBankCaseService, view: dict, reviewer: CaseActor) -> tuple[ReviewDecision, ...]:
+    out = []
+    for finding in view["findings"]:
+        draft = ReviewDecision(finding_id=finding["finding_id"], disposition="investigate",
+                               reviewer_id=reviewer.user_id, reason_code="REVIEW_PENDING",
+                               decision_hash="0" * 64)
+        out.append(draft.model_copy(update={"decision_hash": service.review_decision_hash(draft)}))
+    return tuple(out)
+
+
 def test_headless_bank_case_completes_with_fixture_evidence_and_no_llm_or_bravo_api():
     service = SyntheticBankCaseService()
     maker, case = _prepared(service)
@@ -41,9 +51,9 @@ def test_headless_bank_case_completes_with_fixture_evidence_and_no_llm_or_bravo_
     assert view["trace"]["raw_evidence_retained"] is False
 
     checker = _actor("checker", "reviewer")
-    dispositions = {item["finding_id"]: "investigate" for item in view["findings"]}
+    decisions = _decisions(service, view, checker)
     case = service.review(case.case_id.value, actor=checker, department_ids=_DEPT_A,
-                          expected_revision=case.revision, idempotency_key="review", dispositions=dispositions,
+                          expected_revision=case.revision, idempotency_key="review", decisions=decisions,
                           payload_hash_value=view["draft_payload_hash"], evidence_hash=view["evidence_hash"],
                           result_hash=view["result_hash"])
     reviewed = service.view(case)
@@ -77,7 +87,7 @@ def test_maker_cannot_review_and_fixture_scope_cannot_be_substituted():
                               expected_revision=case.revision, idempotency_key="checks")
     with pytest.raises(CaseAccessError):
         service.review(case.case_id.value, actor=maker, department_ids=_DEPT_A,
-                       expected_revision=case.revision, idempotency_key="review", dispositions={},
+                       expected_revision=case.revision, idempotency_key="review", decisions=(),
                        payload_hash_value="a" * 64, evidence_hash="a" * 64, result_hash="a" * 64)
     foreign_scope = service.evidence.scope.model_copy(update={"tenant_id": "other"})
     with pytest.raises(CaseAccessError, match="frozen synthetic"):
@@ -95,19 +105,19 @@ def test_cross_operation_key_and_failed_review_retry_cannot_mutate_state():
                               expected_revision=case.revision, idempotency_key="checks")
     before = service.view(case)
     checker = _actor("checker", "reviewer")
-    dispositions = {item["finding_id"]: "investigate" for item in before["findings"]}
+    decisions = _decisions(service, before, checker)
     case = service.review(case.case_id.value, actor=checker, department_ids=_DEPT_A,
-                          expected_revision=case.revision, idempotency_key="review", dispositions=dispositions,
+                          expected_revision=case.revision, idempotency_key="review", decisions=decisions,
                           payload_hash_value=before["draft_payload_hash"], evidence_hash=before["evidence_hash"],
                           result_hash=before["result_hash"])
     after = service.view(case)
-    tampered = {item["finding_id"]: "resolved" for item in before["findings"]}
+    tampered = tuple(item.model_copy(update={"disposition": ReviewDisposition.RESOLVED, "evidence_snapshot_ids": ("resolution-evidence",)}) for item in decisions)
     with pytest.raises(IdempotencyConflict):
         service.review(case.case_id.value, actor=checker, department_ids=_DEPT_A,
-                       expected_revision=case.revision, idempotency_key="review", dispositions=tampered,
+                       expected_revision=case.revision, idempotency_key="review", decisions=tampered,
                        payload_hash_value=after["draft_payload_hash"], evidence_hash=after["evidence_hash"],
                        result_hash=after["result_hash"])
-    assert service.view(case)["review_dispositions"] == dispositions
+    assert service.view(case)["review_decisions"] == [item.model_dump(mode="json") for item in decisions]
 
 
 def test_evidence_supersession_invalidates_draft_review_and_forces_fresh_checks():
@@ -132,7 +142,7 @@ def test_evidence_supersession_invalidates_draft_review_and_forces_fresh_checks(
 @pytest.mark.skipif(not db_available(), reason="Postgres not reachable")
 def test_http_routes_enforce_server_identity_scope_and_complete_headlessly(monkeypatch):
     from app.api import routes_accounting_cases_v2 as routes
-    from app.database import async_session_factory
+    from app.database import async_session_factory, engine
     from app.database.models import Department, Employee, EmployeeDepartment
     from app.main import app
     from app.security.auth import get_current_identity
@@ -186,5 +196,6 @@ def test_http_routes_enforce_server_identity_scope_and_complete_headlessly(monke
                 assert checks.status_code == 200, checks.text
         finally:
             app.dependency_overrides.pop(get_current_identity, None)
+            await engine.dispose()
 
     asyncio.run(run())

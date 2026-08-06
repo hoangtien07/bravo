@@ -7,8 +7,12 @@
     "dev": "vite --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --environment jsdom",
+    "test:auth": "vitest run --environment jsdom src/test/auth.test.ts",
+    "test:contract": "vitest run --environment jsdom src/test/accountingCases.test.ts",
     "test:a11y": "vitest run --environment jsdom src/test/accessibility.test.tsx",
     "test:visual": "vitest run src/test/visual-matrix.test.ts",
+    "test:e2e": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-playwright.ps1",
+    "test:e2e:update": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-playwright.ps1 --update-snapshots",
     "build": "vite build",
     "preview": "vite preview",
     "format": "oxfmt"
@@ -19,6 +23,7 @@
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

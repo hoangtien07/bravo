@@ -1,6 +1,6 @@
 # BRAVO 10 business-flow remediation plan before FigmaMake
 
-Status: `COUNCIL SELECTED - FE ADMISSION CLOSED UNTIL AUTOMATED GATES PASS`
+Status: `BF-00..BF-05 AUTOMATED EXITS ACCEPTED — FE ADMISSION OPEN; BF-06 AUTHORIZED`
 
 Date: 2026-08-02
 
@@ -211,8 +211,11 @@ immutability tests pass. Operator-owned non-owner HTTP/MCP/worker probes remain 
 
 ## 10. BF-06 - FE admission and local integrated demo
 
-`FigmaMake_UI` productization begins only after BF-00 through BF-05 automated exits pass and council
-records a new `FE ADMISSION OPEN` decision.
+BF-00 through BF-05 automated exits passed and the owner recorded
+[`FE ADMISSION OPEN`](../evidence/v2/V2-BRAVO10-FE-ADMISSION-COUNCIL-DECISION-2026-08-02.md)
+on 2026-08-02. `FigmaMake_UI` productization is therefore authorized for the local synthetic
+three-case integration governed by
+[Plan 17](17-FIGMAMAKE-UI-THREE-CASE-FE-IMPLEMENTATION-PLAN.md).
 
 The handoff package must contain for all three cases:
 
@@ -237,8 +240,8 @@ Immediate containment
   -> BF-03 Period functional case
   -> BF-04 bounded reasoning contract
   -> BF-05 security/audit automated gates
-  -> council FE admission
-  -> BF-06 FigmaMake + local integrated demo
+  -> council FE admission [OPEN 2026-08-02]
+  -> BF-06 FigmaMake + local integrated demo [AUTHORIZED]
   -> deferred model/SME/user/operator/release evidence
 ```
 

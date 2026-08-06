@@ -14,3 +14,11 @@ def test_not_applicable_and_nonmaterial_unresolved_items_do_not_make_unsupported
                                  (ReconciliationReference("case_12345678", "unresolved", False),))
     assert result.ready is True
     assert not result.blocker_ids
+
+
+def test_period_close_empty_input_fails_closed():
+    result = assess_period_close((), ())
+
+    assert result.ready is False
+    assert result.blocker_ids == ("prerequisite-policy",)
+    assert result.reason_codes == ("MISSING_APPROVED_PREREQUISITE_POLICY_OR_EVIDENCE",)

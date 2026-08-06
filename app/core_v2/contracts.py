@@ -52,6 +52,13 @@ class FindingSeverity(StrEnum):
     CRITICAL = "critical"
 
 
+class ReviewDisposition(StrEnum):
+    INVESTIGATE = "investigate"
+    RESOLVED = "resolved"
+    ACCEPTED_EXCEPTION = "accepted_exception"
+    ESCALATE = "escalate"
+
+
 class AccountingCaseId(ContractModel):
     value: str = Field(pattern=r"^case_[A-Za-z0-9_-]{8,128}$")
 
@@ -114,6 +121,26 @@ class Finding(ContractModel):
     reviewer_disposition: str | None = None
 
     _required = field_validator("finding_id", "finding_type", "status")(_nonblank)
+
+
+class ReviewDecision(ContractModel):
+    """Immutable reviewer decision bound to evidence and the reviewing identity."""
+
+    finding_id: str
+    disposition: ReviewDisposition
+    reviewer_id: str
+    reason_code: str
+    note: str | None = None
+    evidence_snapshot_ids: tuple[str, ...] = ()
+    decision_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    _required = field_validator("finding_id", "reviewer_id", "reason_code")(_nonblank)
+
+    @model_validator(mode="after")
+    def disposition_evidence_requirements(self) -> "ReviewDecision":
+        if self.disposition is ReviewDisposition.RESOLVED and not self.evidence_snapshot_ids:
+            raise ValueError("resolved decision requires resolution evidence")
+        return self
 
 
 class RecommendationDraft(ContractModel):

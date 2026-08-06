@@ -9,7 +9,7 @@ from app.core_v2.demo_config import DemoConfigError, load_synthetic_demo_config
 from app.adapters.accounting_case_store import SqlSyntheticBankCaseStore
 from app.core_v2.bank_orchestration import CaseAccessError, SyntheticBankCaseService
 from app.core_v2.case_state import CaseStateError, IdempotencyConflict, RevisionConflict
-from app.core_v2.contracts import CaseActor
+from app.core_v2.contracts import CaseActor, CaseType, ReviewDecision
 from app.core_v2.wp01_schema import ScopeKey
 from app.core_v2.bank_reasoning import SyntheticBankReasoning
 from app.core_v2.secondary_case_contracts import (
@@ -32,6 +32,7 @@ _store = SqlSyntheticBankCaseStore()
 
 class CreateCaseIn(BaseModel):
     scope: ScopeKey
+    case_type: CaseType = CaseType.BANK_RECONCILIATION
     idempotency_key: str = Field(min_length=1, max_length=128)
 
 
@@ -41,11 +42,16 @@ class MutationIn(BaseModel):
 
 
 class EvidenceIn(MutationIn):
-    replacement_source_type: str | None = Field(default=None, pattern=r"^(bank_statement|bravo_bank_ledger)$")
+    replacement_source_type: str | None = Field(
+        default=None,
+        pattern=(r"^(bank_statement|bravo_bank_ledger|invoice|purchase_order_or_contract|receipt_or_qc|"
+                 r"bravo_draft_voucher|duplicate_registry|tax_master_policy|account_dimension_policy|"
+                 r"prerequisite_policy|process_status|reconciliation_reference|approval_record)$"),
+    )
 
 
 class ReviewIn(MutationIn):
-    dispositions: dict[str, str]
+    decisions: tuple[ReviewDecision, ...]
     payload_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     evidence_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     result_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -90,6 +96,8 @@ def _require_capability(identity: Identity, action: str) -> None:
 
 
 def _error(exc: Exception) -> HTTPException:
+    if isinstance(exc, HTTPException):
+        return exc
     if isinstance(exc, CaseAccessError):
         return HTTPException(status.HTTP_403_FORBIDDEN, str(exc))
     if isinstance(exc, RevisionConflict):
@@ -126,6 +134,17 @@ def _require_period_close_preview() -> None:
     _require_enabled("period_close_readiness")
 
 
+def _require_bank_reasoning() -> None:
+    _require_enabled("bank_reasoning")
+
+
+def _require_functional_case(case_type: CaseType) -> None:
+    settings = get_settings()
+    config = load_synthetic_demo_config(getattr(settings, "accounting_case_v2_demo_config", ""))
+    if case_type not in config.functional_case_types:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Accounting Case V2 functional case is disabled")
+
+
 @router.get("")
 async def list_cases(_: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> list[dict]:
     _require_capability(identity, "read")
@@ -137,7 +156,8 @@ async def create_case(body: CreateCaseIn, _: None = Depends(_require_enabled), i
     _require_capability(identity, "create")
     actor, _ = _actor(identity)
     try:
-        return await _store.create(db, identity, actor, body.scope, body.idempotency_key)
+        _require_functional_case(body.case_type)
+        return await _store.create(db, identity, actor, body.scope, body.idempotency_key, body.case_type)
     except Exception as exc:
         raise _error(exc) from None
 
@@ -166,7 +186,7 @@ async def get_case(case_id: str, _: None = Depends(_require_enabled), identity: 
 
 
 @router.post("/{case_id}/conversation")
-async def conversation(case_id: str, body: ConversationIn, _: None = Depends(_require_enabled), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
+async def conversation(case_id: str, body: ConversationIn, _: None = Depends(_require_bank_reasoning), identity: Identity = Depends(get_current_identity), db: AsyncSession = Depends(get_db)) -> dict:
     """Read-only explanation/clarification surface; no model or case mutation in developer mode."""
     _require_capability(identity, "read")
     try:
@@ -210,7 +230,7 @@ async def review(case_id: str, body: ReviewIn, _: None = Depends(_require_enable
     try:
         return await _store.mutate(db, identity, actor, case_id, "review", body.idempotency_key, body.model_dump(mode="json"), lambda service, _: service.review(case_id, actor=actor, department_ids=departments,
                                expected_revision=body.expected_revision, idempotency_key=body.idempotency_key,
-                               dispositions=body.dispositions, payload_hash_value=body.payload_hash,
+                               decisions=body.decisions, payload_hash_value=body.payload_hash,
                                evidence_hash=body.evidence_hash, result_hash=body.result_hash))
     except Exception as exc:
         raise _error(exc) from None

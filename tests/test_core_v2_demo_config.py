@@ -14,6 +14,8 @@ def test_synthetic_demo_config_is_complete_and_denies_model_egress_until_pinned(
     assert config.synthetic_only is True
     assert config.model_egress_policy == "deny_until_owner_pins_model"
     assert config.capability_flags["accounting_case_v2"] is True
+    assert {item.value for item in config.functional_case_types} == {"bank_reconciliation", "voucher_evidence_review", "period_close_readiness"}
+    assert not config.developer_preview_case_types
 
 
 def test_demo_config_rejects_non_synthetic_mode(tmp_path):

@@ -20,15 +20,40 @@ class BankConversationReply(BaseModel):
     evidence_snapshot_ids: tuple[str, ...] = ()
     rule_ids: tuple[str, ...] = ()
     mutates_case: Literal[False] = False
+    model_provider: str | None = None
+    model_version: str | None = None
+    prompt_hash: str | None = None
+    config_hash: str | None = None
+    synthetic_fallback: bool = True
 
 
-class SyntheticBankReasoning:
+class ReasoningModelRecord(BaseModel):
+    """Owner-pinned metadata; a record alone never authorizes live model execution."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    provider: str
+    model_version: str
+    prompt_hash: str
+    config_hash: str
+    egress_policy: Literal["deny_until_owner_pins_model", "approved_minimized_egress"]
+    owner_approved: bool = False
+
+
+_FORBIDDEN_REQUESTS = ("bỏ qua", "override", "post", "thanh toán", "pay", "khóa kỳ", "close period", "run sql", "chạy sql", "widen scope", "mở rộng phạm vi")
+
+
+class BoundedReasoningAdapter:
     """A safe development implementation of the Core V2 ``ReasoningPort`` boundary."""
 
     def respond(self, case_view: dict, question: str) -> BankConversationReply:
         text = question.strip()
         findings = tuple(case_view.get("findings") or ())
         evidence = tuple(item["snapshot_id"] for item in case_view.get("evidence") or ())
+        if any(token in text.lower() for token in _FORBIDDEN_REQUESTS):
+            return BankConversationReply(kind="abstention",
+                text="Yêu cầu không thể thay đổi kiểm tra, phê duyệt, phạm vi hoặc thực thi BRAVO.",
+                evidence_snapshot_ids=evidence)
         if not text:
             return BankConversationReply(kind="clarification",
                 text="Hãy nêu mã finding cần giải thích hoặc hỏi về bằng chứng đang thiếu.")
@@ -48,3 +73,7 @@ class SyntheticBankReasoning:
                   "không thay đổi số tiền, phân loại hay trạng thái phê duyệt."),
             finding_ids=tuple(x["finding_id"] for x in selected), evidence_snapshot_ids=snapshots,
             rule_ids=result_ids)
+
+
+# No live model is active until an owner-pinned record and evaluation exist.
+SyntheticBankReasoning = BoundedReasoningAdapter

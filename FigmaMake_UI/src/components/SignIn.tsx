@@ -3,20 +3,26 @@ import { Banner, DiagonalMotif, Button, Input, T } from "./shared";
 import bravoLogo from "../imports/bravo-logo.png";
 
 interface SignInProps {
-  onSignIn: () => void;
+  qaMode?: boolean;
+  onFixtureSignIn?: () => void;
+  onPasswordSignIn?: (email: string, password: string) => Promise<void>;
+  onOidcSignIn?: () => void;
+  oidcEnabled?: boolean;
+  loadingOidc?: boolean;
+  authError?: string | null;
 }
 
-export default function SignIn({ onSignIn }: SignInProps) {
+export default function SignIn({ qaMode = false, onFixtureSignIn, onPasswordSignIn, onOidcSignIn, oidcEnabled = false, loadingOidc = false, authError = null }: SignInProps) {
   const scenario = new URLSearchParams(window.location.search).get("scenario")?.toUpperCase() ?? "AUTH-01";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(scenario === "AUTH-04" ? "Email hoặc mật khẩu mô phỏng không đúng. Kiểm tra lại hoặc dùng phương thức đăng nhập được cấp." : null);
+  const [error, setError] = useState<string | null>(qaMode && scenario === "AUTH-04" ? "Email hoặc mật khẩu mô phỏng không đúng. Kiểm tra lại hoặc dùng phương thức đăng nhập được cấp." : null);
   const [width, setWidth] = useState(window.innerWidth);
   const isMobile = width < 768;
-  const ssoEnabled = scenario !== "AUTH-02";
-  const passwordEnabled = scenario !== "AUTH-03";
+  const ssoEnabled = qaMode ? scenario !== "AUTH-02" : oidcEnabled;
+  const passwordEnabled = qaMode ? scenario !== "AUTH-03" : true;
 
   useEffect(() => {
     const update = () => setWidth(window.innerWidth);
@@ -26,9 +32,15 @@ export default function SignIn({ onSignIn }: SignInProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (scenario === "AUTH-04") { setError("Không thể đăng nhập bằng thông tin mô phỏng này. Không có yêu cầu nào được gửi đi."); return; }
+    if (qaMode && scenario === "AUTH-04") { setError("Không thể đăng nhập bằng thông tin mô phỏng này. Không có yêu cầu nào được gửi đi."); return; }
     setLoading(true);
-    setTimeout(() => { setLoading(false); onSignIn(); }, 900);
+    if (qaMode) {
+      setTimeout(() => { setLoading(false); onFixtureSignIn?.(); }, 900);
+      return;
+    }
+    void onPasswordSignIn?.(email, password).catch(reason => {
+      setError(reason instanceof Error ? reason.message : "Đăng nhập không thành công.");
+    }).finally(() => setLoading(false));
   }
 
   return (
@@ -44,7 +56,7 @@ export default function SignIn({ onSignIn }: SignInProps) {
           {/* Logo */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 48 }}>
             <img src={bravoLogo} alt="BRAVO" style={{ height: 36, width: "auto", display: "block" }} />
-            <span style={{ fontSize: 16, fontWeight: 600, color: "#1F2927", borderLeft: "1px solid #D7E1DE", paddingLeft: 12, marginLeft: 4 }}>Agent AI</span>
+            <span style={{ fontSize: 16, fontWeight: 600, color: "#1F2927", borderLeft: "1px solid #D7E1DE", paddingLeft: 12, marginLeft: 4 }}>Accounting Intelligence</span>
           </div>
 
           {/* Thesis */}
@@ -52,22 +64,22 @@ export default function SignIn({ onSignIn }: SignInProps) {
             Trợ lý nghiệp vụ<br />có bằng chứng
           </h1>
           <p style={{ fontSize: 14, lineHeight: "22px", color: "#56625F", margin: "0 0 40px 0", maxWidth: 380 }}>
-            Hỗ trợ kiểm toán viên, kế toán trưởng và quản lý tài chính trong quy trình đóng kỳ kế toán — có bằng chứng, có phân quyền, có kiểm soát bản nháp.
+            Hỗ trợ người lập và người rà soát chuyển AccountingCase qua từng bước an toàn — có bằng chứng, có phân quyền, không tự thực hiện trên BRAVO.
           </p>
 
           {/* // motif as separator */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
             <DiagonalMotif size={20} color="#00A88D" />
-            <span style={{ fontSize: 13, color: "#56625F", fontWeight: 500 }}>Financial Close Advisor</span>
+            <span style={{ fontSize: 13, color: "#56625F", fontWeight: 500 }}>Accounting Operations Hub</span>
           </div>
 
           {/* Feature list */}
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
             {[
-              "Kiểm tra mức độ sẵn sàng đóng kỳ",
-              "Đối chiếu bằng chứng và điều kiện",
-              "Kiểm soát bản nháp và phê duyệt",
-              "Truy xuất nguồn gốc tài liệu",
+              "Đối chiếu ngân hàng và ngoại lệ",
+              "Rà soát chứng từ có bằng chứng",
+              "Theo dõi điều kiện sẵn sàng đóng kỳ",
+              "Xuất gói rà soát không thực thi",
             ].map(item => (
               <li key={item} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#56625F" }}>
                 <span style={{ color: "#00A88D", fontWeight: 700, fontSize: 16 }}>✓</span>
@@ -81,22 +93,22 @@ export default function SignIn({ onSignIn }: SignInProps) {
       {/* Right panel */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: isMobile ? "28px 20px" : "48px 40px" }}>
         <div style={{ width: "100%", maxWidth: 360 }}>
-          {isMobile && <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}><img src={bravoLogo} alt="BRAVO" style={{ height: 28 }} /><strong>Agent AI</strong></div>}
+          {isMobile && <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}><img src={bravoLogo} alt="BRAVO" style={{ height: 28 }} /><strong>Accounting Intelligence</strong></div>}
           <h2 style={{ fontSize: 20, lineHeight: "28px", fontWeight: 600, color: "#1F2927", margin: "0 0 8px 0" }}>Đăng nhập</h2>
           <p style={{ fontSize: 14, color: "#56625F", margin: "0 0 32px 0" }}>Đăng nhập vào môi trường BRAVO của bạn</p>
 
-          <Banner variant="info"><strong>Xác thực mô phỏng.</strong> Màn hình này không gửi mật khẩu, không mở OIDC thật và không chứng minh quyền truy cập.</Banner>
-          {scenario === "AUTH-06" && <Banner variant="warning"><strong>Phiên đã hết hạn.</strong> Đăng nhập lại để tiếp tục tới địa chỉ an toàn đã lưu.</Banner>}
-          {scenario === "AUTH-08" && <Banner variant="warning"><strong>Đang ngoại tuyến.</strong> Đăng nhập mới không khả dụng; liên hệ hỗ trợ nội bộ.</Banner>}
-          {error && <Banner variant="error"><strong>Đăng nhập không thành công.</strong> {error}</Banner>}
+          {qaMode ? <Banner variant="info"><strong>Xác thực mô phỏng.</strong> Chỉ chế độ QA mới sử dụng fixture, không chứng minh quyền truy cập.</Banner> : <Banner variant="info"><strong>Phiên cục bộ của candidate.</strong> Mật khẩu chỉ được gửi tới endpoint xác thực cùng môi trường; quyền vẫn do máy chủ quyết định.</Banner>}
+          {qaMode && scenario === "AUTH-06" && <Banner variant="warning"><strong>Phiên đã hết hạn.</strong> Đăng nhập lại để tiếp tục tới địa chỉ an toàn đã lưu.</Banner>}
+          {qaMode && scenario === "AUTH-08" && <Banner variant="warning"><strong>Đang ngoại tuyến.</strong> Đăng nhập mới không khả dụng; liên hệ hỗ trợ nội bộ.</Banner>}
+          {(error ?? authError) && <Banner variant="error"><strong>Đăng nhập không thành công.</strong> {error ?? authError}</Banner>}
 
           {/* SSO primary */}
           {ssoEnabled && <>
           <Button
             variant="secondary"
             style={{ width: "100%", justifyContent: "center", marginBottom: 16, padding: "10px 16px" }}
-            onClick={onSignIn}
-            disabled={scenario === "AUTH-08"}
+            onClick={() => qaMode ? onFixtureSignIn?.() : onOidcSignIn?.()}
+            disabled={(qaMode && scenario === "AUTH-08") || loadingOidc}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <rect x="1" y="1" width="6.5" height="6.5" rx="1" fill="#4285F4"/>
@@ -104,7 +116,7 @@ export default function SignIn({ onSignIn }: SignInProps) {
               <rect x="1" y="8.5" width="6.5" height="6.5" rx="1" fill="#FBBC05"/>
               <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1" fill="#EA4335"/>
             </svg>
-            Đăng nhập bằng Google Workspace
+            {loadingOidc ? "Đang chuyển tới nhà cung cấp danh tính…" : "Đăng nhập bằng SSO"}
           </Button>
 
           {/* Divider */}

@@ -3,7 +3,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.rag.kb_lifecycle import apply_version_policy, version_weight
+from app.rag.kb_lifecycle import (
+    ExactClaimRequirement,
+    apply_version_policy,
+    exact_claim_evidence,
+    version_weight,
+)
 
 
 @dataclass
@@ -52,3 +57,21 @@ def test_deprecated_still_retrievable_when_only_option():
     results = [_R("only", 0.5, {"approved_status": "deprecated"})]
     ordered = apply_version_policy(results)
     assert [r.chunk_id for r in ordered] == ["only"]
+
+
+def test_exact_claim_retrieval_rejects_mismatched_version_and_unapproved_source():
+    requirement = ExactClaimRequirement(doc_version="B10R1")
+    results = [
+        _R("wrong-version", 0.99, {"doc_version": "B8R4", "approved_status": "approved", "customer_scope": "global"}),
+        _R("draft", 0.98, {"doc_version": "B10R1", "approved_status": "draft", "customer_scope": "global"}),
+        _R("approved", 0.70, {"doc_version": "B10R1", "approved_status": "approved", "customer_scope": "global"}),
+    ]
+
+    assert [item.chunk_id for item in exact_claim_evidence(results, requirement)] == ["approved"]
+
+
+def test_exact_claim_retrieval_rejects_unknown_effective_date_when_as_of_authority_is_required():
+    requirement = ExactClaimRequirement(doc_version="B10R1", effective_on_required=True)
+    source = _R("unknown-date", 0.9, {"doc_version": "B10R1", "approved_status": "approved", "customer_scope": "global", "effective_date": None})
+
+    assert exact_claim_evidence([source], requirement) == []

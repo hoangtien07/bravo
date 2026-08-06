@@ -21,11 +21,13 @@
     "reason": "Project owner accepted the frozen synthetic policy and fixture truth on 2026-07-31; this is not an independent SME-quality claim."
   },
   "artifacts": [
-    {"path": "bank_golden.yaml", "sha256": "b9a4103be46b695eccb16b6b99ecbe9c3ab7f56d912e4f761f5235a63ad72e7b"},
+    {"path": "bank_golden.yaml", "sha256": "09c248c24b4549aa648c6695535689daed5fe3ea7b1c1dc423ca2d0c55e1ccf5"},
     {"path": "held_out_manifest.json", "sha256": "fc8d2046d6a5f778be1495ba4387b76f7a640e82e4b40c1cd58c6a3a6a5558ce"},
     {"path": "bank_policy.yaml", "sha256": "c5787a97bf93f2238f1ad731fee22da926bb53a5c8d259560f560376e711dcd4"},
     {"path": "voucher_schema.yaml", "sha256": "7f6e2926ac85561bd71cabd8f953fbe05f49de549d8478f0deae322ff63f3a8c"},
+    {"path": "voucher_golden.yaml", "sha256": "419231493ee2dcd0e97366906063588f64536110d1f12ac426694242dc9c5063"},
     {"path": "period_close_schema.yaml", "sha256": "f84aa093418c4adc0ecb05b8c6aa286c3dc25f75f2b7eacd8cdd68f03d756d87"},
+    {"path": "period_close_golden.yaml", "sha256": "629f1f275af1fce828fa8e0c148a18c0988db6ca33780cad5fc469b1d3a7b979"},
     {"path": "must_not_claims.md", "sha256": "79a3885230984391da79cd705a717aa2509daa6ab359275389d8ea168efd70d7"},
     {"path": "glossary.md", "sha256": "a6986fe38a638bc2456d6233302a403eb6462b150fa0e62af5788c879d5deebc"}
   ]

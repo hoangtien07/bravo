@@ -1,0 +1,7 @@
+# Explicit local-only overlay for Plan 18's synthetic AccountingCase demonstration.
+# Use with docker-compose.yml and docker-compose.override.yml; it never enables production data.
+services:
+  api:
+    environment:
+      ACCOUNTING_CASE_V2_ENABLED: "true"
+      ACCOUNTING_CASE_V2_DEMO_CONFIG: file_system/core_v2_synthetic_demo.yaml

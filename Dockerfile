@@ -34,6 +34,9 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY scripts ./scripts
+# AccountingCase V2's local synthetic demonstrator loads these frozen fixtures at runtime.
+# Keep the runtime image narrow: do not copy the test suite, only the versioned demo inputs.
+COPY tests/fixtures/core_v2/wp01 ./tests/fixtures/core_v2/wp01
 
 # Test image is deliberately separate from the runtime image: it carries development
 # dependencies and the test suite, but does not pay the cost of the frontend build.

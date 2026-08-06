@@ -1,11 +1,17 @@
 # BRAVO V2 frontend — Figma Make productization and cutover plan
 
-Status: `READY FOR REBASE AFTER CORE CONTRACT FREEZE — three-case product scope accepted`
+Status: `SUPERSEDED FOR FE EXECUTION BY PLAN 17 — RETAIN AS DESIGN/HISTORICAL INPUT`
 Owner: project owner
 Decision updated: 2026-07-31
 Repository baseline: `feat/v2-p0-containment` at `f17d31c079f8de71f0ffc303495f3176eef59d23`
 Candidate V2 frontend: `FigmaMake_UI/`
 Classic baseline/rollback frontend: `frontend-react/`
+
+Execution authority since 2026-08-02:
+[`17-FIGMAMAKE-UI-THREE-CASE-FE-IMPLEMENTATION-PLAN.md`](17-FIGMAMAKE-UI-THREE-CASE-FE-IMPLEMENTATION-PLAN.md).
+This document remains useful for the approved visual system and historical cutover constraints,
+but its FM work packages, legacy parity scope and Financial Close route plan are not the current
+implementation backlog.
 
 ---
 

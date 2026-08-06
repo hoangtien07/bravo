@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StatusBadge, T, ScopeChip, useFocusTrap } from "./shared";
+import { T, ScopeChip, useFocusTrap } from "./shared";
 import { useApp } from "../context/AppContext";
 import { useQA } from "../context/QAContext";
+import { useAuth } from "../auth/AuthContext";
 import { ROLE_PERMISSIONS } from "../state/types";
 import bravoLogo from "../imports/bravo-logo.png";
 import { useNavigate } from "react-router-dom";
@@ -13,13 +14,11 @@ export type Screen = "new-conversation" | "active-conversation" | "financial-clo
 
 interface NavItem { id: Screen; label: string; icon: string; adminOnly?: boolean; approvalOnly?: boolean; }
 const NAV_ITEMS: NavItem[] = [
-  { id: "new-conversation",    label: "Cuộc hội thoại mới",  icon: "✦" },
-  { id: "financial-close",     label: "Đóng kỳ tài chính",   icon: "⊟" },
-  { id: "accounting-work",      label: "Công việc AI",         icon: "▣" },
-  { id: "active-conversation", label: "Hội thoại",           icon: "◷" },
-  { id: "knowledge",           label: "Kho tri thức",         icon: "☰" },
-  { id: "draft-approval",      label: "Phê duyệt",           icon: "✎", approvalOnly: true },
-  { id: "admin",               label: "Quản trị",             icon: "⚙", adminOnly: true },
+  { id: "new-conversation", label: "Knowledge Chat", icon: "✦" },
+  { id: "accounting-work", label: "Công việc AI", icon: "▣" },
+  { id: "active-conversation", label: "Hội thoại", icon: "◷" },
+  { id: "knowledge", label: "Kho tri thức", icon: "☰" },
+  { id: "admin", label: "Quản trị", icon: "⚙", adminOnly: true },
 ];
 
 const ADDITIONAL_NAV_ITEMS: NavItem[] = [
@@ -32,7 +31,7 @@ const ADDITIONAL_NAV_ITEMS: NavItem[] = [
 ];
 
 const SCREEN_TITLES: Partial<Record<Screen, string>> = {
-  "new-conversation":    "Cuộc hội thoại mới",
+  "new-conversation":    "Knowledge Chat",
   "active-conversation": "Hội thoại",
   "financial-close":     "Đóng kỳ tài chính",
   "accounting-work":     "Công việc AI",
@@ -45,7 +44,7 @@ const SCREEN_TITLES: Partial<Record<Screen, string>> = {
 const SCREEN_ROUTES: Record<Screen, string> = {
   "new-conversation": "/", "active-conversation": "/c/fixture:current", conversations: "/conversations",
   "financial-close": "/financial-close", "financial-graph": "/financial-close/graph",
-  "accounting-work": "/accounting-work",
+  "accounting-work": "/work",
   "draft-approval": "/approvals", knowledge: "/knowledge", admin: "/admin",
   "money-engine": "/tools/money-engine", anomaly: "/tools/anomaly", tax: "/tools/tax",
   "knowledge-graph": "/tools/knowledge-graph", "review-index": "/review",
@@ -61,6 +60,7 @@ export default function AppShell({ children }: AppShellProps) {
   const screen = state.screen;
   const onNavigate = (s: Screen) => { dispatch({ type: "NAVIGATE", screen: s }); navigate(SCREEN_ROUTES[s]); };
   const { qa } = useQA();
+  const auth = useAuth();
   const perms = ROLE_PERMISSIONS[state.role];
 
   // Responsive breakpoint detection
@@ -90,7 +90,8 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   const visibleNav = [...NAV_ITEMS, ...ADDITIONAL_NAV_ITEMS].filter(item => {
-    if (item.adminOnly && !perms.canAdminister) return false;
+    if (item.id === "accounting-work" && !qa.enabled && !auth.capabilities.read && !auth.capabilities.create) return false;
+    if (item.adminOnly && !(qa.enabled ? perms.canAdminister : auth.identity?.isAdmin)) return false;
     if (item.approvalOnly && !perms.canApprove) return false;
     return true;
   });
@@ -140,7 +141,7 @@ export default function AppShell({ children }: AppShellProps) {
                   <NavButton key={item.id} item={item} active={screen === item.id} onNavigate={handleNavigate} collapsed={false} />
                 ))}
               </nav>
-              <UserFooter collapsed={false} state={state} />
+              <UserFooter collapsed={false} state={state} name={auth.identity?.fullName} onLogout={qa.enabled ? undefined : auth.logout} />
             </div>
           </>
         )}
@@ -178,7 +179,7 @@ export default function AppShell({ children }: AppShellProps) {
             <NavButton key={item.id} item={item} active={screen === item.id} onNavigate={handleNavigate} collapsed={sidebarCollapsed} />
           ))}
         </nav>
-        <UserFooter collapsed={sidebarCollapsed} state={state} />
+        <UserFooter collapsed={sidebarCollapsed} state={state} name={auth.identity?.fullName} onLogout={qa.enabled ? undefined : auth.logout} />
       </aside>
 
       {/* Main */}
@@ -197,7 +198,7 @@ export default function AppShell({ children }: AppShellProps) {
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <StatusBadge status="not-assessed" compact />
+            {!qa.enabled && <span style={{ fontSize: 11, color: T.secondary }}>{auth.capabilities.read ? "Phiên đã xác thực" : "Quyền công việc bị giới hạn"}</span>}
             <button
               aria-label="Chia sẻ"
               style={{ background: "none", border: `1px solid ${T.border}`, borderRadius: 6, padding: "5px 12px", fontSize: 13, color: T.secondary, cursor: "pointer", fontFamily: "inherit", minHeight: 36 }}
@@ -249,7 +250,7 @@ function NavButton({ item, active, onNavigate, collapsed }: { item: NavItem; act
   );
 }
 
-function UserFooter({ collapsed, state }: { collapsed: boolean; state: ReturnType<typeof useApp>["state"] }) {
+function UserFooter({ collapsed, state, name, onLogout }: { collapsed: boolean; state: ReturnType<typeof useApp>["state"]; name?: string; onLogout?: () => void }) {
   const roleLabels: Record<string, string> = {
     accountant: "Kế toán viên",
     chief_accountant: "Kế toán trưởng",
@@ -263,7 +264,7 @@ function UserFooter({ collapsed, state }: { collapsed: boolean; state: ReturnTyp
         <div style={{ textAlign: "center", color: T.secondary, fontSize: 16 }} aria-label="Tài khoản người dùng">●</div>
       ) : (
         <>
-          <div style={{ fontSize: 13, fontWeight: 500, color: T.strong, marginBottom: 2 }}>[Người dùng]</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: T.strong, marginBottom: 2 }}>{name || "[Người dùng]"}</div>
           <div style={{ fontSize: 12, color: T.secondary }}>{roleLabels[state.role] ?? state.role}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: state.capability === "online" ? T.green : T.orange, display: "inline-block" }} />
@@ -271,6 +272,7 @@ function UserFooter({ collapsed, state }: { collapsed: boolean; state: ReturnTyp
               {state.capability === "online" ? "Trực tuyến" : state.capability === "offline_local" ? "Ngoại tuyến — cục bộ" : "Giới hạn khả năng"}
             </span>
           </div>
+          {onLogout && <button type="button" onClick={onLogout} style={{ marginTop: 8, padding: 0, border: "none", background: "transparent", color: T.interactive, fontSize: 12, cursor: "pointer" }}>Đăng xuất</button>}
         </>
       )}
     </div>

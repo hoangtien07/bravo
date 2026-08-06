@@ -1,6 +1,6 @@
 export type CaseFamily =
   | "AUTH" | "CHAT" | "HIST" | "SSE" | "CLOSE" | "DRAFT" | "KNOW"
-  | "ADMIN" | "MONEY" | "ANOM" | "TAX" | "KGRAPH" | "SHARE" | "ROUTE";
+  | "WORK" | "ADMIN" | "MONEY" | "ANOM" | "TAX" | "KGRAPH" | "SHARE" | "ROUTE";
 
 export type ReviewCase = {
   id: string;
@@ -16,6 +16,7 @@ const FAMILY_CONFIG: Record<CaseFamily, { count: number; route: string; label: s
   HIST: { count: 10, route: "/conversations", label: "Lịch sử hội thoại" },
   SSE: { count: 18, route: "/c/fixture:stream", label: "Luồng sự kiện mô phỏng" },
   CLOSE: { count: 13, route: "/financial-close", label: "Đóng kỳ tài chính" },
+  WORK: { count: 3, route: "/accounting-work", label: "Công việc AI — ba case" },
   DRAFT: { count: 18, route: "/approvals", label: "Bản nháp và phê duyệt" },
   KNOW: { count: 15, route: "/knowledge", label: "Kho tri thức" },
   ADMIN: { count: 12, route: "/admin", label: "Quản trị" },
@@ -32,6 +33,7 @@ const boundaries: Partial<Record<CaseFamily, string>> = {
   SSE: "Lịch biểu sự kiện xác định; không mở EventSource hoặc kết nối backend.",
   DRAFT: "Phê duyệt khác xuất, thực hiện và xác minh.",
   CLOSE: "Mức sẵn sàng chỉ là dữ liệu minh họa có bằng chứng.",
+  WORK: "Bank, Voucher và Period Close dùng chung AccountingCase; UI không tự tính verdict hoặc thực thi BRAVO ERP.",
   SHARE: "Bề mặt chỉ đọc không dựng thao tác riêng tư.",
 };
 
@@ -54,4 +56,3 @@ export function reviewUrl(reviewCase: ReviewCase): string {
   const delimiter = reviewCase.route.includes("?") ? "&" : "?";
   return `${reviewCase.route}${delimiter}qa=1&scenario=${reviewCase.id}&state=ready&theme=light`;
 }
-

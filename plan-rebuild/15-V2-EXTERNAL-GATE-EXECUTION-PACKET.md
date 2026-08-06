@@ -4,10 +4,10 @@ Status: `READY FOR AUTHORIZED EXECUTION — NO EXTERNAL GATE HAS PASSED`
 
 Date: 2026-08-02
 
-Relation to Plan 16: the later 2026-08-02 BRAVO 10 business-flow audit found deterministic and
-evidence-contract gaps that must be remediated before FE admission. This packet still governs the
-external operator/model/SME/user gates, but those gates do not replace or waive Plan 16's backend
-business-correctness work.
+Relation to Plans 16/17: Plan 16 BF-00 through BF-05 automated exits have been accepted and
+`FE ADMISSION OPEN` now authorizes the local synthetic FigmaMake three-case integration under
+Plan 17. This packet still governs the external operator/model/SME/user gates. None has passed,
+and FE admission does not replace or waive them.
 
 ## Purpose and council decision
 
@@ -21,25 +21,27 @@ authority to run them, select a model, inspect secrets, or use customer data.
 | Invent a model pin, reviewer truth, or runtime-role result | Rejected | That would simulate authority/evidence and violate the accepted V2 gates. |
 | Prepare a bounded execution packet and hold each gate open until its owner supplies evidence | **Selected** | Preserves the developer result while making the next authorized work reproducible and auditable. |
 
-The source baseline for this packet is commit `8b0a7ec86709cab06ce1d4f586bc330cb6a461c1` and
-Alembic head `0019_case_v2_defaults`. The inaccessible untracked `.tmp-pytest/` artifact is
-outside this baseline and is recorded in `evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`.
+The original source baseline for this packet was commit
+`8b0a7ec86709cab06ce1d4f586bc330cb6a461c1` at Alembic head `0019_case_v2_defaults`. The FE
+admission review was later performed from the explicit dirty remediation worktree observed at
+commit `c41255635bee7e594e4b867cf26f5691b98097cc`, with Alembic head
+`0020_case_v2_audit`. The untracked `.tmp-pytest/` artifact remains outside the evidence set.
 
 ## Accurate delivery boundary
 
 | Work package | Current evidence | Not yet satisfied |
 |---|---|---|
-| WP-02–04 Bank core, deterministic checks and durable API | Implemented and synthetic HTTP/native-RLS tested | Non-owner runtime cutover and quality verdict |
-| WP-05 Bank reasoning/evaluation | Deterministic, read-only explanation exists | Owner-pinned model adapter, frozen matched A/B/C/D run, blind quality gate |
-| WP-06 Bank UX | Contract-first FigmaMake and `frontend-react` synthetic workflow controls exist | Human usability/accessibility acceptance beyond automated checks |
-| WP-07 Voucher Review | Typed deterministic **preview** exists | Approved policy/fixture truth, durable case/review/export lifecycle, held-out evaluation |
-| WP-08 Period Close Readiness | Typed deterministic **preview** exists | Approved policy/fixture truth, durable handoff/export lifecycle, held-out evaluation |
+| WP-02–04 Bank core, deterministic checks and durable API | Plan 16 remediation implemented and synthetic HTTP/native-RLS tested | Non-owner runtime cutover and quality verdict |
+| WP-05 Bank reasoning/evaluation | Typed, deterministic, read-only fallback exists | Owner-pinned model adapter, frozen matched A/B/C/D run, blind quality gate |
+| WP-06 Accounting Work UX | `FE ADMISSION OPEN`; Plan 17 authorized; candidate baseline typecheck/tests/build pass | Integrated three-case API lifecycle and full E2E/a11y/visual acceptance |
+| WP-07 Voucher Review | Server-authoritative evidence and durable case/review/export lifecycle pass developer tests | Independent SME policy/truth approval and held-out evaluation |
+| WP-08 Period Close Readiness | Server-authoritative prerequisite evidence and durable handoff/export lifecycle pass developer tests | Independent SME policy/truth approval and held-out evaluation |
 | WP-09 configuration | Synthetic manifest and capability backstops exist | Owner-pinned model/egress decision and the non-functional Governance mock acceptance |
 | WP-10 integration/release evidence | Focused backend/frontend checks and isolated durable DB proof exist | A/B/C/D, blind SME, manual baseline, full operational proof and release result |
 
-Therefore the developer implementation must be called a **synthetic demonstrator scaffold**, not a
-complete V2 quality/release plan. The previews are intentionally not promoted to durable workflows
-until their policies and golden truth are approved.
+Therefore the developer implementation must be called a **synthetic three-case developer
+demonstrator**, not a complete V2 quality/release plan. Voucher and Period are now durable
+developer flows, but their synthetic policy/golden truth remains pending independent SME review.
 
 ## Gate 1 — operator: non-owner runtime containment
 
@@ -111,8 +113,8 @@ attestation template; a predefined manual timing/edit protocol.
    the repository.
 3. Measure manual reviewer time and material edits on the same synthetic cases. Report the Bank
    OD-09 metrics separately from secondary-case observations.
-4. Before promoting Voucher/Period previews, approve each policy, golden set and sealed held-out
-   manifest; then implement and assess its full bounded lifecycle.
+4. Before making a quality/release claim for Voucher or Period, approve each policy, golden set and
+   sealed held-out manifest, then assess its existing bounded lifecycle.
 
 **Pass criterion:** independent evidence satisfies the frozen rubric, hard-failure rules and
 OD-09 thresholds. A developer or model self-score is invalid.

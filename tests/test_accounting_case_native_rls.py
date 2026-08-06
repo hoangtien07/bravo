@@ -46,10 +46,28 @@ def test_native_rls_hides_cross_department_accounting_cases_for_create_scoped_ma
                     "(:ca, 'bank_reconciliation', :oa, ARRAY[:da]::uuid[], '{}'::jsonb, 'EVIDENCE_READY'), "
                     "(:cb, 'bank_reconciliation', :ob, ARRAY[:db]::uuid[], '{}'::jsonb, 'EVIDENCE_READY')"),
                     {"ca": case_a, "cb": case_b, "oa": owner_a, "ob": owner_b, "da": dept_a, "db": dept_b})
+                await conn.execute(text(
+                    "INSERT INTO accounting_case_commands_v2 (id, subject, operation, idempotency_key, request_hash, outcome_case_id, department_ids) VALUES "
+                    "(:a, 'case-a', 'run_checks', 'a', :h, :ca, ARRAY[:da]::uuid[]), "
+                    "(:b, 'case-b', 'run_checks', 'b', :h, :cb, ARRAY[:db]::uuid[])"),
+                    {"a": uuid.uuid4(), "b": uuid.uuid4(), "h": "a" * 64, "ca": case_a, "cb": case_b,
+                     "da": dept_a, "db": dept_b})
+                await conn.execute(text(
+                    "INSERT INTO accounting_case_audit_v2 (id, case_id, department_ids, action, detail) VALUES "
+                    "(:a, :ca, ARRAY[:da]::uuid[], 'run_checks', '{}'::jsonb), "
+                    "(:b, :cb, ARRAY[:db]::uuid[], 'run_checks', '{}'::jsonb)"),
+                    {"a": uuid.uuid4(), "b": uuid.uuid4(), "ca": case_a, "cb": case_b,
+                     "da": dept_a, "db": dept_b})
                 await conn.execute(text("ALTER TABLE accounting_cases_v2 ENABLE ROW LEVEL SECURITY"))
                 await conn.execute(text("ALTER TABLE accounting_cases_v2 FORCE ROW LEVEL SECURITY"))
+                await conn.execute(text("ALTER TABLE accounting_case_commands_v2 ENABLE ROW LEVEL SECURITY"))
+                await conn.execute(text("ALTER TABLE accounting_case_commands_v2 FORCE ROW LEVEL SECURITY"))
+                await conn.execute(text("ALTER TABLE accounting_case_audit_v2 ENABLE ROW LEVEL SECURITY"))
+                await conn.execute(text("ALTER TABLE accounting_case_audit_v2 FORCE ROW LEVEL SECURITY"))
                 await conn.execute(text("CREATE ROLE accounting_case_rls_probe NOSUPERUSER"))
                 await conn.execute(text("GRANT SELECT ON accounting_cases_v2 TO accounting_case_rls_probe"))
+                await conn.execute(text("GRANT SELECT, UPDATE, DELETE ON accounting_case_commands_v2 TO accounting_case_rls_probe"))
+                await conn.execute(text("GRANT SELECT, UPDATE, DELETE ON accounting_case_audit_v2 TO accounting_case_rls_probe"))
                 maker = Identity(employee_id=owner_a, department_ids=[dept_a],
                                  permissions=frozenset({"accounting_case:create:own_dept"}))
                 await apply_rls_gucs(conn, maker)
@@ -57,8 +75,18 @@ def test_native_rls_hides_cross_department_accounting_cases_for_create_scoped_ma
                 visible = set((await conn.execute(text(
                     "SELECT case_id FROM accounting_cases_v2 WHERE case_id = ANY(:ids)"),
                     {"ids": [case_a, case_b]})).scalars().all())
-                await conn.execute(text("RESET ROLE"))
                 assert visible == {case_a}
+                visible_commands = set((await conn.execute(text(
+                    "SELECT outcome_case_id FROM accounting_case_commands_v2 WHERE outcome_case_id = ANY(:ids)"),
+                    {"ids": [case_a, case_b]})).scalars().all())
+                visible_audit = set((await conn.execute(text(
+                    "SELECT case_id FROM accounting_case_audit_v2 WHERE case_id = ANY(:ids)"),
+                    {"ids": [case_a, case_b]})).scalars().all())
+                assert visible_commands == {case_a}
+                assert visible_audit == {case_a}
+                with pytest.raises(Exception, match="append-only"):
+                    await conn.execute(text("UPDATE accounting_case_audit_v2 SET action = 'tamper' WHERE case_id = :case"),
+                                       {"case": case_a})
                 await trans.rollback()
         finally:
             await engine.dispose()

@@ -82,6 +82,26 @@ button { touch-action: manipulation; }
 .review-grid { display: grid; grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr); gap: 16px; }
 @media (max-width: 767px) { .review-grid { grid-template-columns: 1fr; } }
 
+@media (max-width: 1100px) {
+  .live-shell-body {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .live-shell-desktop-nav {
+    display: none;
+  }
+  div:has(> aside[aria-label="Evidence Rail"]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .live-shell-identity { display: none; }
+}
+
+.live-shell-skip { position: absolute; left: -9999px; z-index: 20; background: var(--surface); color: var(--interactive); padding: 8px 12px; }
+.live-shell-skip:focus { left: 12px; top: 12px; }
+.live-shell-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.3); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
