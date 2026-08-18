@@ -81,3 +81,24 @@ environment and reproducible-image prerequisites are therefore ready. The frozen
 still intentionally not run: the worktree must first be cleaned/frozen and an owner-approved,
 immutable model/configuration record must be bound to the run. No chat/model request or secret
 value was recorded during this remediation.
+
+## Model configuration record — 2026-08-18
+
+The owner selected the synthetic-only cloud runtime below. This is the sole short model record;
+it contains no credential or secret-store value.
+
+| Field | Value |
+|---|---|
+| Provider | OpenAI API |
+| Deployment policy | `cloud_only`, synthetic A/B only |
+| API base URL | `https://api.openai.com/v1` |
+| Requested alias | `gpt-4o` |
+| Pinned model revision | `gpt-4o-2024-11-20` |
+| Runtime image | `bravo-wp19-api@sha256:68c79d747417a88b153bfe866d5c26938fc2bc95482f345b6a8910bba1891b36` |
+
+The non-secret cloud policy/base URL/model settings were applied to the ignored `.env.wp00` file.
+The configuration helper intentionally refused activation because `CLOUD_API_KEY` is absent. A
+non-network offline check against a synthetic temporary configuration confirmed that it preserves
+the approved snapshot and enables the required cloud flags. The final activation, API restart and
+non-prompt authenticated endpoint preflight remain pending secret-manager injection of the API key.
+No model completion or A/B capture has been run.

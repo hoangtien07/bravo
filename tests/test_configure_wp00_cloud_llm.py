@@ -33,6 +33,6 @@ def test_exposed_credential_cleanup_sets_openai_defaults_but_never_preserves_the
 
     values = dict(line.split("=", 1) for line in path.read_text(encoding="utf-8").splitlines() if "=" in line)
     assert values["CLOUD_BASE_URL"] == "https://api.openai.com/v1"
-    assert values["CLOUD_MODEL"] == "gpt-4o"
+    assert values["CLOUD_MODEL"] == "gpt-4o-2024-11-20"
     assert values["CLOUD_API_KEY"] == ""
     assert values["CLOUD_EMBEDDING_API_KEY"] == ""

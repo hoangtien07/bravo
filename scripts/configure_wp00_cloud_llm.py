@@ -35,7 +35,7 @@ _CLOUD_EMBEDDING_UPDATES = {
 _OPENAI_COMPATIBLE_UPDATES = {
     **_CLOUD_EMBEDDING_UPDATES,
     "CLOUD_BASE_URL": "https://api.openai.com/v1",
-    "CLOUD_MODEL": "gpt-4o",
+    "CLOUD_MODEL": "gpt-4o-2024-11-20",
 }
 
 
