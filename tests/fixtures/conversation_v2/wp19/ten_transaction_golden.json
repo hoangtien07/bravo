@@ -1,0 +1,94 @@
+{
+  "schema_version": "bravo-knowledge-chat-v2-ten-transaction/v1",
+  "fixture_id": "knowledge-chat-v2/ten-transaction-anchor/v1",
+  "synthetic_only": true,
+  "customer_data_permitted": false,
+  "review_status": "owner_accepted_pending_independent_sme_review",
+  "chart_of_accounts_policy": {"policy_id": "tt99", "version": "2025"},
+  "implementation_gate": {
+    "deterministic_engine_allowed": false,
+    "reason": "Owner/SME must review the frozen synthetic answer key and its hashes before a Conversation Core V2 accounting engine is implemented."
+  },
+  "task_units": [
+    {
+      "ordinal": 1,
+      "request": "Rút tiền gửi ngân hàng về quỹ tiền mặt 80.000.000 VND.",
+      "deterministic_rule_ids": ["cash_transfer/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-1", "debits": [{"account": "111", "amount_vnd": "80000000"}], "credits": [{"account": "112", "amount_vnd": "80000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy"],
+      "must_not_claims": ["Do not state that BRAVO created or posted the voucher."]
+    },
+    {
+      "ordinal": 2,
+      "request": "Ngân hàng giải ngân và thanh toán trực tiếp cho nhà cung cấp 60.000.000 VND.",
+      "deterministic_rule_ids": ["direct-bank-loan-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-2", "debits": [{"account": "331", "amount_vnd": "60000000"}], "credits": [{"account": "3411", "amount_vnd": "60000000"}]}], "calculations": [], "policy_ambiguity": "Surface account 311 only as an unresolved legacy-curriculum alternative; TT99 policy uses 3411."},
+      "evidence_requirements": ["approved_chart_of_accounts_policy", "loan_fact"],
+      "must_not_claims": ["Do not choose the legacy 311 policy without the selected policy version."]
+    },
+    {
+      "ordinal": 3,
+      "request": "Thu tiền khách hàng bằng tiền mặt 40.000.000 VND.",
+      "deterministic_rule_ids": ["customer-cash-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-3", "debits": [{"account": "111", "amount_vnd": "40000000"}], "credits": [{"account": "131", "amount_vnd": "40000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy"],
+      "must_not_claims": ["Do not claim an exact BRAVO screen without approved guide evidence."]
+    },
+    {
+      "ordinal": 4,
+      "request": "Trả nợ vay bằng tiền mặt 15.000.000 VND.",
+      "deterministic_rule_ids": ["loan-cash-repayment/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-4", "debits": [{"account": "3411", "amount_vnd": "15000000"}], "credits": [{"account": "111", "amount_vnd": "15000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy", "loan_fact"],
+      "must_not_claims": ["Do not assume loan classification without policy and loan facts."]
+    },
+    {
+      "ordinal": 5,
+      "request": "Mua hàng nhập kho giá chưa VAT 100.000.000 VND, VAT 10%, chưa thanh toán.",
+      "deterministic_rule_ids": ["vat-exclusive/v1", "inventory-purchase/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-5", "debits": [{"account": "156", "amount_vnd": "100000000"}, {"account": "1331", "amount_vnd": "10000000"}], "credits": [{"account": "331", "amount_vnd": "110000000"}]}], "calculations": [{"calculation_id": "unit-5-vat", "net_vnd": "100000000", "vat_vnd": "10000000", "gross_vnd": "110000000", "vat_basis": "exclusive"}]},
+      "evidence_requirements": ["approved_tax_policy", "approved_chart_of_accounts_policy"],
+      "must_not_claims": ["Do not infer tax eligibility from the arithmetic alone."]
+    },
+    {
+      "ordinal": 6,
+      "request": "Thanh toán công nợ nhà cung cấp bằng tiền gửi ngân hàng 50.000.000 VND.",
+      "deterministic_rule_ids": ["supplier-bank-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-6", "debits": [{"account": "331", "amount_vnd": "50000000"}], "credits": [{"account": "112", "amount_vnd": "50000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy"],
+      "must_not_claims": ["Do not call this an executed bank payment."]
+    },
+    {
+      "ordinal": 7,
+      "request": "Mua hàng nhập kho giá chưa VAT 200.000.000 VND, VAT 10%; trả tiền mặt 100.000.000 VND, còn nợ.",
+      "deterministic_rule_ids": ["vat-exclusive/v1", "inventory-purchase/v1", "partial-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-7-purchase", "debits": [{"account": "156", "amount_vnd": "200000000"}, {"account": "1331", "amount_vnd": "20000000"}], "credits": [{"account": "331", "amount_vnd": "220000000"}]}, {"group_id": "unit-7-payment", "debits": [{"account": "331", "amount_vnd": "100000000"}], "credits": [{"account": "111", "amount_vnd": "100000000"}]}], "calculations": [{"calculation_id": "unit-7-vat", "net_vnd": "200000000", "vat_vnd": "20000000", "gross_vnd": "220000000", "vat_basis": "exclusive"}, {"calculation_id": "unit-7-remaining-payable", "paid_vnd": "100000000", "remaining_payable_vnd": "120000000"}]},
+      "evidence_requirements": ["approved_tax_policy", "approved_chart_of_accounts_policy", "approved_BRAVO_partial_payment_guide_if_navigation_is_claimed"],
+      "must_not_claims": ["Do not claim a BRAVO partial-payment field automatically creates the remaining payable without configuration evidence."]
+    },
+    {
+      "ordinal": 8,
+      "request": "Nhận góp vốn bằng tài sản cố định 500.000.000 VND.",
+      "deterministic_rule_ids": ["fixed-asset-capital-contribution/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-8", "debits": [{"account": "211", "amount_vnd": "500000000"}], "credits": [{"account": "4111", "amount_vnd": "500000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy", "approved_fixed_asset_registration_guide_if_navigation_is_claimed"],
+      "must_not_claims": ["Do not claim fixed-asset registration was completed."]
+    },
+    {
+      "ordinal": 9,
+      "request": "Chi lương bằng tiền mặt 10.000.000 VND.",
+      "deterministic_rule_ids": ["salary-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-9", "debits": [{"account": "334", "amount_vnd": "10000000"}], "credits": [{"account": "111", "amount_vnd": "10000000"}]}], "calculations": [], "required_assumption": "Salary payable was previously accrued; otherwise request the missing accrual treatment."},
+      "evidence_requirements": ["approved_chart_of_accounts_policy", "salary_accrual_status"],
+      "must_not_claims": ["Do not silently assume salary payable was accrued."]
+    },
+    {
+      "ordinal": 10,
+      "request": "Thu tiền khách hàng qua ngân hàng 35.000.000 VND.",
+      "deterministic_rule_ids": ["customer-bank-settlement/v1", "posting-balance/v1"],
+      "expected_work_product": {"posting_groups": [{"group_id": "unit-10", "debits": [{"account": "112", "amount_vnd": "35000000"}], "credits": [{"account": "131", "amount_vnd": "35000000"}]}], "calculations": []},
+      "evidence_requirements": ["approved_chart_of_accounts_policy"],
+      "must_not_claims": ["Do not claim the bank receipt was reconciled or executed."]
+    }
+  ]
+}

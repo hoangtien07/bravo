@@ -68,7 +68,11 @@ def infer_query_intent(query: str) -> BravoQueryIntent:
     lifecycle_stage: str | None = None
 
     if _has_any(q, (
-        "b30", "b20", "b10", "b00", "b30bizdoc", "b30accdoc", "bang ", "table",
+        # Do not use the accent-folded word ``bang`` as a technical signal.  It is also the
+        # folded form of the ordinary Vietnamese preposition ``bằng`` (for example, "bằng
+        # tiền mặt").  Qualified identifiers such as B30BizDoc and the explicit English
+        # ``table`` still provide the technical-design signal without hijacking accounting turns.
+        "b30", "b20", "b10", "b00", "b30bizdoc", "b30accdoc", "table",
         "view", "procedure", "stored", "usp_", "ufn_", "function", "rowid", "stt",
         "layout", "editor", "explorer", "datasource", "dll", "getdata",
         "evaluator", "commandvalidator", "commandvalidators", "b00command",

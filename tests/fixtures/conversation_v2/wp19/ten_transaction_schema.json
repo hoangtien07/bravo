@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bravo-knowledge-chat-v2-ten-transaction/v1",
+  "title": "Synthetic ten-transaction Knowledge Chat V2 anchor",
+  "description": "Frozen review schema only. It does not authorize an accounting engine, an ERP action, or a BRAVO navigation claim.",
+  "type": "object",
+  "required": [
+    "schema_version", "fixture_id", "synthetic_only", "customer_data_permitted",
+    "review_status", "chart_of_accounts_policy", "task_units", "implementation_gate"
+  ],
+  "properties": {
+    "schema_version": {"const": "bravo-knowledge-chat-v2-ten-transaction/v1"},
+    "fixture_id": {"const": "knowledge-chat-v2/ten-transaction-anchor/v1"},
+    "synthetic_only": {"const": true},
+    "customer_data_permitted": {"const": false},
+    "review_status": {"enum": ["pending_owner_sme_review", "owner_accepted_pending_independent_sme_review", "owner_sme_accepted"]},
+    "chart_of_accounts_policy": {
+      "type": "object",
+      "required": ["policy_id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "policy_id": {"type": "string"},
+        "version": {"type": "string"}
+      }
+    },
+    "task_units": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {"$ref": "#/$defs/taskUnit"}
+    },
+    "implementation_gate": {
+      "type": "object",
+      "required": ["deterministic_engine_allowed", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "deterministic_engine_allowed": {"type": "boolean"},
+        "reason": {"type": "string"}
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "money": {"type": "string", "pattern": "^-?[0-9]+(?:\\.[0-9]+)?$"},
+    "postingLine": {
+      "type": "object",
+      "required": ["account", "amount_vnd"],
+      "additionalProperties": false,
+      "properties": {
+        "account": {"type": "string"},
+        "amount_vnd": {"$ref": "#/$defs/money"}
+      }
+    },
+    "taskUnit": {
+      "type": "object",
+      "required": [
+        "ordinal", "request", "deterministic_rule_ids", "expected_work_product",
+        "evidence_requirements", "must_not_claims"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 10},
+        "request": {"type": "string"},
+        "deterministic_rule_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "expected_work_product": {"type": "object"},
+        "evidence_requirements": {"type": "array", "items": {"type": "string"}},
+        "must_not_claims": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -20,6 +20,15 @@ def test_infer_schema_question_prefers_technical_manual():
     assert intent.lifecycle_stage == "technical_design"
 
 
+def test_infer_cash_payment_with_bang_does_not_become_technical_design():
+    """Accent folding must not turn ``bằng tiền mặt`` into a database-table request."""
+    intent = infer_query_intent("Thanh toán công nợ bằng tiền mặt")
+
+    assert intent.lifecycle_stage != "technical_design"
+    assert "technical_manual" not in intent.source_types
+    assert "platform" not in intent.modules
+
+
 def test_infer_framework_question_prefers_technical_context():
     intent = infer_query_intent(
         "Datasource Evaluator CommandValidators trong Editor khac nhau the nao?"

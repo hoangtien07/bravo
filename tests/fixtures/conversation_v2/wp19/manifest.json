@@ -1,0 +1,22 @@
+{
+  "schema_version": "bravo-knowledge-chat-v2-wp19-fixture-manifest/v1",
+  "fixture_pack_id": "knowledge-chat-v2/ten-transaction-anchor/v1",
+  "synthetic_only": true,
+  "customer_data_permitted": false,
+  "review_status": "owner_accepted_pending_independent_sme_review",
+  "review_gate": {
+    "required_roles": ["accounting_sme", "bravo_erp_sme"],
+    "acceptance_record": "evidence/v2/wp19-01-owner-sme-review.md",
+    "note": "The project owner accepted the TT99/2025 synthetic fixture on 2026-08-18. An independent accounting/BRAVO SME review remains required before a deterministic engine or prompt migration begins."
+  },
+  "implementation_gate": {
+    "wp19_02_allowed": false,
+    "wp19_04_allowed": false,
+    "reason": "The anchor is frozen for review, not accepted as accounting truth."
+  },
+  "artifacts": [
+    {"path": "ten_transaction_schema.json", "sha256": "7be04e5c449024c510072d9b1d968cdfb660a70bb5763bdbd75e410e5df1646e"},
+    {"path": "ten_transaction_golden.json", "sha256": "c7b4686683af88a4a9abd1e2f6870cdb95725f16a127455084fd13152e7f8c45"},
+    {"path": "must_not_claims.md", "sha256": "e00300246205daedebcf2a7267344ac2c53af8a1badda1126d435dc34a92a15c"}
+  ]
+}
