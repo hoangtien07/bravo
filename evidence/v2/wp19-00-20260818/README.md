@@ -111,3 +111,21 @@ the pinned snapshot returned HTTP `200`. The API was then restarted with the act
 configuration and `/health` returned `200` on `127.0.0.1:18000`. PostgreSQL and Redis remain in
 the isolated `bravo-wp19` network. No chat completion, fixture replay or A/B output has been
 created by this activation check.
+
+## Frozen A/B capture — 2026-08-18
+
+The authorized synthetic replay completed 30 matched System A (legacy, `off`) / System B
+(Consultant, `on`) pairs successfully through the pinned cloud runtime. The raw synthetic replay
+is retained at `evidence/v2/ab/wp19-20260818-gpt4o-20241120/replay.json`; its SHA-256 is
+`1b2cab94bb6ada664be15dd161a8116bfeb0ff48c5f50a0a2fa6658e559196c7`.
+
+The offline frozen writer created the immutable artifact in
+`evidence/v2/ab/wp19-20260818-gpt4o-20241120/frozen-baseline/`. It binds baseline commit
+`2f73b5f5a50716066d361559e017f3b9d3ea62af`, model/revision `gpt-4o-2024-11-20`, corpus
+manifest SHA-256 `37dd033330cd1cb68a5d0f2f01a3e8fd007ce1078323903ce6d2428f8273549d`, and
+the current legacy-loop/Consultant-service prompt-source hashes. The artifact checksum is
+`2696b32e147db06c48083afa95d237364b3cbd46ea884327ad44c5defb05acd6`; its canonical payload
+hash is `899ef132ecbe75a63967d78206189c4938ee273d57ab756723cd1e7a90bf01c8`.
+
+This closes the frozen System A/B capture prerequisite only. It does not establish a quality win,
+blind-SME result, a Core V2 rollout, customer-data authorization, pilot or production readiness.

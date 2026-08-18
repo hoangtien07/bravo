@@ -1,0 +1,878 @@
+{
+  "fixture": "app/eval/consultant_benchmark.example.yaml",
+  "cases": 30,
+  "runs": [
+    {
+      "case_id": "financial.close.correction",
+      "runs": [
+        {
+          "conversation_id": "76dc5feb-a55d-4e93-a462-3f2e88208dc3",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 10350,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Để lên báo cáo tài chính trong BRAVO, bạn cần thực hiện các bước tổng quan sau:\n\n1. **Chuẩn bị dữ liệu kế toán**:\n   - Đảm bảo các chứng từ kế toán đã được nhập đầy đủ và chính xác.\n   - Kiểm tra các bút toán kết chuyển, phân bổ chi phí, và các bút toán điều chỉnh cần thiết.\n\n2. **Kiểm tra sổ sách**:\n   - Đối chiếu số liệu giữa các sổ chi tiết và sổ tổng hợp.\n   - Kiểm tra các tài khoản kế toán để đảm bảo không có sai sót hoặc số dư bất thường.\n\n3. **Chạy báo cáo tài chính**:\n   - Truy cập module \"Báo cáo\" trong BRAVO.\n   - Chọn loại báo cáo tài chính cần lập, ví dụ: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển tiền tệ.\n   - Thiết lập các tham số báo cáo như kỳ báo cáo, loại tiền tệ, và các tùy chọn khác.\n   - Chạy báo cáo và kiểm tra số liệu.\n\n4. **Xuất báo cáo**:\n   - Sau khi kiểm tra, bạn có thể xuất báo cáo ra các định dạng như Excel hoặc PDF để lưu trữ hoặc trình bày.\n\nNếu bạn cần hướng dẫn chi tiết hơn về từng bước hoặc gặp vấn đề cụ thể trong quá trình lập báo cáo, vui lòng cung cấp thêm thông tin.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "691c0ca0-2fad-4e0f-9bc5-289a991e8947",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 10991,
+          "workflow_id": "financial_close",
+          "current_node": "scope_known",
+          "state_revision": 1,
+          "answer": "Để lên báo cáo tài chính trong BRAVO, bạn cần thực hiện các bước tổng quan sau:\n\n1. **Xác định kỳ báo cáo và phạm vi**:\n   - Xác định kỳ báo cáo tài chính cần lập (tháng, quý, năm).\n   - Xác định phạm vi dữ liệu (toàn công ty hay từng đơn vị).\n\n2. **Kiểm tra và hoàn thiện chứng từ**:\n   - Đảm bảo tất cả các chứng từ kế toán liên quan đã được nhập đầy đủ và chính xác.\n   - Kiểm tra các bút toán điều chỉnh, phân bổ chi phí, và kết chuyển cuối kỳ.\n\n3. **Đóng kỳ kế toán**:\n   - Thực hiện đóng kỳ kế toán để đảm bảo dữ liệu không bị thay đổi trong quá trình lập báo cáo.\n\n4. **Lập báo cáo tài chính**:\n   - Truy cập module Báo cáo trong BRAVO.\n   - Chọn loại báo cáo tài chính cần lập (Bảng cân đối kế toán, Báo cáo kết quả kinh doanh, Báo cáo lưu chuyển tiền tệ, Thuyết minh báo cáo tài chính).\n   - Thiết lập các tham số báo cáo (kỳ báo cáo, đơn vị, loại tiền tệ, v.v.).\n   - Chạy báo cáo và kiểm tra số liệu.\n\n5. **Kiểm tra và điều chỉnh**:\n   - Soát xét số liệu trên báo cáo để phát hiện sai sót hoặc bất thường.\n   - Thực hiện các bút toán điều chỉnh nếu cần.\n\n6. **Xuất và trình bày báo cáo**:\n   - Xuất báo cáo ra các định dạng cần thiết (PDF, Excel, v.v.).\n   - Trình bày báo cáo theo yêu cầu của quản lý hoặc cơ quan kiểm toán.\n\nNếu bạn cần hướng dẫn chi tiết hơn về từng bước hoặc cách sử dụng các chức năng cụ thể trong BRAVO, vui lòng cung cấp thêm thông tin về phiên bản BRAVO bạn đang sử dụng hoặc kỳ báo cáo cụ thể.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "financial.close.ready",
+      "runs": [
+        {
+          "conversation_id": "b4d57abb-8086-4c16-80fd-d0fc4be83135",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3709,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần hướng dẫn quy trình khóa sổ tháng 05/2026 trong BRAVO hay chỉ cần xác nhận điều kiện đã đủ để khóa sổ?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "c005a995-4d64-48af-92da-ec4158f78526",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 5743,
+          "workflow_id": "financial_close",
+          "current_node": "closing_complete",
+          "state_revision": 1,
+          "answer": "Để khóa sổ tháng 05/2026, bạn cần thực hiện các bước sau:\n\n1. **Kiểm tra điều kiện trước khi khóa sổ**:\n   - Đảm bảo tất cả các bút toán đã được hạch toán đầy đủ và chính xác.\n   - Đối chiếu số liệu giữa các phân hệ (kế toán tổng hợp, công nợ, kho, tài sản cố định, v.v.) đã hoàn tất.\n\n2. **Thực hiện phân bổ và kết chuyển cuối kỳ**:\n   - Chạy các bút toán phân bổ chi phí, kết chuyển doanh thu, chi phí, lãi lỗ.\n   - Đảm bảo các bút toán này được ghi nhận đúng kỳ.\n\n3. **Khóa sổ kế toán**:\n   - Truy cập menu \"Kế toán tổng hợp\" → \"Khóa sổ kế toán\".\n   - Chọn kỳ cần khóa (tháng 05/2026) và thực hiện khóa sổ.\n\n4. **Kiểm tra báo cáo sau khóa sổ**:\n   - Kiểm tra các báo cáo tài chính (Bảng cân đối kế toán, Báo cáo kết quả kinh doanh, Báo cáo lưu chuyển tiền tệ) để đảm bảo số liệu chính xác.\n\nNếu cần hướng dẫn chi tiết hơn về từng bước hoặc gặp lỗi trong quá trình thực hiện, bạn có thể hỏi thêm.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "ap.invoice",
+      "runs": [
+        {
+          "conversation_id": "025d65f7-a379-4577-8076-d14539ed2737",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2768,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần hướng dẫn xử lý hóa đơn đầu vào tháng 5 trong bối cảnh nào? Ví dụ: nhập liệu vào BRAVO, kiểm tra tính hợp lệ, hay hạch toán kế toán?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "b140b32c-aba3-4a2d-b1d0-66edb5a78dcd",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2431,
+          "workflow_id": "ap_invoice",
+          "current_node": "invoice_checked",
+          "state_revision": 1,
+          "answer": "Bạn đang sử dụng BRAVO 10 bản nào hoặc cấu hình nào? Và bạn cần hướng dẫn xử lý hóa đơn đầu vào theo quy trình cụ thể nào (ví dụ: nhập liệu, kiểm tra, hạch toán)?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "report.discrepancy",
+      "runs": [
+        {
+          "conversation_id": "5d8dc2e9-8cfc-4b75-8a3f-1e2ac7f7b2a0",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3088,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn có thể cung cấp thêm thông tin về báo cáo doanh thu và công nợ nào đang bị lệch? Ví dụ: tên báo cáo, kỳ báo cáo, hoặc các trường hợp cụ thể để tôi hỗ trợ chính xác hơn.",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "75963133-d5a3-420e-be6e-afde83cfcae7",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 4295,
+          "workflow_id": "report_discrepancy",
+          "current_node": "scope_known",
+          "state_revision": 1,
+          "answer": "Kỳ báo cáo, loại báo cáo doanh thu và công nợ nào bạn đang so sánh? Có thông tin về số tiền lệch hoặc bộ lọc áp dụng không?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "technical.layout",
+      "runs": [
+        {
+          "conversation_id": "21371a79-1bc2-432d-bccb-a62f8cc83bb3",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 4634,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần tạo Layout XML và DataSource cho báo cáo, màn hình nhập liệu, hay một module cụ thể nào trong BRAVO 10? Vui lòng cung cấp thêm chi tiết về yêu cầu hoặc mục đích sử dụng.",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "cca02ecc-3178-4a6d-95cc-f1bafb0cc755",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 6662,
+          "workflow_id": "technical_configuration",
+          "current_node": "environment_known",
+          "state_revision": 1,
+          "answer": "Bạn có thể cung cấp thêm thông tin về loại báo cáo hoặc chứng từ cần tạo Layout XML và DataSource không? Ví dụ: tên báo cáo, module liên quan, hoặc yêu cầu cụ thể về dữ liệu.",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "schema.version",
+      "runs": [
+        {
+          "conversation_id": "07bd5124-6900-4c81-92e3-80b623b977ca",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2133,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn đang hỏi về bảng chứa loại chứng từ cụ thể nào trong database BRAVO 10 (ví dụ: mua hàng, bán hàng, phiếu thu, phiếu chi, nhập kho, xuất kho, v.v.)?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "e4009e79-18cd-4b36-9d52-2a70687dce2d",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2210,
+          "workflow_id": "schema_grounding",
+          "current_node": "version_known",
+          "state_revision": 1,
+          "answer": "Bạn đang muốn tìm bảng chứa loại chứng từ cụ thể nào trên database BRAVO 10 (ví dụ: mua hàng, bán hàng, phiếu thu, phiếu chi, hay khác)?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "incident",
+      "runs": [
+        {
+          "conversation_id": "e82570a6-8c28-4824-99f8-c8e2736e6c1f",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 4515,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không có thông tin cụ thể trong ngữ cảnh để xác định lỗi không hiển thị chứng từ thuộc module nào hoặc tình huống cụ thể. Để kiểm tra log, bạn có thể:\n\n1. Xác định module liên quan (kế toán, kho, bán hàng, mua hàng, v.v.).\n2. Kiểm tra quyền truy cập của người dùng vào chứng từ đó.\n3. Truy cập log hệ thống (nếu được phân quyền) để tìm lỗi liên quan đến chứng từ.\n\nNếu cần hỗ trợ chi tiết hơn, vui lòng cung cấp thêm thông tin về module, loại chứng từ, hoặc tình huống cụ thể.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "2abd2768-919f-48bc-b19e-c969f2ec5592",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2300,
+          "workflow_id": "incident_diagnosis",
+          "current_node": "symptom_scoped",
+          "state_revision": 1,
+          "answer": "Bạn đang gặp lỗi không hiển thị chứng từ ở phân hệ nào (kế toán, mua hàng, bán hàng, kho, hay khác)? Và bạn cần xem log của hệ thống hay log của chứng từ cụ thể?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "ar.collection",
+      "runs": [
+        {
+          "conversation_id": "4df1b078-069b-4de1-99f6-0e15ab49f210",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3233,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"hạch toán công nợ phải thu và thu tiền\"}}",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "3705c25f-4ada-4159-b7e9-ea824d10bcea",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 4720,
+          "workflow_id": "ar_collection",
+          "current_node": "document_checked",
+          "state_revision": 1,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.\n\n--- Ngoài tài liệu BRAVO (kiến thức chung, chưa kiểm chứng với BRAVO 10) ---\nHạch toán công nợ phải thu và thu tiền thường bao gồm các bước:\n\n1. **Hạch toán công nợ phải thu**:\n   - Khi phát sinh doanh thu bán hàng, kế toán ghi nhận công nợ phải thu từ khách hàng.\n   - Định khoản: Nợ TK 131 (Phải thu khách hàng) / Có TK 511 (Doanh thu bán hàng) và Có TK 3331 (Thuế GTGT đầu ra).\n\n2. **Hạch toán thu tiền**:\n   - Khi khách hàng thanh toán, kế toán ghi nhận giảm công nợ phải thu và tăng tiền mặt hoặc tiền gửi ngân hàng.\n   - Định khoản: Nợ TK 111 (Tiền mặt) hoặc TK 112 (Tiền gửi ngân hàng) / Có TK 131 (Phải thu khách hàng).\n\nNếu cần hướng dẫn chi tiết trong BRAVO, bạn có thể cung cấp thêm thông tin về phiên bản BRAVO, loại chứng từ hoặc kỳ báo cáo cần xử lý.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "inventory.close",
+      "runs": [
+        {
+          "conversation_id": "3408bc51-93f3-4db2-91a0-8d58afd54845",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2032,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"chốt tồn kho cuối tháng\"}}",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "08eb12be-b0ef-4b74-840b-37525e436d09",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2628,
+          "workflow_id": "inventory_close",
+          "current_node": "movements_checked",
+          "state_revision": 1,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "fixed.asset",
+      "runs": [
+        {
+          "conversation_id": "f1e42cb6-a022-4f19-bf57-c807e8533837",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 13470,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần hướng dẫn tính khấu hao tài sản cố định trong BRAVO hay theo phương pháp kế toán chung? Nếu là BRAVO, bạn đang sử dụng phiên bản nào và cần hỗ trợ ở bước nào?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "0e2bcd00-81ce-4c33-98b8-18e4966aff3b",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 13702,
+          "workflow_id": "fixed_asset_close",
+          "current_node": "asset_changes_checked",
+          "state_revision": 1,
+          "answer": "Bạn muốn hỏi về quy trình tính khấu hao tài sản cố định trong BRAVO hay nguyên tắc kế toán chung? Nếu là BRAVO, bạn đang dùng phiên bản nào và kỳ tính khấu hao là kỳ nào?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "costing",
+      "runs": [
+        {
+          "conversation_id": "54ce2d1e-faff-4576-b22e-ac89332ca7ee",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2561,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần hướng dẫn tính giá thành sản phẩm trong BRAVO hay muốn tìm hiểu quy trình chung? Nếu là BRAVO, bạn đang sử dụng module nào và có yêu cầu cụ thể nào không?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "ffd919e9-8689-4d77-8da8-37d62ddf10fb",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 4299,
+          "workflow_id": "costing",
+          "current_node": "inputs_checked",
+          "state_revision": 1,
+          "answer": "Bạn đang cần hướng dẫn tính giá thành sản phẩm trong BRAVO 10 hay chỉ muốn biết quy trình tổng quan? Nếu trong BRAVO, bạn đang sử dụng phiên bản nào và kỳ tính giá thành là kỳ nào?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "pause.resume",
+      "runs": [
+        {
+          "conversation_id": "ec463303-8388-4630-9081-488fb26bce33",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2446,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "bc0021eb-aa0d-40b7-9396-e842b8329113",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 6356,
+          "workflow_id": "financial_close",
+          "current_node": "scope_known",
+          "state_revision": 1,
+          "answer": "Để lập Báo cáo tài chính (BCTC) trong BRAVO, bạn cần thực hiện các bước sau:\n\n1. **Xác định kỳ báo cáo và phạm vi**:\n   - Xác định kỳ báo cáo cần lập (tháng, quý, năm).\n   - Đảm bảo tất cả các chứng từ liên quan đến kỳ báo cáo đã được nhập và hạch toán đầy đủ.\n\n2. **Kiểm tra và đối chiếu số liệu**:\n   - Kiểm tra các tài khoản kế toán, đảm bảo không có sai lệch hoặc số dư bất thường.\n   - Đối chiếu các sổ sách như sổ cái, sổ chi tiết, và các báo cáo liên quan.\n\n3. **Thực hiện bút toán cuối kỳ**:\n   - Hạch toán các bút toán điều chỉnh, phân bổ chi phí, kết chuyển doanh thu, chi phí, và lãi lỗ.\n   - Đảm bảo các tài khoản tạm thời được kết chuyển đúng.\n\n4. **Lập Báo cáo tài chính**:\n   - Truy cập module kế toán trong BRAVO.\n   - Sử dụng chức năng lập báo cáo tài chính để tạo các báo cáo như: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển tiền tệ, và Thuyết minh BCTC.\n\n5. **Kiểm tra và hoàn thiện**:\n   - Kiểm tra lại các báo cáo đã lập, đảm bảo số liệu chính xác và khớp với sổ sách.\n   - Thực hiện các chỉnh sửa cần thiết nếu phát hiện sai sót.\n\n6. **Xuất và nộp báo cáo**:\n   - Xuất báo cáo ra file (PDF, Excel) để lưu trữ hoặc nộp cho cơ quan quản lý.\n\nNếu bạn cần hướng dẫn chi tiết từng bước trong BRAVO, vui lòng cung cấp thêm thông tin về phiên bản BRAVO bạn đang sử dụng hoặc kỳ báo cáo cụ thể.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "financial.close.period-first",
+      "runs": [
+        {
+          "conversation_id": "a3bd2b27-2de5-45fd-a999-62b9458ad6ce",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3191,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn đang hỏi về việc chuẩn bị BCTC kỳ 2026-04 trong BRAVO hay quy định chung về BCTC? Nếu là BRAVO, bạn cần hỗ trợ về thao tác, cấu hình hay dữ liệu cụ thể?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "5fccc6fb-d19d-419d-8bad-d682e6942a5e",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 5984,
+          "workflow_id": "financial_close",
+          "current_node": "posting_checked",
+          "state_revision": 1,
+          "answer": "Để chuẩn bị Báo cáo tài chính (BCTC) cho kỳ 2026-04, cần thực hiện các bước sau:\n\n1. **Kiểm tra và hoàn thiện chứng từ kế toán**:\n   - Đảm bảo tất cả các chứng từ phát sinh trong kỳ (mua hàng, bán hàng, thu chi, lương, khấu hao, v.v.) đã được nhập đầy đủ vào hệ thống.\n   - Kiểm tra tính hợp lệ và hợp pháp của chứng từ.\n\n2. **Hạch toán đầy đủ các bút toán kế toán**:\n   - Đảm bảo các bút toán định kỳ như phân bổ chi phí trả trước, khấu hao tài sản cố định, kết chuyển doanh thu và chi phí đã được thực hiện.\n   - Kiểm tra các bút toán điều chỉnh nếu có.\n\n3. **Đối chiếu số liệu**:\n   - Đối chiếu số dư các tài khoản kế toán (tiền mặt, tiền gửi, công nợ phải thu, phải trả, hàng tồn kho, v.v.).\n   - Đối chiếu giữa sổ chi tiết và sổ tổng hợp.\n\n4. **Kiểm tra và khóa sổ kế toán**:\n   - Kiểm tra các tài khoản kế toán để đảm bảo không có sai sót.\n   - Khóa sổ kế toán để đảm bảo không có thay đổi sau khi lập báo cáo.\n\n5. **Lập Báo cáo tài chính**:\n   - Sử dụng chức năng lập BCTC trong BRAVO để tạo các báo cáo như: Bảng cân đối kế toán, Báo cáo kết quả hoạt động kinh doanh, Báo cáo lưu chuyển tiền tệ, và Thuyết minh BCTC.\n   - Kiểm tra và chỉnh sửa các báo cáo nếu cần.\n\n6. **Kiểm tra và phê duyệt**:\n   - Kiểm tra lại các báo cáo để đảm bảo tính chính xác.\n   - Trình phê duyệt theo quy trình nội bộ của doanh nghiệp.\n\nNếu cần hướng dẫn chi tiết về từng bước trong BRAVO, bạn có thể hỏi thêm.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "financial.close.unclosed",
+      "runs": [
+        {
+          "conversation_id": "13ac5856-75bf-4377-879e-b6e4ca4614e6",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2840,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "eecff81b-1d59-4c0c-a547-ab9d931671da",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 5303,
+          "workflow_id": "financial_close",
+          "current_node": "reconciliation_checked",
+          "state_revision": 1,
+          "answer": "1. Để lên báo cáo tài chính, cần đảm bảo các bước sau:\n   - Hạch toán đầy đủ các nghiệp vụ phát sinh trong kỳ.\n   - Kết chuyển các tài khoản cuối kỳ (như tài khoản doanh thu, chi phí) để xác định kết quả kinh doanh.\n   - Đối chiếu và cân đối các sổ sách, bao gồm sổ cái và sổ chi tiết.\n\n2. Trong trường hợp của bạn, nếu đã hạch toán tháng 4 nhưng chưa thực hiện kết chuyển:\n   - Báo cáo tài chính có thể lên được, nhưng sẽ không phản ánh đúng kết quả kinh doanh và tình hình tài chính, vì các tài khoản doanh thu, chi phí chưa được kết chuyển để xác định lãi/lỗ.\n   - Để đảm bảo tính chính xác, cần thực hiện kết chuyển trước khi lập báo cáo tài chính.\n\n3. Khuyến nghị:\n   - Thực hiện kết chuyển tài khoản cuối kỳ trước khi lập báo cáo tài chính.\n   - Sau khi kết chuyển, kiểm tra lại số liệu để đảm bảo tính chính xác trước khi xuất báo cáo.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "financial.close.version",
+      "runs": [
+        {
+          "conversation_id": "859fde9c-f24f-42cc-970e-297699e3b58d",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2228,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "e2500955-9e56-40a2-83ba-7e0951b38fe3",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 4509,
+          "workflow_id": "financial_close",
+          "current_node": "posting_checked",
+          "state_revision": 1,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "ap.invoice.version",
+      "runs": [
+        {
+          "conversation_id": "ed7181b5-3a5a-4203-b5a4-7f7ca0fb1de6",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 5090,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "BRAVO 10 xử lý chứng từ mua đầu vào theo quy trình chuẩn, bao gồm các bước chính sau:\n\n1. **Tạo chứng từ mua hàng đầu vào**:\n   - Người dùng nhập thông tin liên quan đến giao dịch mua hàng, bao gồm: nhà cung cấp, hàng hóa/dịch vụ, số lượng, đơn giá, thuế suất, và các thông tin khác.\n   - Chứng từ này thường được tạo từ menu \"Mua hàng\" hoặc \"Chứng từ mua hàng\" trong hệ thống BRAVO.\n\n2. **Kiểm tra và phê duyệt**:\n   - Chứng từ sau khi tạo sẽ được kiểm tra tính chính xác và đầy đủ của thông tin.\n   - Quy trình phê duyệt có thể được thiết lập tùy theo yêu cầu của doanh nghiệp, đảm bảo rằng chỉ những chứng từ hợp lệ mới được ghi nhận.\n\n3. **Hạch toán kế toán**:\n   - Sau khi chứng từ được phê duyệt, hệ thống sẽ tự động sinh các bút toán kế toán liên quan, như ghi nhận công nợ phải trả, giá trị hàng tồn kho, thuế GTGT đầu vào, v.v.\n   - Các tài khoản kế toán được sử dụng sẽ dựa trên cấu hình trong hệ thống.\n\n4. **Liên kết với các phân hệ khác**:\n   - Chứng từ mua hàng đầu vào có thể liên kết với các phân hệ khác như: kho (nhập kho hàng hóa), công nợ phải trả (ghi nhận công nợ với nhà cung cấp), và thuế (ghi nhận thuế GTGT đầu vào).\n\n5. **Báo cáo và theo dõi**:\n   - Hệ thống cung cấp các báo cáo liên quan để theo dõi tình hình mua hàng, công nợ, và thuế.\n\nNếu bạn cần hướng dẫn chi tiết hơn về từng bước hoặc cách thực hiện trên giao diện BRAVO 10, vui lòng cung cấp thêm thông tin cụ thể.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "4d86d328-cf66-4128-90ff-f53fefc34f08",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2642,
+          "workflow_id": "ap_invoice",
+          "current_node": "invoice_checked",
+          "state_revision": 1,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "ap.invoice.tax",
+      "runs": [
+        {
+          "conversation_id": "a1c08f2c-3ecb-41aa-b23d-d793bc1b3e07",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 4935,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Có, hóa đơn mua cần được kiểm tra thuế trước khi hạch toán. Đây là một bước quan trọng để đảm bảo tính chính xác và tuân thủ quy định pháp luật về thuế. Cụ thể:\n\n1. **Kiểm tra thông tin thuế trên hóa đơn**:\n   - Đảm bảo mã số thuế của nhà cung cấp là hợp lệ.\n   - Kiểm tra các thông tin như thuế suất, số tiền thuế, và tổng giá trị hóa đơn có khớp với quy định và thực tế giao dịch.\n\n2. **Đối chiếu với chứng từ liên quan**:\n   - So sánh hóa đơn với hợp đồng, phiếu nhập kho, hoặc các chứng từ mua hàng khác để đảm bảo tính nhất quán.\n\n3. **Kiểm tra tính hợp lệ của hóa đơn**:\n   - Đảm bảo hóa đơn không bị sai sót, trùng lặp hoặc thuộc danh sách hóa đơn không hợp lệ (nếu có danh sách từ cơ quan thuế).\n\n4. **Xác nhận quyền khấu trừ thuế**:\n   - Đối với hóa đơn có thuế GTGT, cần xác định xem doanh nghiệp có đủ điều kiện để khấu trừ thuế hay không.\n\nSau khi hoàn tất các bước kiểm tra trên, hóa đơn mới được đưa vào hệ thống để hạch toán. Nếu có bất kỳ sai sót nào, cần liên hệ với nhà cung cấp để điều chỉnh trước khi tiếp tục.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "7053eedb-077f-4b98-916b-ce0a7cfec33b",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 5040,
+          "workflow_id": "ap_invoice",
+          "current_node": "invoice_checked",
+          "state_revision": 1,
+          "answer": "Có, hóa đơn mua cần được kiểm tra thuế trước khi hạch toán. Đây là một bước quan trọng trong quy trình xử lý hóa đơn mua hàng để đảm bảo tính chính xác và tuân thủ quy định pháp luật. Cụ thể:\n\n1. **Kiểm tra thông tin thuế trên hóa đơn**:\n   - Đảm bảo rằng mã số thuế của nhà cung cấp là hợp lệ.\n   - Kiểm tra các thông tin liên quan đến thuế suất, số tiền thuế, và tổng giá trị hóa đơn.\n\n2. **Đối chiếu với chứng từ liên quan**:\n   - So sánh thông tin thuế trên hóa đơn với hợp đồng, phiếu nhập kho, hoặc các chứng từ khác để đảm bảo tính nhất quán.\n\n3. **Xác minh tính hợp lệ của hóa đơn**:\n   - Kiểm tra xem hóa đơn có thuộc danh sách hóa đơn hợp pháp theo quy định của cơ quan thuế.\n\n4. **Kiểm tra các điều kiện khấu trừ thuế (nếu có)**:\n   - Đảm bảo rằng hóa đơn đáp ứng các điều kiện để được khấu trừ thuế giá trị gia tăng (nếu áp dụng).\n\nSau khi hoàn tất kiểm tra thuế và các thông tin liên quan, hóa đơn mới được đưa vào hạch toán trong hệ thống kế toán. Nếu cần thêm thông tin chi tiết về quy trình này trong BRAVO, bạn có thể hỏi thêm.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "ar.document",
+      "runs": [
+        {
+          "conversation_id": "26984ff8-91fc-4405-884c-6381d870607b",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3005,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần hướng dẫn đối chiếu hóa đơn bán và công nợ phải thu trong BRAVO, hay chỉ cần giải thích quy trình tổng quan?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "13697022-909a-4004-9a95-98cde007b07b",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 3107,
+          "workflow_id": "ar_collection",
+          "current_node": "document_checked",
+          "state_revision": 1,
+          "answer": "Kỳ báo cáo hoặc hóa đơn/chứng từ cụ thể nào bạn cần đối chiếu? Bạn đang dùng BRAVO 10 bản nào?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "inventory.cost",
+      "runs": [
+        {
+          "conversation_id": "332a50b2-890b-47ea-b0d4-684d47e0f2a8",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1526,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "{\"action\":\"kb_search\",\"args\":{\"q\":\"tính giá thành tồn kho sau nhập xuất kho\"}}",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "ae0f5b0b-4561-4228-90ad-1344953e2fad",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2124,
+          "workflow_id": "inventory_close",
+          "current_node": "movements_checked",
+          "state_revision": 1,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "fixed.asset.depreciation",
+      "runs": [
+        {
+          "conversation_id": "fdc12e52-ad0a-4a18-ac8a-3c44ab219b49",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1521,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn có thể cung cấp thêm thông tin về vấn đề khấu hao tài sản cố định bị thiếu? Cụ thể, bạn muốn hỏi về cách kiểm tra, nguyên nhân hay cách xử lý trong BRAVO?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "9bce9422-0b0f-4d42-85ca-81db6a5878f3",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 1413,
+          "workflow_id": "fixed_asset_close",
+          "current_node": "asset_changes_checked",
+          "state_revision": 1,
+          "answer": "Bạn có thể cung cấp thêm thông tin về kỳ khấu hao, loại tài sản cố định, hoặc phiên bản BRAVO bạn đang sử dụng không? Điều này sẽ giúp tôi hỗ trợ chính xác hơn.",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "costing.preconditions",
+      "runs": [
+        {
+          "conversation_id": "384d5ac1-93ec-4e43-97ad-d580d94f5c66",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1952,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không thể tính giá thành chính xác nếu chưa đủ chi phí đầu vào. Trong quy trình tính giá thành, các chi phí đầu vào (như nguyên vật liệu, nhân công, chi phí sản xuất chung) là cơ sở để xác định giá thành sản phẩm. Nếu thiếu bất kỳ yếu tố nào, kết quả tính toán sẽ không phản ánh đúng thực tế. Bạn cần đảm bảo rằng tất cả các chi phí liên quan đã được ghi nhận đầy đủ trước khi tiến hành tính giá thành.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "aa4fa6b9-5a2e-465e-96f5-e8efee5038bd",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2966,
+          "workflow_id": "costing",
+          "current_node": "inputs_checked",
+          "state_revision": 1,
+          "answer": "Không thể tính giá thành khi chưa đủ chi phí đầu vào. \n\n1. **Lý do nghiệp vụ:**\n   - Giá thành là tổng hợp các chi phí liên quan đến sản xuất, bao gồm chi phí nguyên vật liệu trực tiếp, chi phí nhân công trực tiếp và chi phí sản xuất chung. Nếu thiếu bất kỳ thành phần nào, kết quả tính giá thành sẽ không chính xác.\n\n2. **Yêu cầu kế toán:**\n   - Để đảm bảo tính đúng đắn và tuân thủ quy định kế toán, cần tập hợp đầy đủ các chi phí đầu vào trước khi thực hiện tính giá thành.\n\n3. **Hệ thống BRAVO:**\n   - Trong BRAVO, các bước tính giá thành thường yêu cầu dữ liệu từ các phân hệ khác như kho (xuất nguyên vật liệu), nhân sự (chi phí nhân công) và kế toán (chi phí sản xuất chung). Nếu dữ liệu từ các phân hệ này chưa đầy đủ, hệ thống sẽ không thể thực hiện tính toán chính xác.\n\nBạn có thể hỏi thêm về cách kiểm tra hoặc tập hợp chi phí đầu vào trong BRAVO nếu cần.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "discrepancy.parameters",
+      "runs": [
+        {
+          "conversation_id": "baf99315-8ae8-45f8-8e6b-c7d73070549f",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 4078,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Để khoanh vùng số liệu chênh lệch trong báo cáo, bạn cần thực hiện các bước sau:\n\n1. **Xác định loại báo cáo**:\n   - Báo cáo tài chính (Bảng cân đối kế toán, Báo cáo kết quả kinh doanh, Lưu chuyển tiền tệ).\n   - Báo cáo quản trị (Báo cáo tồn kho, Báo cáo công nợ, Báo cáo bán hàng).\n   - Báo cáo chi tiết (Sổ chi tiết tài khoản, Sổ quỹ, Sổ kho).\n\n2. **Xác định tham số khoanh vùng**:\n   - **Thời gian**: Chọn khoảng thời gian cụ thể (tháng, quý, năm).\n   - **Đơn vị cơ sở**: Nếu hệ thống có nhiều chi nhánh hoặc đơn vị cơ sở, cần chọn đúng đơn vị.\n   - **Tài khoản kế toán**: Đối với báo cáo tài chính, cần kiểm tra các tài khoản liên quan.\n   - **Mã hàng hóa, vật tư**: Đối với báo cáo kho, cần kiểm tra mã hàng hóa, nhóm hàng.\n   - **Đối tượng**: Đối với báo cáo công nợ, cần kiểm tra theo khách hàng, nhà cung cấp.\n   - **Chứng từ**: Kiểm tra các chứng từ phát sinh liên quan (phiếu nhập, phiếu xuất, hóa đơn, bút toán).\n\n3. **So sánh số liệu**:\n   - So sánh giữa các báo cáo tổng hợp và chi tiết.\n   - So sánh giữa các kỳ (kỳ trước và kỳ này).\n   - So sánh giữa các nguồn dữ liệu (ví dụ: sổ sách kế toán và báo cáo quản trị).\n\n4. **Kiểm tra các yếu tố khác**:\n   - **Phân quyền**: Đảm bảo người dùng có quyền truy cập đúng dữ liệu.\n   - **Cấu hình hệ thống**: Kiểm tra các tham số cấu hình liên quan đến báo cáo.\n   - **Sai sót nhập liệu**: Kiểm tra các lỗi nhập liệu hoặc thiếu sót chứng từ.\n\nNếu cần hỗ trợ cụ thể hơn, bạn có thể cung cấp thêm thông tin về loại báo cáo và tình huống chênh lệch.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "13e03c09-50cf-4b7e-b38e-c42de47ee609",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 3949,
+          "workflow_id": "report_discrepancy",
+          "current_node": "scope_known",
+          "state_revision": 1,
+          "answer": "Để khoanh vùng số liệu chênh lệch giữa các báo cáo, bạn cần thực hiện các bước sau:\n\n1. **Xác định báo cáo liên quan**:\n   - Xác định rõ các báo cáo nào đang có chênh lệch (ví dụ: Báo cáo tồn kho, Báo cáo tài chính, Báo cáo bán hàng, v.v.).\n   - Đảm bảo rằng các báo cáo này được lấy từ cùng một hệ thống hoặc nguồn dữ liệu.\n\n2. **Xác định kỳ báo cáo**:\n   - Kiểm tra kỳ báo cáo (tháng, quý, năm) để đảm bảo rằng các báo cáo đang so sánh cùng một khoảng thời gian.\n\n3. **Kiểm tra tham số lọc (filter)**:\n   - Các tham số lọc như: mã kho, mã hàng, nhóm hàng, chi nhánh, đơn vị cơ sở, v.v.\n   - Đảm bảo rằng các tham số lọc được áp dụng nhất quán trên các báo cáo.\n\n4. **Xác định số tiền hoặc số lượng chênh lệch**:\n   - Ghi nhận cụ thể số tiền hoặc số lượng chênh lệch giữa các báo cáo.\n   - Điều này giúp khoanh vùng nhanh hơn các giao dịch hoặc dữ liệu cần kiểm tra.\n\n5. **Kiểm tra cấu hình báo cáo**:\n   - Đảm bảo rằng các báo cáo được cấu hình đúng (ví dụ: cách tính giá vốn, phương pháp hạch toán, v.v.).\n\n6. **Kiểm tra dữ liệu nguồn**:\n   - Xác minh dữ liệu nguồn (chứng từ gốc, bút toán hạch toán) để đảm bảo rằng không có sai sót trong việc nhập liệu hoặc xử lý dữ liệu.\n\nNếu cần hỗ trợ thêm về cách thực hiện chi tiết trong BRAVO, bạn có thể hỏi cụ thể hơn về từng bước hoặc báo cáo.",
+          "grounded": false,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "discrepancy.stop-resume",
+      "runs": [
+        {
+          "conversation_id": "5b3718b6-1541-4a4e-a037-24d9bb93b30b",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2006,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn có thể cung cấp thêm thông tin về loại sai sót trong báo cáo công nợ? Ví dụ: sai số liệu, sai định dạng, hay thiếu dữ liệu? Và báo cáo này thuộc công nợ phải thu hay phải trả?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "824feb7c-2e57-4306-8fee-4d3e4dcd37e5",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2654,
+          "workflow_id": "report_discrepancy",
+          "current_node": "scope_known",
+          "state_revision": 1,
+          "answer": "Bạn có thể cung cấp thêm thông tin về kỳ báo cáo, loại công nợ (phải thu hay phải trả), và chi tiết sai lệch cụ thể không?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "technical.b00lookup",
+      "runs": [
+        {
+          "conversation_id": "dc43dde5-8ecb-4424-b37d-1b60b691ec81",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 2057,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn có thể làm rõ yêu cầu tạo B00Lookup? Cụ thể, bạn muốn tạo mới bảng B00Lookup, chỉnh sửa cấu trúc, hay thêm dữ liệu vào bảng này? Nếu có thông tin chi tiết về mục đích hoặc yêu cầu cụ thể, vui lòng cung cấp thêm.",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "bf1335c4-d581-4507-b2ca-5cc7fe2c4235",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2121,
+          "workflow_id": "technical_configuration",
+          "current_node": "environment_known",
+          "state_revision": 1,
+          "answer": "Bạn có thể cung cấp thêm thông tin về mục đích hoặc nội dung cụ thể của B00Lookup cần tạo không? Ví dụ: B00Lookup này dùng cho module nào, hoặc cần cấu hình dữ liệu gì?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "technical.template",
+      "runs": [
+        {
+          "conversation_id": "723e7eeb-feed-4c58-9642-518832adeb22",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3245,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn cần thiết kế Template và DataSource cho module nào hoặc mục đích cụ thể gì? Ví dụ: báo cáo, chứng từ, hay giao diện tùy chỉnh?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "5ab0e6a7-b0e7-4cc6-9231-43692a04f715",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 3305,
+          "workflow_id": "technical_configuration",
+          "current_node": "environment_known",
+          "state_revision": 1,
+          "answer": "Bạn cần thiết kế Template và DataSource mới cho module nào hoặc mục đích cụ thể gì? Có yêu cầu kỹ thuật hoặc môi trường triển khai nào không?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "schema.table-field",
+      "runs": [
+        {
+          "conversation_id": "6a3e701e-4a4d-4c0d-90f6-33f48bcf46af",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1822,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "3aac9b64-234b-4fb1-97d7-355a0dd33dc7",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 1871,
+          "workflow_id": "schema_grounding",
+          "current_node": "version_known",
+          "state_revision": 1,
+          "answer": "Bạn đang hỏi về loại chứng từ nào trong BRAVO 10 (ví dụ: mua hàng, bán hàng, phiếu thu, phiếu chi, v.v.)? Mỗi loại chứng từ có thể có các trường liên kết khác nhau.",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "schema.view",
+      "runs": [
+        {
+          "conversation_id": "0e1fe303-5147-4ae2-aa30-979341eed689",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1940,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Không tìm thấy thông tin trong tài liệu nội bộ. Bạn có thể nêu tên chức năng/màn hình hoặc mô tả nghiệp vụ cụ thể hơn để tôi tra tiếp.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "810f8288-9f8e-480c-a5aa-2606d2316b31",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 1718,
+          "workflow_id": "schema_grounding",
+          "current_node": "version_known",
+          "state_revision": 1,
+          "answer": "Bạn đang hỏi về view cụ thể nào trong database BRAVO 10, hoặc báo cáo nào cần kiểm tra sự tồn tại của view?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "incident.ui",
+      "runs": [
+        {
+          "conversation_id": "00b6d763-9a54-4440-a1f4-6796133deb2e",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1826,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn đang gặp lỗi UI không hiển thị trên loại chứng từ nào? Vui lòng cung cấp thêm thông tin về loại chứng từ (ví dụ: phiếu nhập kho, phiếu xuất kho, hóa đơn, v.v.) và mô tả chi tiết lỗi.",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "8bccf8d7-ae46-42fd-9b26-5159172d9822",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 1772,
+          "workflow_id": "incident_diagnosis",
+          "current_node": "symptom_scoped",
+          "state_revision": 1,
+          "answer": "Bạn đang gặp lỗi UI không hiển thị trên loại chứng từ nào? Có thông báo lỗi cụ thể hoặc tình huống nào khác liên quan không?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "incident.integration",
+      "runs": [
+        {
+          "conversation_id": "ea72ed1b-c95b-4c8b-93ee-0da4c0151b07",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 3216,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Để kiểm tra log khi gặp lỗi tích hợp trong BRAVO, bạn có thể thực hiện các bước sau:\n\n1. **Xác định loại tích hợp**:\n   - Nếu là tích hợp qua API, kiểm tra log API.\n   - Nếu là tích hợp qua file import/export, kiểm tra log xử lý file.\n\n2. **Truy cập log hệ thống**:\n   - Vào menu **Hệ thống** > **Log hệ thống**.\n   - Lọc theo thời gian, loại lỗi, hoặc module liên quan để tìm log chi tiết.\n\n3. **Kiểm tra log ứng dụng**:\n   - Nếu bạn có quyền truy cập server, kiểm tra log ứng dụng (thường nằm trong thư mục cài đặt BRAVO hoặc thư mục log được cấu hình).\n\n4. **Liên hệ hỗ trợ**:\n   - Nếu không tìm thấy thông tin cần thiết, liên hệ bộ phận hỗ trợ kỹ thuật để được hỗ trợ thêm.\n\nNếu cần hướng dẫn chi tiết hơn, vui lòng cung cấp thêm thông tin về loại tích hợp hoặc lỗi cụ thể.",
+          "grounded": false,
+          "citations": []
+        },
+        {
+          "conversation_id": "affd52c5-07c7-4643-b480-b289ab8d3783",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2005,
+          "workflow_id": "incident_diagnosis",
+          "current_node": "symptom_scoped",
+          "state_revision": 1,
+          "answer": "Bạn đang gặp lỗi tích hợp ở module nào (ví dụ: bán hàng, mua hàng, kế toán)? Và bạn cần xem log trên giao diện BRAVO hay từ file hệ thống?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    },
+    {
+      "case_id": "unknown.goal",
+      "runs": [
+        {
+          "conversation_id": "9d32b6f5-4eac-475a-ae80-2d90dd1f9973",
+          "mode": "off",
+          "http_status": 200,
+          "latency_ms": 1847,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 0,
+          "answer": "Bạn có thể cung cấp thêm thông tin về yêu cầu cụ thể hoặc chức năng nào bạn đang cần xử lý không?",
+          "grounded": true,
+          "citations": []
+        },
+        {
+          "conversation_id": "ab0360fb-3c29-437d-be8f-00f5872e315a",
+          "mode": "on",
+          "http_status": 200,
+          "latency_ms": 2258,
+          "workflow_id": null,
+          "current_node": null,
+          "state_revision": 1,
+          "answer": "Bạn có thể cung cấp thêm thông tin về yêu cầu cụ thể hoặc chức năng nào bạn đang cần xử lý không? Ví dụ: liên quan đến module nào (kế toán, mua hàng, bán hàng, kho, v.v.), hoặc mục tiêu nghiệp vụ là gì?",
+          "grounded": true,
+          "citations": []
+        }
+      ]
+    }
+  ],
+  "persist_answers": true,
+  "note": "Answer text captured for a FROZEN A/B baseline (synthetic fixture only)."
+}
