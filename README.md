@@ -20,23 +20,90 @@
 
 ## Chạy thử (local)
 
-```bash
-# 1) Hạ tầng + backend
-cp .env.example .env                       # bật cloud-only demo (xem preset trong file) hoặc local LLM
+Yêu cầu: Docker Desktop đang chạy, Node.js 20+ và Python 3.11–3.14. Dùng Python 3.11–3.13 nếu
+cần toàn bộ bộ dev/eval; Python 3.14 chạy được ứng dụng và migration, nhưng phần `ragas` được bỏ
+qua. Trên Windows, kiểm tra các bản Python có sẵn bằng `py -0p` và **dùng cùng một bản Python cho
+tất cả lệnh bên dưới**. Ví dụ này dùng Python 3.14; thay `3.14` bằng bản bạn đã chọn.
+
+### Windows / PowerShell
+
+```powershell
+# 1) Tạo cấu hình local nếu chưa có. Không commit file .env.
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+
+# 2) Khởi động hạ tầng; chờ postgres có trạng thái healthy.
 docker compose up -d postgres redis
-pip install -e ".[dev]"
-alembic upgrade head
-python scripts/seed_demo.py                # 5 user demo (mật khẩu: demo123)
-python scripts/ingest_userguide.py         # nạp corpus cẩm nang (nếu có)
+docker compose ps
 
-# 2) Frontend React (build 1 lần -> uvicorn tự serve)
-cd frontend-react && npm install && npm run build && cd ..
+# 3) Host PowerShell phải dùng localhost: hostname "postgres" chỉ có trong Docker network.
+$env:DATABASE_URL = 'postgresql+asyncpg://bravo:bravo@localhost:5432/bravo'
 
-# 3) Chạy
-uvicorn app.main:app --port 8000           # http://localhost:8000  (đăng nhập ketoan@bravo.vn / demo123)
+# 4) Cài dependency, tạo schema, rồi nạp tài khoản demo.
+py -3.14 -m pip install -e ".[dev]"
+py -3.14 -m alembic upgrade head
+py -3.14 -m alembic current                 # kỳ vọng: 0020_case_v2_audit (head)
+py -3.14 -m scripts.seed_demo
+
+# 5) Build frontend và chạy backend.
+Push-Location frontend-react
+npm install
+npm run build
+Pop-Location
+py -3.14 -m uvicorn app.main:app --port 8000 --reload
 ```
-Dev hot-reload FE: `cd frontend-react && npm run dev` (proxy `/api` → :8000) → http://localhost:5173.
-Chi tiết: [README-DEV.md](README-DEV.md).
+
+Mở http://localhost:8000 và đăng nhập `ketoan@bravo.vn` / `demo123`.
+
+Nạp cẩm nang là bước tùy chọn, chỉ chạy sau khi migration và seed đã thành công:
+
+```powershell
+$env:DATABASE_URL = 'postgresql+asyncpg://bravo:bravo@localhost:5432/bravo'
+py -3.14 -m scripts.ingest_userguide
+```
+
+Dev hot-reload frontend chạy ở terminal khác:
+
+```powershell
+Set-Location frontend-react
+npm run dev
+```
+
+Sau đó mở http://localhost:5173; Vite sẽ proxy `/api` đến backend ở cổng 8000.
+
+### macOS / Linux
+
+Thay `py -3.14` bằng Python đã chọn, ví dụ `python3.13`, và dùng cùng URL database cho phiên shell:
+
+```bash
+test -f .env || cp .env.example .env
+docker compose up -d postgres redis
+export DATABASE_URL='postgresql+asyncpg://bravo:bravo@localhost:5432/bravo'
+python3.13 -m pip install -e ".[dev]"
+python3.13 -m alembic upgrade head
+python3.13 -m scripts.seed_demo
+cd frontend-react && npm install && npm run build && cd ..
+python3.13 -m uvicorn app.main:app --port 8000 --reload
+```
+
+### Xử lý lỗi local thường gặp
+
+- `No module named alembic.__main__` hoặc `No module named alembic`: bạn đang gọi một Python khác
+  với Python đã cài dependency. Trên Windows, dùng lại chính `py -3.14 -m ...` (hoặc bản đã chọn),
+  không gọi `alembic`/`uvicorn` trực tiếp.
+- `could not translate host name "postgres"`: lệnh đang chạy trên host nhưng `DATABASE_URL` chưa
+  được override cho phiên shell. Chạy lại lệnh `$env:DATABASE_URL = ...localhost...` ở trên.
+- Migration phải kết thúc ở `0020_case_v2_audit (head)` trước khi chạy `seed_demo` hoặc ingest.
+  Không chạy các lệnh sau nếu migration thất bại.
+- Nếu đây chỉ là database demo local, chưa có dữ liệu cần giữ, và một lần chạy cũ đã làm migration
+  dở dang, khởi tạo lại volume rồi lặp lại toàn bộ hướng dẫn Windows/macOS/Linux ở trên:
+
+  ```powershell
+  # XÓA toàn bộ database Docker local của project, không dùng cho dữ liệu cần giữ.
+  docker compose down -v
+  docker compose up -d postgres redis
+  ```
+
+Chi tiết cho development và test: [README-DEV.md](README-DEV.md).
 
 ## Đọc theo thứ tự
 

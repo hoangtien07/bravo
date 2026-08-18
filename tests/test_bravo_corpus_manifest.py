@@ -23,11 +23,11 @@ def test_bravo_manifest_maps_purchase_userguide():
     assert meta["knowledge_type"] == "Chuong 08 - Purchases"
 
 
-def test_bravo_manifest_maps_mindmap_and_technical_manual():
+def test_bravo_manifest_maps_technical_manual_without_derived_mindmaps():
     manifest = load_manifest(_MANIFEST)
     idx = manifest_index(manifest, _FS)
 
-    assert idx["Mindmaps/Mindmap_Purchase.md"]["source_type"] == "mindmap"
+    assert all(meta["source_type"] != "mindmap" for meta in idx.values())
     assert idx["TaiLieuBravo10_KhoiKyThuat.docx"]["source_type"] == "technical_manual"
     assert idx["TaiLieuBravo10_KhoiKyThuat.docx"]["lifecycle_stage"] == "technical_design"
 

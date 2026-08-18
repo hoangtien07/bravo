@@ -11,7 +11,7 @@ Stack: FastAPI + async SQLAlchemy + PostgreSQL/pgvector (modular monolith — [A
 cp .env.example .env            # bật preset DEMO CLOUD-ONLY (OpenAI) hoặc LLM local
 docker compose up postgres redis -d
 pip install -e ".[dev]"         # core = cloud-only nhẹ; `.[local]` = bge-m3/Docling (cần GPU/bake)
-alembic upgrade head
+python -m alembic upgrade head
 python -m scripts.seed_demo      # 5 tài khoản demo (mật khẩu demo123) + token MCP demo
 python -m scripts.seed_content   # 4 bút toán nháp mẫu (màn hình không rỗng khi test)
 # Tài khoản: giamdoc(admin) · ketoan(maker) · ketoantruong(checker+MCP) · kinhdoanh · nhansu(HR)
@@ -23,6 +23,14 @@ uvicorn app.main:app --port 8000 --reload   # http://localhost:8000  (--reload: 
 
 # Hoặc dev hot-reload FE (2 cổng):
 cd frontend-react && npm run dev      # http://localhost:5173 (proxy /api -> :8000)
+```
+Nếu bạn chạy các lệnh này trong PowerShell trên máy host và `.env` vẫn trỏ `postgres`, set tạm DSN trước khi migrate/seed:
+
+```powershell
+$env:DATABASE_URL = 'postgresql+asyncpg://bravo:bravo@localhost:5432/bravo'
+python -m alembic upgrade head
+python -m scripts.seed_demo
+python -m scripts.seed_content
 ```
 > ⚠ **Đính kèm chat (attachments) & ingest bất đồng bộ:** upload docx/pdf được enqueue cho arq worker.
 > Ở dev một-tiến-trình, HOẶC đặt `INGEST_SYNC=true` trong `.env` (bóc tách inline, không cần worker),

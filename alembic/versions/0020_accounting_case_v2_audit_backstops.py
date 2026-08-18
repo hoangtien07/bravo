@@ -33,30 +33,43 @@ def _policy(table: str) -> None:
     op.execute(f"CREATE POLICY {table}_rls_backstop ON {table} FOR ALL USING ({_SCOPE}) WITH CHECK ({_SCOPE})")
 
 
+def _has_column(table: str, column: str) -> bool:
+    """Account for the legacy 0001 metadata bootstrap on a fresh database.
+
+    Migration 0001 creates the *current* ORM metadata, which can already contain columns
+    introduced by a later revision.  Later migrations therefore must not assume their schema
+    change is absent on a new local database.
+    """
+    return column in {item["name"] for item in sa.inspect(op.get_bind()).get_columns(table)}
+
+
 def upgrade() -> None:
     op.alter_column("accounting_cases_v2", "review_dispositions", server_default=sa.text("'[]'::jsonb"))
-    op.add_column("accounting_case_commands_v2", sa.Column(
-        "department_ids", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=False,
-        server_default=sa.text("'{}'::uuid[]"),
-    ))
+    if not _has_column("accounting_case_commands_v2", "department_ids"):
+        op.add_column("accounting_case_commands_v2", sa.Column(
+            "department_ids", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=False,
+            server_default=sa.text("'{}'::uuid[]"),
+        ))
     op.execute("""
         UPDATE accounting_case_commands_v2 command
         SET department_ids = cases.department_ids
         FROM accounting_cases_v2 cases
         WHERE command.outcome_case_id = cases.case_id
     """)
-    op.create_table(
-        "accounting_case_audit_v2",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("case_id", sa.String(length=160), nullable=False),
-        sa.Column("department_ids", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=False,
-                  server_default=sa.text("'{}'::uuid[]")),
-        sa.Column("actor_id", postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column("action", sa.String(length=80), nullable=False),
-        sa.Column("detail", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-    )
-    op.create_index("ix_accounting_case_audit_v2_case_id", "accounting_case_audit_v2", ["case_id"])
+    inspector = sa.inspect(op.get_bind())
+    if not inspector.has_table("accounting_case_audit_v2"):
+        op.create_table(
+            "accounting_case_audit_v2",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("case_id", sa.String(length=160), nullable=False),
+            sa.Column("department_ids", postgresql.ARRAY(postgresql.UUID(as_uuid=True)), nullable=False,
+                      server_default=sa.text("'{}'::uuid[]")),
+            sa.Column("actor_id", postgresql.UUID(as_uuid=True), nullable=True),
+            sa.Column("action", sa.String(length=80), nullable=False),
+            sa.Column("detail", postgresql.JSONB(), nullable=False, server_default=sa.text("'{}'::jsonb")),
+            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        )
+        op.create_index("ix_accounting_case_audit_v2_case_id", "accounting_case_audit_v2", ["case_id"])
     _policy("accounting_case_commands_v2")
     _policy("accounting_case_audit_v2")
     op.execute("""
@@ -66,6 +79,8 @@ def upgrade() -> None:
         END;
         $$ LANGUAGE plpgsql
     """)
+    op.execute("DROP TRIGGER IF EXISTS accounting_case_commands_v2_immutable ON accounting_case_commands_v2")
+    op.execute("DROP TRIGGER IF EXISTS accounting_case_audit_v2_immutable ON accounting_case_audit_v2")
     op.execute("""
         CREATE TRIGGER accounting_case_commands_v2_immutable
           BEFORE UPDATE OR DELETE ON accounting_case_commands_v2

@@ -100,9 +100,7 @@ async def main() -> None:
 
         print(f"Seeded {len(DEPARTMENTS)} departments + {len(EMPLOYEES)} employees "
               "(demo credential value not logged).")
-        for email, full_name, is_admin, depts, perms in EMPLOYEES:
-            tag = "ADMIN" if is_admin else ",".join(perms)
-            print(f"  - {email:24} [{','.join(depts)}]  {tag}")
+        print("Demo accounts: " + ", ".join(email for email, *_ in EMPLOYEES))
         print(f"MCP demo token configured for {MCP_DEMO_EMAIL}; value not logged.")
 
 
