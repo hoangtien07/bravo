@@ -1,0 +1,118 @@
+{
+  "schema_version": "bravo-v2-runtime-baseline/v1",
+  "generated_at": "2026-08-18T03:14:20.953216+00:00",
+  "secret_handling": {
+    "reads_env_files": false,
+    "renders_interpolated_compose": false,
+    "records_environment_values": false,
+    "records_credentials": false
+  },
+  "git": {
+    "head": "628eecf71f964b85fac37fa838e7918aa3f618cd",
+    "branch": "codex/v2-financial-close-core",
+    "conversation_code_baseline": "628eecf71f964b85fac37fa838e7918aa3f618cd"
+  },
+  "alembic_heads": [
+    "0020_case_v2_audit"
+  ],
+  "dependency_inputs": {
+    "pyproject.toml": "f5857b8aa8b803f38232ef0d200cd48231fb9cf13bf0d6dcd4653dd15b27e362",
+    "frontend-react/package-lock.json": "b06ea86f13e3903d1262f21c1a9150fc643efb3efd747dc633e2ad361ac53030",
+    "python_lockfile": "uv.lock:65ed1c4f5032ed0445f369f517458e50ef86ce7285f65f797e86d35fe6206bc4",
+    "python_executable": "3.14.6",
+    "python_package_snapshot_sha256": "b2166f9fae224ccda73bf7589156e0dac78e94874ea2f7901c49a54ff158956e"
+  },
+  "corpus_manifest": {
+    "path": "file_system/bravo_corpus_manifest.yaml",
+    "sha256": "37dd033330cd1cb68a5d0f2f01a3e8fd007ce1078323903ce6d2428f8273549d",
+    "version": 1,
+    "system_version": "B10R1"
+  },
+  "static_compose_projection": {
+    "compose_files": [
+      {
+        "path": "docker-compose.yml",
+        "sha256": "5bd76d047fd8a95814a28a19f656bf4d46b4ee23fa77dc1a552ee0947ce42eed"
+      },
+      {
+        "path": "docker-compose.prod.yml",
+        "sha256": "3c3925a217111f40a494edae01dee01f2b4e7b3f6775914a6b2b393fbbd00485"
+      },
+      {
+        "path": "deploy/docker-compose.rls-cutover.yml",
+        "sha256": "0098e0c92c19e8d4c53309b03a5ee17061dd119a5d7b536fc848258ce0b2fd10"
+      }
+    ],
+    "services": {
+      "api": {
+        "image": null,
+        "ports": [],
+        "environment_keys": [
+          "APP_ROOT",
+          "CORPUS_ROOT",
+          "DATABASE_URL",
+          "DATA_ROOT",
+          "DATA_RUNTIME_POLICY",
+          "ENV",
+          "NATIVE_RLS_ENABLED",
+          "PRIVATE_DATA_ROOT",
+          "UPLOAD_ROOT"
+        ],
+        "uses_env_file": true,
+        "has_build": true
+      },
+      "caddy": {
+        "image": "caddy:2",
+        "ports": [
+          "443:443",
+          "80:80"
+        ],
+        "environment_keys": [],
+        "uses_env_file": false,
+        "has_build": false
+      },
+      "postgres": {
+        "image": "pgvector/pgvector:pg16",
+        "ports": [],
+        "environment_keys": [
+          "POSTGRES_DB",
+          "POSTGRES_PASSWORD",
+          "POSTGRES_USER"
+        ],
+        "uses_env_file": false,
+        "has_build": false
+      },
+      "redis": {
+        "image": "redis:7-alpine",
+        "ports": [],
+        "environment_keys": [],
+        "uses_env_file": false,
+        "has_build": false
+      },
+      "worker": {
+        "image": null,
+        "ports": [],
+        "environment_keys": [
+          "APP_ROOT",
+          "CORPUS_ROOT",
+          "DATABASE_URL",
+          "DATA_ROOT",
+          "DATA_RUNTIME_POLICY",
+          "NATIVE_RLS_ENABLED",
+          "PRIVATE_DATA_ROOT",
+          "UPLOAD_ROOT"
+        ],
+        "uses_env_file": true,
+        "has_build": true
+      }
+    }
+  },
+  "static_network_preflight": {
+    "status": "passed",
+    "failures": []
+  },
+  "runtime_proof": {
+    "status": "not_collected",
+    "reason": "Requires an operator-run, redacted effective-Compose projection and live probes."
+  }
+}

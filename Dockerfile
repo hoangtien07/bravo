@@ -7,7 +7,7 @@
 FROM node:20-slim AS frontend-build
 WORKDIR /fe
 COPY frontend-react/package.json frontend-react/package-lock.json* ./
-RUN npm install --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 COPY frontend-react/ ./
 RUN npm run build      # -> /fe/dist (base=/static/)
 
