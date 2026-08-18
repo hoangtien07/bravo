@@ -102,3 +102,12 @@ non-network offline check against a synthetic temporary configuration confirmed 
 the approved snapshot and enables the required cloud flags. The final activation, API restart and
 non-prompt authenticated endpoint preflight remain pending secret-manager injection of the API key.
 No model completion or A/B capture has been run.
+
+## Cloud activation preflight — 2026-08-18
+
+After the operator injected the credential through the approved local secret file, the configuration
+helper completed without printing any value. A non-prompt authenticated model-metadata request for
+the pinned snapshot returned HTTP `200`. The API was then restarted with the activated cloud-only
+configuration and `/health` returned `200` on `127.0.0.1:18000`. PostgreSQL and Redis remain in
+the isolated `bravo-wp19` network. No chat completion, fixture replay or A/B output has been
+created by this activation check.
