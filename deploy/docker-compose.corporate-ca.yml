@@ -1,0 +1,24 @@
+# Opt-in BuildKit secret for networks that intercept TLS.  The CA is public certificate material,
+# and it stays outside the repository. It is mounted only during dependency-fetch build steps;
+# the app stage then updates its ordinary Linux trust bundle. Usage is documented in README-DEV.md.
+# The required variable intentionally fails fast when this override is selected without a CA bundle.
+services:
+  api:
+    build:
+      secrets:
+        - source: corporate_ca
+          target: corporate_ca
+  worker:
+    build:
+      secrets:
+        - source: corporate_ca
+          target: corporate_ca
+  test:
+    build:
+      secrets:
+        - source: corporate_ca
+          target: corporate_ca
+
+secrets:
+  corporate_ca:
+    file: ${BRAVO_CORPORATE_CA_FILE:?Set BRAVO_CORPORATE_CA_FILE to the corporate TLS-inspection PEM chain}

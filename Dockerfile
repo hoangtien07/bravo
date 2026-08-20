@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # BRAVO AI Copilot — API + worker image (modular monolith, ADR-0007).
 # On-prem target: build once, run air-gapped. Models (Qwen/bge-m3) served separately.
 
@@ -7,7 +8,14 @@
 FROM node:20-slim AS frontend-build
 WORKDIR /fe
 COPY FigmaMake_UI/package.json FigmaMake_UI/pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+# Optional BuildKit secret.  Corporate TLS inspection uses a private CA that is not present in
+# Debian/Node's default trust stores; mount its public root/intermediate PEM chain only for this
+# dependency-fetch step.  It is deliberately not copied into the repository or app stage.
+RUN --mount=type=secret,id=corporate_ca,target=/run/secrets/corporate-ca,required=false \
+    if [ -s /run/secrets/corporate-ca ]; then \
+        export NODE_EXTRA_CA_CERTS=/run/secrets/corporate-ca; \
+    fi; \
+    corepack enable && pnpm install --frozen-lockfile
 COPY FigmaMake_UI/ ./
 RUN pnpm build         # -> /fe/dist (base=/)
 
@@ -16,12 +24,20 @@ FROM python:3.11-slim AS app-base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_CERT=/etc/ssl/certs/ca-certificates.crt \
+    REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 WORKDIR /app
 
-# System deps (psycopg/asyncpg build, etc.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# System deps (psycopg/asyncpg build, etc.).  When supplied, the same corporate CA is baked into
+# the Linux trust store before apt or pip access a TLS endpoint.  The source secret mount itself
+# does not persist; only the public CA becomes part of the standard consolidated trust bundle.
+RUN --mount=type=secret,id=corporate_ca,target=/usr/local/share/ca-certificates/bravo-corporate-ca.crt,required=false \
+    if [ -s /usr/local/share/ca-certificates/bravo-corporate-ca.crt ]; then \
+        update-ca-certificates; \
+    fi; \
+    apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 

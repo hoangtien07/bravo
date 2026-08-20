@@ -118,6 +118,26 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-de
 docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm --no-deps test python -m pytest -q -rs
 ```
 
+### Corporate TLS inspection during Docker builds
+
+If Docker reports `UNABLE_TO_VERIFY_LEAF_SIGNATURE` from Corepack, the registry is reachable but
+the container does not trust the organization’s TLS-inspection CA. Obtain the **public PEM chain**
+(root plus any intermediate CA) from the network/security owner; do not use the intercepted
+registry leaf certificate and do not disable TLS verification.
+
+Keep that file outside the repository, then pass it as a BuildKit secret:
+
+```powershell
+$env:BRAVO_CORPORATE_CA_FILE = 'C:\secure-path\corporate-inspection-ca.pem'
+docker compose -f docker-compose.yml -f deploy/docker-compose.corporate-ca.yml build api worker
+docker compose -f docker-compose.yml -f docker-compose.test.yml -f deploy/docker-compose.corporate-ca.yml build test
+```
+
+The optional override mounts the PEM only while `corepack`, `apt` and `pip` fetch dependencies.
+The source file is not copied or committed; its public CA is incorporated into the standard Linux
+trust bundle for the Python app stage. The standard Compose commands continue to work unchanged
+where no corporate TLS inspection is present.
+
 The `test` target includes development dependencies only; the production `api` and `worker`
 images remain unchanged.
 
