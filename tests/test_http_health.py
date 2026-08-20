@@ -39,5 +39,5 @@ def test_unauthenticated_protected_route_rejected():
     from app.main import app
 
     with TestClient(app) as client:
-        r = client.post("/api/invoices/draft")  # thiếu auth + file
-        assert r.status_code in (401, 422)       # 401 chưa auth / 422 thiếu field
+        r = client.post("/api/invoices/draft")
+        assert r.status_code == 404              # Plan 20: legacy draft surface is not mounted

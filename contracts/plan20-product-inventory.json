@@ -129,7 +129,7 @@
     ],
     "disable_or_remove_when_unreferenced": [
       "BRAVO API/DB connection configuration",
-      "computer-use configuration for ERP targets",
+      "computer-use configuration and ERP targets",
       "legacy journal draft/export configuration"
     ],
     "defer": [

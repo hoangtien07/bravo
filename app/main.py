@@ -190,9 +190,16 @@ if _FRONTEND.exists():
     async def index() -> FileResponse:
         return _spa_index_response()
 
-    @app.get("/{full_path:path}")
-    async def spa_fallback(full_path: str) -> FileResponse:
-        if full_path.startswith(("api/", "static/")) or full_path in (
-                "livez", "readyz", "health", "metrics", "docs", "openapi.json"):
+    @app.api_route(
+        "/{full_path:path}",
+        methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        include_in_schema=False,
+    )
+    async def spa_fallback(full_path: str, request: Request) -> FileResponse:
+        # A GET-only catch-all makes an unknown POST /api/... look like a 405 even when no API
+        # route is registered.  Handle all normal methods so retired API families fail as an
+        # unmounted route (404), while preserving SPA deep links for browser navigation only.
+        if request.method not in {"GET", "HEAD"} or full_path.startswith(("api/", "static/")) or full_path in (
+                "api", "livez", "readyz", "health", "metrics", "docs", "openapi.json"):
             raise HTTPException(status_code=404)
         return _spa_index_response()

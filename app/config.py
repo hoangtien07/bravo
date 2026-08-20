@@ -282,6 +282,12 @@ class Settings(BaseSettings):
         Ở env=local (demo) là no-op để không cản trở phát triển."""
         if self.env in ("staging", "production", "prod") and self.plan20_legacy_erp_surfaces_enabled:
             raise ValueError("PLAN20_LEGACY_ERP_SURFACES_ENABLED is forbidden outside a controlled local rollback")
+        # ADR-0035 removes browser/computer automation from the standalone product boundary.
+        # Unlike the retained legacy ERP surface switch, there is no Plan 20 rollback exception
+        # for this capability: its policy module may remain as historical code, but an app
+        # process must never advertise or enable it.
+        if self.computer_use_enabled:
+            raise ValueError("computer_use_enabled is forbidden by the Plan 20 standalone product boundary")
         # Manifest deploy (nếu cấu hình): validate ở MỌI env — fail-closed khi sai (config-as-data).
         if self.site_config:
             from app.site_config import load_site_config
