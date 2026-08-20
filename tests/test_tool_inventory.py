@@ -17,13 +17,10 @@ def test_builtin_registry_passes_least_privilege():
     assert report.clean, report.errors
 
 
-def test_inventory_describes_write_tool_as_validated_on_behalf_of():
+def test_plan20_inventory_excludes_legacy_erp_draft_tools_by_default():
     _register_builtin_tools()
     rows = {r.name: r for r in describe_registry(REGISTRY)}
-    cje = rows["create_journal_entry"]
-    assert cje.mode == "write->draft"
-    assert cje.required_permission == "draft:create"
-    assert cje.validated and cje.requires_approval and cje.on_behalf_of
+    assert {"create_journal_entry", "list_drafts", "preview_journal_entry"}.isdisjoint(rows)
 
 
 def test_anonymous_write_is_flagged():

@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "inventory_version": "wp20-00/2026-08-20",
+  "decision_authority": [
+    "docs/adr/0035-standalone-file-evidence-and-artifact-workspace.md",
+    "plan-rebuild/20-FIGMAMAKE-STANDALONE-ACCOUNTING-INTELLIGENCE-COMPLETION-PLAN.md"
+  ],
+  "baseline_commit": "e06d9173fc042c743c4ecea8099f18ef1eec31a7",
+  "alembic_source_head": "0020_case_v2_audit",
+  "rules": {
+    "standalone": true,
+    "bravo_runtime_connection": "forbidden",
+    "erp_mutation": "forbidden",
+    "data_deletion": "forbidden_until_retention_migration_is_approved",
+    "legacy_frontend": "rollback_only_until_parity_and_retention_gate"
+  },
+  "ui_routes": {
+    "keep": [
+      { "route": "/", "surface": "knowledge_chat", "priority": "P0" },
+      { "route": "/c/:conversationId", "surface": "active_conversation", "priority": "P0" },
+      { "route": "/conversations", "surface": "conversation_history", "priority": "P0" },
+      { "route": "/shared/:token", "surface": "read_only_share", "priority": "P1" },
+      { "route": "/work", "surface": "accounting_work", "priority": "P0" },
+      { "route": "/work/new/:caseType", "surface": "create_accounting_case", "priority": "P0" },
+      { "route": "/work/cases/:caseId", "surface": "case_workspace", "priority": "P0" },
+      { "route": "/work/cases/:caseId/findings/:findingId", "surface": "finding_investigation", "priority": "P0" }
+    ],
+    "rename": [
+      { "current": "Công việc AI", "target": "Công việc kế toán", "scope": "production_navigation" }
+    ],
+    "redirect": [
+      { "route": "/accounting-work", "target": "/work", "reason": "temporary_compatibility" },
+      { "route": "/financial-close", "target": "/work/new/period_close_readiness", "reason": "temporary_compatibility" }
+    ],
+    "remove_from_production": [
+      "/approvals",
+      "/tools/money-engine",
+      "/tools/anomaly",
+      "/tools/tax",
+      "/tools/knowledge-graph",
+      "/review?qa=1"
+    ],
+    "defer": [
+      { "route": "/imports", "reason": "WP20-03 import/evidence spine" },
+      { "route": "/knowledge", "reason": "P1 governed source/rule management" },
+      { "route": "/artifacts", "reason": "P1 Artifact Workspace after a format benchmark" },
+      { "route": "/admin", "reason": "P1 administration and audit surface" }
+    ]
+  },
+  "api_families": {
+    "keep": [
+      "routes_auth",
+      "routes_oidc",
+      "routes_admin",
+      "routes_sources",
+      "routes_conversations",
+      "routes_runs",
+      "routes_artifacts",
+      "routes_attachments",
+      "routes_accounting_cases_v2"
+    ],
+    "internal_or_admin_only": [
+      "routes_consultant",
+      "routes_frontier"
+    ],
+    "deprecate_after_conversation_v2_cutover": [
+      "routes_ask",
+      "routes_agent"
+    ],
+    "disable_behind_plan20_containment": [
+      "routes_invoices",
+      "routes_drafts",
+      "routes_connectors",
+      "routes_agents",
+      "routes_graph"
+    ]
+  },
+  "tools_and_runtime_dependencies": {
+    "keep": [
+      "read-only knowledge retrieval",
+      "AccountingCase deterministic checks",
+      "artifact download for existing non-journal artifacts"
+    ],
+    "disable_behind_plan20_containment": [
+      "create_journal_entry",
+      "preview_journal_entry",
+      "MCP list_drafts",
+      "app.erp.draft_queue for new activity",
+      "app.accounting.journal_export",
+      "app.erp.client",
+      "app.connectors.registry",
+      "computer-use proposals targeting ERP"
+    ],
+    "defer": [
+      "ArtifactEnginePort and Office engines: benchmark-first, format-specific",
+      "Conversation Core V2 tool inventory: after independent SME fixture review",
+      "file-backed evidence adapters: WP20-03"
+    ]
+  },
+  "persistence": {
+    "retain_read_only": [
+      { "table": "drafts", "owner_disposition": "retain; disable new use and do not erase in this release" },
+      { "table": "agent_approvals", "owner_disposition": "retain historical audit; no execution authority" },
+      { "table": "artifacts", "owner_disposition": "retain; classify journal-import artifacts before a later migration" },
+      { "table": "accounting_cases_v2", "owner_disposition": "retain; future migration renames execution semantics without deleting evidence" }
+    ],
+    "keep": [
+      "conversations",
+      "conversation_messages",
+      "attachments",
+      "sources",
+      "chunks",
+      "audit_log",
+      "accounting_case_commands_v2",
+      "accounting_case_audit_v2"
+    ],
+    "defer": [
+      "import packs, mappings, immutable file evidence snapshots and lineage",
+      "analysis artifacts and review envelopes",
+      "template, brand, artifact diff and validation records",
+      "retention migration or destructive cleanup"
+    ]
+  },
+  "configuration": {
+    "keep": [
+      "authorization, native RLS, offline/local model and egress policy",
+      "accounting_case_v2_enabled and synthetic-demo guard until file-evidence cutover",
+      "upload size and attachment safety limits"
+    ],
+    "disable_or_remove_when_unreferenced": [
+      "BRAVO API/DB connection configuration",
+      "computer-use configuration for ERP targets",
+      "legacy journal draft/export configuration"
+    ],
+    "defer": [
+      "Plan 20 containment feature flag",
+      "Import Pack family/version configuration",
+      "template/brand/Artifact Workspace configuration"
+    ]
+  }
+}

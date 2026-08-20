@@ -1,15 +1,15 @@
 # BRAVO AI Copilot — API + worker image (modular monolith, ADR-0007).
 # On-prem target: build once, run air-gapped. Models (Qwen/bge-m3) served separately.
 
-# --- Frontend build stage: biên dịch React SPA (frontend-react/dist) -------------------
+# --- Frontend build stage: biên dịch canonical FigmaMake SPA ----------------------------
 # dist bị .gitignore nên phải build trong image. Không build được -> app vẫn boot, chỉ
 # không phục vụ trang tĩnh (app/main.py guard _FRONTEND.exists()).
 FROM node:20-slim AS frontend-build
 WORKDIR /fe
-COPY frontend-react/package.json frontend-react/package-lock.json* ./
-RUN npm ci --no-audit --no-fund
-COPY frontend-react/ ./
-RUN npm run build      # -> /fe/dist (base=/static/)
+COPY FigmaMake_UI/package.json FigmaMake_UI/pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
+COPY FigmaMake_UI/ ./
+RUN pnpm build         # -> /fe/dist (base=/)
 
 # --- Python runtime --------------------------------------------------------------------
 FROM python:3.11-slim AS app-base
@@ -45,8 +45,8 @@ RUN pip install -e ".[dev]"
 COPY tests ./tests
 
 FROM app-base AS base
-# React SPA đã build (frontend-react/dist)
-COPY --from=frontend-build /fe/dist ./frontend-react/dist
+# Canonical FigmaMake SPA đã build.
+COPY --from=frontend-build /fe/dist ./FigmaMake_UI/dist
 
 EXPOSE 8000
 

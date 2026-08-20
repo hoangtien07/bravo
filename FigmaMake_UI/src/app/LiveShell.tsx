@@ -18,7 +18,7 @@ export function LiveShell({ children }: { children: ReactNode }) {
   const nav = (closeOnNavigate = false) => <nav aria-label="Điều hướng sản phẩm" style={{ display: "grid", gap: 4 }}>
     <NavLink end to="/" onClick={() => closeOnNavigate && setOpen(false)} style={linkStyle}>Knowledge Chat</NavLink>
     <NavLink to="/conversations" onClick={() => closeOnNavigate && setOpen(false)} style={linkStyle}>Hội thoại gần đây</NavLink>
-    {capabilities.read && <NavLink to="/work" onClick={() => closeOnNavigate && setOpen(false)} style={linkStyle}>Công việc AI</NavLink>}
+    {capabilities.read && <NavLink to="/work" onClick={() => closeOnNavigate && setOpen(false)} style={linkStyle}>Công việc kế toán</NavLink>}
   </nav>;
   return <div style={{ minHeight: "100vh", background: T.canvas, color: T.strong }}>
     <a href="#main" className="live-shell-skip">Bỏ qua điều hướng</a>

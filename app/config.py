@@ -65,6 +65,14 @@ class Settings(BaseSettings):
         validation_alias="ACCOUNTING_CASE_V2_DEMO_CONFIG",
     )
 
+    # Plan 20 containment is on by default.  The compatibility switch exists only to make a
+    # controlled local rollback possible while the retained legacy data is read-only; it must
+    # never make an ERP/draft surface available from a production deployment.
+    plan20_legacy_erp_surfaces_enabled: bool = Field(
+        False,
+        validation_alias="PLAN20_LEGACY_ERP_SURFACES_ENABLED",
+    )
+
     # Auth / security (SECURITY-RLS.md)
     jwt_secret: str = "change-me"
     jwt_algorithm: str = "HS256"
@@ -272,6 +280,8 @@ class Settings(BaseSettings):
         """Fail-closed boot guard (DEPLOY-DEMO.md hứa điều này). Ở staging/production:
         chặn khởi động nếu secret còn mặc định/quá ngắn, hoặc bật cloud mà thiếu key.
         Ở env=local (demo) là no-op để không cản trở phát triển."""
+        if self.env in ("staging", "production", "prod") and self.plan20_legacy_erp_surfaces_enabled:
+            raise ValueError("PLAN20_LEGACY_ERP_SURFACES_ENABLED is forbidden outside a controlled local rollback")
         # Manifest deploy (nếu cấu hình): validate ở MỌI env — fail-closed khi sai (config-as-data).
         if self.site_config:
             from app.site_config import load_site_config

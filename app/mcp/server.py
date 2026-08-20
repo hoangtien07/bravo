@@ -27,21 +27,6 @@ async def kb_search(token: str, query: str, top_n: int = 8) -> str:
         return "\n\n".join(lines)
 
 
-async def list_pending_drafts(token: str) -> str:
-    """T6: pending drafts in the token's scope (RLS-in-SQL) — symmetric with the in-process tool."""
-    async with async_session_factory() as db:
-        identity = await resolve_mcp_identity(token, db)
-        if identity is None:
-            return "Lỗi: token không hợp lệ hoặc đã bị thu hồi."
-        from app.erp import draft_queue
-        rows = await draft_queue.list_pending(db, identity)
-        if not rows:
-            return "Không có bút toán nháp nào đang chờ duyệt."
-        return "\n".join(
-            f"- Nháp {d.id} ({getattr(d, 'kind', '?')}, trạng thái {getattr(d, 'status', '?')})"
-            for d in rows[:50])
-
-
 def create_mcp_server():
     """Build the FastMCP server exposing scoped KB tools."""
     mcp = FastMCP("bravo")
@@ -71,13 +56,5 @@ def create_mcp_server():
         if not token:
             return "Lỗi: thiếu token xác thực."
         return await kb_search(token, query)
-
-    @mcp.tool()
-    async def list_drafts(ctx: Context) -> str:
-        """Liệt kê bút toán nháp đang chờ duyệt trong phạm vi quyền của token."""
-        token = _token_from_context(ctx)
-        if not token:
-            return "Lỗi: thiếu token xác thực."
-        return await list_pending_drafts(token)
 
     return mcp

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "contract_version": "plan20-import-pack-families/v1",
+  "status": "frozen-for-WP20-03-implementation",
+  "scope": "Minimum user-owned evidence packs only. This document does not authorize a connector, universal mapping DSL, arbitrary document automation, or ERP mutation.",
+  "common_envelope": {
+    "required": [
+      "pack_id",
+      "pack_version",
+      "case_type",
+      "scope",
+      "files",
+      "mapping_confirmation",
+      "cutoff",
+      "source_checksums"
+    ],
+    "scope_required": [
+      "tenant_id",
+      "legal_entity_id",
+      "ledger_id",
+      "period",
+      "cutoff",
+      "currency",
+      "source_version"
+    ],
+    "workflow": [
+      "malware_type_size_check",
+      "parse_to_staging_preview",
+      "user_confirmed_mapping_and_scope",
+      "control_total_and_freshness_validation",
+      "immutable_evidence_snapshot",
+      "case_specific_deterministic_analysis"
+    ],
+    "fail_closed": [
+      "unknown_or_missing_schema_version",
+      "unconfirmed_mapping",
+      "missing_required_control_total",
+      "duplicate_source_checksum_without_supersession",
+      "scope_currency_or_cutoff_conflict",
+      "stale_or_incomplete_evidence"
+    ]
+  },
+  "families": [
+    {
+      "id": "bank-reconciliation/v1",
+      "case_type": "bank_reconciliation",
+      "inputs": [
+        {
+          "source_type": "bank_statement",
+          "allowed_formats": ["csv", "xlsx", "mt940"],
+          "required_columns": ["source_row_id", "account_ref", "transaction_date", "amount", "direction", "currency"],
+          "optional_columns": ["value_date", "bank_reference", "description"],
+          "required_controls": ["opening_balance", "closing_balance", "row_count", "cutoff"]
+        },
+        {
+          "source_type": "bravo_bank_ledger_export",
+          "allowed_formats": ["csv", "xlsx"],
+          "required_columns": ["source_row_id", "account_ref", "posting_date", "debit", "credit", "currency"],
+          "optional_columns": ["document_id", "voucher_id", "reference_id", "document_status"],
+          "required_controls": ["opening_balance", "closing_balance", "row_count", "cutoff"]
+        }
+      ],
+      "fixture_refs": ["tests/fixtures/core_v2/wp01/bank_golden.yaml", "tests/fixtures/core_v2/wp01/bank_policy.yaml"],
+      "analysis_preconditions": ["matching account_ref", "matching legal entity", "matching currency", "matching cutoff"],
+      "output": "immutable evidence snapshots and a neutral review result; never a BRAVO import file"
+    },
+    {
+      "id": "voucher-evidence-review/v1",
+      "case_type": "voucher_evidence_review",
+      "inputs": [
+        {
+          "source_type": "invoice_evidence",
+          "allowed_formats": ["xml", "pdf"],
+          "required_fields": ["document_id", "supplier_identity", "issue_date", "gross_amount", "tax_amount", "currency"]
+        },
+        {
+          "source_type": "purchase_or_receipt_evidence",
+          "allowed_formats": ["pdf", "csv", "xlsx"],
+          "required_fields": ["document_id", "document_type", "date", "counterparty_identity"]
+        },
+        {
+          "source_type": "bravo_voucher_snapshot",
+          "allowed_formats": ["csv", "xlsx", "pdf"],
+          "required_fields": ["document_id", "voucher_id", "debit_lines", "credit_lines", "currency", "document_status"]
+        }
+      ],
+      "fixture_refs": ["tests/fixtures/core_v2/wp01/voucher_schema.yaml", "tests/fixtures/core_v2/wp01/voucher_golden.yaml"],
+      "normalization": "The historical fixture label bravo_draft_voucher normalizes to bravo_voucher_snapshot. It does not authorize draft creation or posting.",
+      "output": "evidence-linked review findings and suggested correction description only"
+    },
+    {
+      "id": "period-close-readiness/v1",
+      "case_type": "period_close_readiness",
+      "inputs": [
+        {
+          "source_type": "close_checklist",
+          "allowed_formats": ["csv", "xlsx", "pdf"],
+          "required_fields": ["prerequisite_id", "applicability", "status", "as_of_date", "evidence_reference"]
+        },
+        {
+          "source_type": "trial_balance_or_subledger_export",
+          "allowed_formats": ["csv", "xlsx", "pdf"],
+          "required_fields": ["legal_entity_id", "ledger_id", "period", "cutoff", "currency"]
+        },
+        {
+          "source_type": "reviewed_reconciliation_reference",
+          "allowed_formats": ["json", "csv", "xlsx", "pdf"],
+          "required_fields": ["case_reference", "result_hash", "review_status", "cutoff"]
+        }
+      ],
+      "fixture_refs": ["tests/fixtures/core_v2/wp01/period_close_schema.yaml", "tests/fixtures/core_v2/wp01/period_close_golden.yaml"],
+      "analysis_preconditions": ["all applicable prerequisites represented", "evidence freshness verified", "reconciliation references reviewed or explicitly absent"],
+      "output": "ready, not-ready, or abstained result with reason codes; never a BRAVO close/lock action"
+    },
+    {
+      "id": "transaction-analysis/v1",
+      "case_type": "accounting_transaction_analysis",
+      "inputs": [
+        {
+          "source_type": "user_scenario_or_worksheet",
+          "allowed_formats": ["json", "csv", "xlsx", "text"],
+          "required_fields": ["transaction_id", "currency", "amount", "vat_basis", "policy_version"]
+        }
+      ],
+      "fixture_refs": ["tests/fixtures/conversation_v2/wp19/ten_transaction_schema.json", "tests/fixtures/conversation_v2/wp19/ten_transaction_golden.json"],
+      "gate": "implementation remains blocked until the independent accounting/BRAVO SME review required by WP19-01 is recorded",
+      "output": "read-only work product with Decimal calculation lineage; never a journal or import payload"
+    }
+  ]
+}

@@ -35,7 +35,7 @@ services:
 
 def test_manifest_declares_static_not_runtime_proof(tmp_path, monkeypatch):
     _write(tmp_path / "pyproject.toml", "[project]\nname = 'example'\n")
-    _write(tmp_path / "frontend-react" / "package-lock.json", "{}\n")
+    _write(tmp_path / "FigmaMake_UI" / "pnpm-lock.yaml", "lockfileVersion: '9.0'\n")
     _write(tmp_path / "file_system" / "bravo_corpus_manifest.yaml", "version: 1\nsystem_version: B10R1\n")
     _write(tmp_path / "docker-compose.yml", "services: {}\n")
     _write(tmp_path / "docker-compose.prod.yml", "services: {}\n")

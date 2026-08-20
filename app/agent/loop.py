@@ -456,6 +456,12 @@ def _register_builtin_tools() -> None:
             required_permission="metric:read",   # RLS-gated (CONTRACTS §2.2)
         )(_metric_lookup)
 
+    legacy_erp_tools = ("create_journal_entry", "list_drafts", "preview_journal_entry")
+    if not _settings.plan20_legacy_erp_surfaces_enabled:
+        for name in legacy_erp_tools:
+            REGISTRY.pop(name, None)
+        return
+
     if "create_journal_entry" not in REGISTRY:
         register(
             "create_journal_entry",

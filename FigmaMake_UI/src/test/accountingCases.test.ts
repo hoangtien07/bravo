@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError, createHttpClient } from "../api/http";
 import { createAccountingCaseApi, decodeAccountingCase } from "../api/accountingCases";
 import { canonicalReviewDecisionJson, hashReviewDecision, type UnsignedReviewDecision } from "../api/reviewDecisionHash";
-import { createFixtureAccountingCaseSource } from "../accounting-work/data/source";
+import { createFixtureAccountingCaseSource } from "../accounting-work/fixtureAccountingCaseSource";
 
 const scope = {
   tenant_id: "tenant-demo", legal_entity_id: "legal-entity-demo", ledger_id: "ledger-vnd", period: "2026-06",

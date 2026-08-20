@@ -17,12 +17,12 @@ python -m scripts.seed_content   # 4 bút toán nháp mẫu (màn hình không r
 # Tài khoản: giamdoc(admin) · ketoan(maker) · ketoantruong(checker+MCP) · kinhdoanh · nhansu(HR)
 # Luồng admin BE+FE + checklist test nội bộ: docs/ADMIN-FLOW-PLAN.md
 
-# Frontend React (Vite). Build 1 lần -> uvicorn serve dist ở /static + SPA-fallback:
-cd frontend-react && npm install && npm run build && cd ..
+# Canonical frontend FigmaMake (Vite). Build 1 lần -> uvicorn serve dist ở /static + SPA-fallback:
+cd FigmaMake_UI && corepack enable && pnpm install --frozen-lockfile && pnpm build && cd ..
 uvicorn app.main:app --port 8000 --reload   # http://localhost:8000  (--reload: code mới có hiệu lực ngay)
 
 # Hoặc dev hot-reload FE (2 cổng):
-cd frontend-react && npm run dev      # http://localhost:5173 (proxy /api -> :8000)
+cd FigmaMake_UI && pnpm dev           # http://localhost:8443 (proxy /api -> :8000)
 ```
 Nếu bạn chạy các lệnh này trong PowerShell trên máy host và `.env` vẫn trỏ `postgres`, set tạm DSN trước khi migrate/seed:
 
@@ -51,17 +51,17 @@ app/
   data_layer/        # semantic (metric), calc (sandbox), grounding (verify-gate), money (Decimal)
   accounting/        # [money-engine] coa (TT99), crosswalk, account_mapper, journal, ap_service
   agent/             # loop.py (step + step_stream SSE), memory, runs (durable), conversations
-  erp/               # draft_queue (non-invasive, maker-checker)
-  api/               # routes: auth·ask·agent·conversations(SSE)·invoices·drafts·sources
-  main.py            # FastAPI app + SPA serve (frontend-react/dist) + livez/readyz
+  erp/               # retained legacy/rollback code; not in the Plan 20 product router
+  api/               # auth·conversation(SSE)·sources·attachments·case routes; legacy ERP routes are gated off
+  main.py            # FastAPI app + SPA serve (FigmaMake_UI/dist) + livez/readyz
   worker.py          # arq ingestion worker
-frontend-react/      # React+Vite+TS+Tailwind SPA (chat streaming, sidebar, money-engine, share)
+FigmaMake_UI/        # canonical React+Vite+TS SPA (Knowledge Chat + Accounting Work)
 alembic/versions/    # 0001..0005 (init, memory, agentrun, db-roles, conversations)
 ```
 
 ## Bốn nguyên tắc bất biến — đã gài vào code
 1. **RLS tầng SQL:** `app/security/rls.py::chunk_scope_filter` áp scope *trong* truy vấn vector. Không lọc post-retrieval.
-2. **Không xâm lấn:** ERP read-only; ghi = `Draft` chờ duyệt (`app/erp/`, `app/agent/tools.py`).
+2. **Không xâm lấn:** sản phẩm hiện không kết nối BRAVO và không tạo Draft/journal/import output. Bằng chứng do người dùng tải lên chỉ phục vụ phân tích và rà soát.
 3. **Zero-hallucination:** `routes_ask` từ chối khi không có ngữ cảnh; trích dẫn provenance; số liệu → data_layer (LLM không tính — Phase 2).
 4. **Chủ quyền dữ liệu:** `app/llm/router.py` mặc định local, fail-closed; dữ liệu nhạy ghim local.
 
@@ -98,10 +98,10 @@ docker compose up postgres redis -d
 export DATABASE_URL="postgresql+asyncpg://bravo:bravo@localhost:5432/bravo"
 alembic upgrade head
 
-# 3) Chạy suite — kỳ vọng: 157 passed, 5 skipped (ragas/docling importorskip cho tới khi cài .[local]/ragas)
+# 3) Chạy suite. Không suy diễn số lượng pass lịch sử thành evidence hiện tại.
 pytest -q
 python -m app.eval.run --passk --mock --k=8 # eval HARD-FAIL gate (deterministic)
-cd frontend-react && npm run build          # tsc + vite (typecheck FE)
+cd FigmaMake_UI && pnpm typecheck && pnpm test && pnpm build
 ```
 
 ### Docker-only PostgreSQL integration tests

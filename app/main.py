@@ -15,10 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from app.api import router as api_router
 from app.config import get_settings
 
-# SPA React đã build. `if _FRONTEND.exists()` bên dưới cho phép app vẫn boot khi chưa
+# SPA FigmaMake đã build. `if _FRONTEND.exists()` bên dưới cho phép app vẫn boot khi chưa
 # `npm run build` (dev/test/CI thuần backend) — chỉ không phục vụ trang tĩnh.
 _ROOT = Path(__file__).resolve().parent.parent
-_FRONTEND = _ROOT / "frontend-react" / "dist"
+_FRONTEND = _ROOT / "FigmaMake_UI" / "dist"
 
 settings = get_settings()
 
@@ -77,9 +77,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="BRAVO AI Copilot",
+    title="BRAVO Accounting Intelligence",
     version="0.1.0",
-    summary="Enterprise Knowledge & Financial Analytics Hub (on-prem RAG on BRAVO ERP)",
+    summary="Standalone evidence-backed accounting analysis and review",
     lifespan=lifespan,
 )
 
@@ -171,7 +171,7 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "env": settings.env}
 
 
-# Frontend SPA: assets dưới /static; deep-link (/c/:id, /money-engine, /shared/:token) ->
+# Frontend SPA: assets dưới /static; deep-link (/c/:id, /work, /shared/:token) ->
 # SPA-fallback trả index.html để react-router xử lý (không 404). Guard exists(): app boot
 # được ngay cả khi chưa build dist (dev backend / CI).
 if _FRONTEND.exists():

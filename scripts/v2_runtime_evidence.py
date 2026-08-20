@@ -138,7 +138,7 @@ def _python_snapshot_hash() -> str:
 def _lockfile_projection(root: Path) -> dict[str, str | None]:
     output: dict[str, str | None] = {
         "pyproject.toml": sha256_file(root / "pyproject.toml"),
-        "frontend-react/package-lock.json": sha256_file(root / "frontend-react" / "package-lock.json"),
+        "FigmaMake_UI/pnpm-lock.yaml": sha256_file(root / "FigmaMake_UI" / "pnpm-lock.yaml"),
         "python_lockfile": None,
     }
     for candidate in PYTHON_LOCK_CANDIDATES:

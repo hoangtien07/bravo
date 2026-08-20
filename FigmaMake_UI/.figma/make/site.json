@@ -1,6 +1,6 @@
 {
-  "title": "Bravo Agent AI",
-  "description": "Prototype tương tác cho Conversation Core V2 và Financial Close Advisor.",
+  "title": "BRAVO Accounting Intelligence",
+  "description": "Phân tích và rà soát kế toán dựa trên nguồn bằng chứng do người dùng cung cấp.",
   "language": "vi",
   "robots": { "index": false },
   "accessibility": { "addBypassLinks": true }

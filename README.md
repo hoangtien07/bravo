@@ -1,22 +1,21 @@
 # BRAVO AI Copilot
 
 > **Current-state entrypoint:** read [docs/PROJECT-STATE.md](docs/PROJECT-STATE.md) before using
-> progress/test counts below. The worktree is currently dirty and historical green-test counts
-> have not been revalidated by the 2026-07-16 documentation cleanup. AI reviewers should follow
+> progress/test counts below. Plan 20 is an implementation target, not runtime or production
+> evidence. AI reviewers should follow
 > [docs/AI-REVIEW-MANIFEST.md](docs/AI-REVIEW-MANIFEST.md).
 
-> **Enterprise Knowledge & Financial Analytics Hub** — biến BRAVO ERP thành một hệ thống mở thông minh, có khả năng tương tác bằng ngôn ngữ tự nhiên và tự động hoá phân tích, với bảo mật phân quyền cấp phòng ban và sàn vận hành offline 100% (hybrid cloud tuỳ chọn, có kiểm soát).
+> **BRAVO Accounting Intelligence** — sản phẩm độc lập để tra cứu tri thức, phân tích và rà soát kế toán trên bằng chứng do người dùng cung cấp. BRAVO là hệ thống ghi nhận bên ngoài: runtime hiện tại không kết nối hoặc thay đổi dữ liệu BRAVO.
 
-**Trạng thái:** 🟢 Đang build (Phase 1–2). Lõi đã chạy E2E: RAG có RLS + trích dẫn · agent loop ràng buộc + verify-gate số · **money-engine AP** (hoá đơn điện tử XML → bút toán nháp TT99) · **nền tảng chat** (React SPA + SSE streaming + lịch sử hội thoại). ~140 test xanh.
+**Trạng thái:** Plan 20 implementation in progress. `FigmaMake_UI` là frontend production duy nhất; Import Center, Conversation Core V2, file-backed case và Artifact Workspace vẫn qua các gate riêng.
 
 ## Chức năng (đã chạy)
 
 | Nhóm | Mô tả | Surface |
 |---|---|---|
-| **Hỏi-đáp tri thức** | RAG có RLS theo phòng ban + trích dẫn trang/sheet/ô; từ chối khi ngoài phạm vi | chat · `/api/ask` |
-| **Agentic** | Vòng lặp ràng buộc (ADR-0010): chọn tool, verify-gate chống bịa số, egress-audit, draft HITL | chat agentic · `/api/agent/ask` |
-| **Money-engine AP** | Hoá đơn điện tử XML → bút toán nháp cân Nợ=Có, map TK **TT99**, VAT 1331, trích dẫn dòng → duyệt (maker-checker) | chat (inline) · panel · `/api/invoices/draft` |
-| **Chat platform** | Streaming token + bước agent + citations panel; lịch sử hội thoại theo người dùng; chia sẻ read-only; feedback | React SPA · `/api/chat/{id}/messages` (SSE) |
+| **Knowledge Chat** | Tra cứu tri thức theo RLS, hội thoại, chia sẻ chỉ đọc và feedback | `/api/chat/{id}/messages` (SSE) |
+| **Accounting Work** | Bank, Voucher và Period Close case theo deterministic evidence/review contract | `/api/v2/accounting-cases` |
+| **Product boundary** | Không có connector BRAVO, journal draft/import export, posting, close hoặc period lock | negative contract tests |
 
 ## Chạy thử (local)
 
@@ -45,9 +44,10 @@ py -3.14 -m alembic current                 # kỳ vọng: 0020_case_v2_audit (h
 py -3.14 -m scripts.seed_demo
 
 # 5) Build frontend và chạy backend.
-Push-Location frontend-react
-npm install
-npm run build
+Push-Location FigmaMake_UI
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build
 Pop-Location
 py -3.14 -m uvicorn app.main:app --port 8000 --reload
 ```
@@ -64,8 +64,8 @@ py -3.14 -m scripts.ingest_userguide
 Dev hot-reload frontend chạy ở terminal khác:
 
 ```powershell
-Set-Location frontend-react
-npm run dev
+Set-Location FigmaMake_UI
+pnpm dev
 ```
 
 Sau đó mở http://localhost:5173; Vite sẽ proxy `/api` đến backend ở cổng 8000.
@@ -81,7 +81,7 @@ export DATABASE_URL='postgresql+asyncpg://bravo:bravo@localhost:5432/bravo'
 python3.13 -m pip install -e ".[dev]"
 python3.13 -m alembic upgrade head
 python3.13 -m scripts.seed_demo
-cd frontend-react && npm install && npm run build && cd ..
+cd FigmaMake_UI && corepack enable && pnpm install --frozen-lockfile && pnpm build && cd ..
 python3.13 -m uvicorn app.main:app --port 8000 --reload
 ```
 
