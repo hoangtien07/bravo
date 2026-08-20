@@ -4,6 +4,11 @@
 
 **Date:** 2026-08-18
 
+**Standalone product amendment (2026-08-19):** Plan 20 and ADR-0035 retain this plan's
+Conversation V2 intelligence contracts but supersede its residual `draft proposal`, write-tool and
+future ERP-mutation wording for the current product. Active V2 outputs are read-only analysis,
+review requests and artifacts over uploaded/governed evidence only.
+
 **Baseline commit inspected:** `c7afe01d4a4fcfa7785e5e8d021449e5be6ac35c`
 
 **Scope:** Knowledge Chat and its shared Conversation Core V2 contracts. Accounting Operations Hub
@@ -145,8 +150,8 @@ Minimum contracts:
   deterministic rule/calculation ids.
 - `Claim`: exact text/value, claim type, supporting evidence/calculation ids, confidence class and
   unsupported reason. A numeric confidence score must never substitute for evidence.
-- `AnswerPlan`: ordered task results, missing inputs, warnings, proposed read-only/draft actions and
-  citations.
+- `AnswerPlan`: ordered task results, missing inputs, warnings, proposed read-only next actions or
+  artifact requests and citations.
 - `VerificationResult`: schema, coverage, debit/credit balance, exact-number provenance,
   claim-to-evidence entailment, version fit, permission and must-not-claim checks.
 - `ExecutionTrace`: stage inputs represented by hashes/references, outputs, route alternatives,
@@ -197,19 +202,21 @@ It must:
 - separate accounting truth from BRAVO navigation evidence;
 - return calculation lineage and rule ids for every derived number;
 - refuse or mark missing facts instead of guessing configuration-dependent BRAVO behavior; and
-- expose read-only results only. Any future mutation remains a separate draft/approval flow.
+- expose read-only results only. A future connector or mutation is outside this product plan and
+  requires a new owner ADR; it is not a dormant branch of Conversation V2.
 
 ### 6.2 Tool safety and relevance
 
 - Validate model-produced arguments against the selected tool's strict schema before any tool
-  function or draft builder is invoked; reject unknown fields and invalid types.
+  function or artifact builder is invoked; reject unknown fields and invalid types.
 - Define typed tool results and error categories. A caught Python exception is not a business
   validation contract.
 - Compile a task-relevant tool set after authorization filtering; both filters are required.
-- Preserve the current permission re-check, database RLS backstop, audit attempt and write-to-draft
-  invariants.
-- Add idempotency, timeout and retry policies per tool, with no retry for non-idempotent approval
-  transitions.
+- Preserve the current permission re-check, database RLS backstop and audit-attempt invariants.
+  Compile only read-only tools for V2; Plan 20 WP20-02 removes legacy ERP/draft tools from the active
+  product inventory.
+- Add idempotency, timeout and retry policies per tool, with no unsafe retry for non-idempotent
+  review or artifact transitions.
 
 ## 7. Synthesis, verification and streaming
 
@@ -279,7 +286,7 @@ quality must fail visibly, not weaken financial, authorization or approval invar
 
 - ADR the package boundary and freeze the contracts in section 4.
 - Freeze task types: knowledge lookup, BRAVO navigation, multi-item accounting work product,
-  read-only investigation, clarification and draft proposal.
+  read-only investigation, clarification and analysis proposal.
 - Encode the section 2.3 answer key, assumptions, source requirements and must-not claims.
 - Add adversarial variants: `bằng` vs `bảng`; VAT inclusive/exclusive; direct bank payment vs cash;
   salary accrued/not accrued; TT99 vs legacy account policy; missing/superseded guide.
@@ -420,7 +427,7 @@ Thresholds below are proposed and must be frozen by the owner/SME before candida
 | Evidence authority | 100% of exact BRAVO navigation/version/configuration claims have a matching approved evidence ref or are explicitly withheld. |
 | Citation correctness | At least 95% claim-level citation entailment on the stratified set and 100% on critical claims; no fabricated source/locator. |
 | Abstention/partial answer | Missing evidence produces a precise gap while still returning all independently supported task units. |
-| Tool contract | 100% malformed/unauthorized tool calls blocked before business execution; all writes remain draft/approval gated. |
+| Tool contract | 100% malformed/unauthorized tool calls blocked before invocation; the V2 product inventory contains no ERP mutation/write tool. |
 | Multi-turn state | Explicit corrections override older assumptions in 100% of held-out correction cases; summary poisoning does not alter policy or authority. |
 | Consistency | Critical set passes `pass^k` with `k >= 8`; one lucky run is not a release pass. |
 | Human utility | Recommended: C wins at least 60% and loses no more than 15% against each matched A, B and D comparison, with zero critical SME error. Final threshold is frozen before scoring. |

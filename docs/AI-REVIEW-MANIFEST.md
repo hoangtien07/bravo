@@ -1,7 +1,7 @@
 # AI review manifest
 
 Status: `ACTIVE — review entrypoint`  
-Last verified: 2026-08-02
+Last consolidated: 2026-08-19 (runtime evidence dates remain explicit per source)
 
 ## Purpose
 
@@ -50,6 +50,13 @@ research, raw conversations, or obsolete progress as current truth.
 18. `plan-rebuild/18-FIGMAMAKE-UI-INTERNAL-DEMO-COMPLETION-PLAN.md` before changing normal
     FigmaMake routes, live Knowledge Chat, the final two-module shell, demo identities or the
     Plan 17 local-demo handoff claim.
+19. `plan-rebuild/19-KNOWLEDGE-CHAT-V2-QUALITY-REMEDIATION-PLAN.md` and
+    `docs/adr/0034-conversation-v2-contract-boundary.md` before implementing Conversation V2,
+    Transaction Analysis, retrieval/routing/synthesis changes or judging the WP19 baseline.
+20. `plan-rebuild/20-FIGMAMAKE-STANDALONE-ACCOUNTING-INTELLIGENCE-COMPLETION-PLAN.md` and
+    `docs/adr/0035-standalone-file-evidence-and-artifact-workspace.md` before changing the shipped
+    frontend, product route/API/tool inventory, file evidence path, ERP-connectivity boundary or
+    Artifact Workspace.
 
 ### Tier 2 — open only for a specific claim
 
@@ -93,6 +100,11 @@ the canonical document; do not recursively load an evidence tree.
    and supersedes the earlier AP/Close demonstrator conflict. ADR-0033 accepts the three-case
    scope and target pilot guardrails. Plan 12 owns implementation sequencing. Target architecture
    is not runtime/production evidence.
+   Plan 19/ADR-0034 own the new Conversation V2 intelligence contracts. Plan 20/ADR-0035 own the
+   current shipped-product boundary: FigmaMake-only, user-supplied file evidence, no live BRAVO
+   connector/mutation, and a bounded benchmark-first Artifact Workspace. They amend residual
+   draft/write and pilot-connector semantics for the current roadmap without rewriting historical
+   ADR evidence.
 5. Historical research and council reports do not become current merely because they are detailed.
 6. A structural/synthetic green test does not prove conversational task quality.
 
@@ -102,6 +114,16 @@ Plan 18 is `TECHNICAL DEMO-COMPLETE — READY FOR OWNER EVALUATION` as recorded 
 [`DEMO18-FINAL-PACKET-2026-08-03.md`](../evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md). This only
 closes the local synthetic UI handoff: it does not close blind SME review, A/B/C/D conversation
 quality, customer-data authority, pilot, recovery/deployment or production gates.
+
+## Plan 19/20 dev-handoff status
+
+WP19-00 has a frozen synthetic 30-pair A/B baseline, and the owner accepted the synthetic
+ten-transaction fixture plus ADR-0034. This does not prove System B quality, Core V2 quality or SME
+truth; independent accounting/BRAVO SME review remains open. Plan 20/ADR-0035 are ready for dev
+handoff only in the sense that the product boundary, dependency order and first slice are explicit.
+Current code still ships legacy surfaces, so implementation must begin with WP20-00 inventory,
+FigmaMake cutover and reversible API/tool containment rather than feature expansion or an Office
+engine choice.
 
 ## Review questions
 

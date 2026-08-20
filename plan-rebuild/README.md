@@ -12,6 +12,13 @@ Thư mục này là nguồn sự thật cho quyết định rebuild BRAVO AI Cop
 
 ## Cấu trúc
 
+- `20-FIGMAMAKE-STANDALONE-ACCOUNTING-INTELLIGENCE-COMPLETION-PLAN.md`: current shipped-product
+  completion authority after ADR-0035 — FigmaMake-only, uploaded file evidence, no BRAVO
+  connector/mutation, sequential Bank/Voucher/Period slices and bounded benchmark-first Artifact
+  Workspace.
+- `19-KNOWLEDGE-CHAT-V2-QUALITY-REMEDIATION-PLAN.md`: Conversation V2 intelligence kernel,
+  ten-transaction quality anchor, frozen A/B sequencing, deterministic read-only work product,
+  shared verification and blind evaluation gates.
 - `18-FIGMAMAKE-UI-INTERNAL-DEMO-COMPLETION-PLAN.md`: plan hoàn thiện candidate demo nội bộ
   gồm Knowledge Chat live, Accounting Operations ba case, product shell thống nhất, hai danh tính
   maker/reviewer, kiểm thử live local API và gói rehearsal/rollback; không suy rộng sang production.
@@ -48,9 +55,14 @@ Thư mục này là nguồn sự thật cho quyết định rebuild BRAVO AI Cop
 
 ## Current gate status
 
-Plan 18 is technically demo-complete and ready for owner evaluation. Its bounded local-synthetic
-completion evidence is `evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md`; blind SME, A/B/C/D quality,
-customer-data, pilot and production gates remain open.
+Plan 20/ADR-0035 are ready for dev handoff. Start with WP20-00 inventory/retention freeze, then
+FigmaMake production cutover and reversible API/tool containment. Current code still ships legacy
+surfaces, so the accepted boundary is not runtime evidence. Plan 18 remains technically
+demo-complete evidence for the older bounded local-synthetic handoff.
+
+WP19-00 has frozen the matched synthetic A/B baseline, and the owner accepted the synthetic
+ten-transaction fixture/ADR-0034. Independent accounting/BRAVO SME review, Conversation Core V2,
+blind A/B/C/D quality, customer-data, pilot and production gates remain open.
 
 The permitted black-box collection and formal R0 gate are complete. `P0-20-exit-criteria-audit.md` records 34+ prior independent cases plus the P0-21 strict closure set: five identical anchors across all three modes (15/15 valid observations) and two completed independent Insight repeats. Fabricated-entity, citation, graph and memory coverage are present with historical quota/error attempts preserved separately. This authorizes the rebuild-design decision phase; it does not prove BravoGen's internal GraphRAG, workflow engine, self-learning or authorization implementation.
 

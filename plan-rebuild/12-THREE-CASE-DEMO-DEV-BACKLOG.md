@@ -7,6 +7,12 @@ Authority: ADR-0032, ADR-0033 and accepted owner packet 11
 Primary case: Bank statement ↔ sổ tiền gửi BRAVO
 Secondary cases: Voucher Evidence & Accounting Review; Period Close Readiness
 
+Current-roadmap amendment (2026-08-19): this backlog remains evidence for the shared core,
+deterministic case policies and three-case order. Plan 20/ADR-0035 replace optional BRAVO connector,
+`DraftAction`/`ApprovalEnvelope` and ERP-directed export semantics with uploaded file evidence,
+`AnalysisArtifactPlan`/`ReviewEnvelope` and governed human-readable artifacts. Plan 20 owns the
+active implementation order.
+
 ## 1. Outcome
 
 Deliver a synthetic, single-tenant BRAVO Accounting Intelligence demo with:

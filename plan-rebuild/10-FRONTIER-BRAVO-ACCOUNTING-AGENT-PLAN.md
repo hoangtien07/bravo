@@ -6,6 +6,11 @@ Last verified: 2026-07-31
 Supersedes in product scope: Financial Close as the identity or final objective of `Công việc AI`
 ADR authority: ADR-0032 selects the primary case; ADR-0033 accepts the three-case owner package
 
+Current-roadmap amendment (2026-08-19): Plan 20/ADR-0035 preserve this plan's product/domain and
+three-case boundaries but supersede its live BRAVO connector, downstream draft/export-to-ERP and
+pilot API implementation assumptions for the current product. The active product is FigmaMake-only,
+file-evidence-in, analysis/review/artifact-out; any future connector or mutation requires a new ADR.
+
 ## 1. Decision summary
 
 The target is a standalone product provisionally named **BRAVO Accounting Intelligence**, not a

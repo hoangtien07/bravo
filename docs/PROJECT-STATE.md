@@ -1,16 +1,18 @@
 # BRAVO AI Copilot — current project state
 
-Status: `FE ADMISSION OPEN — local synthetic FigmaMake three-case integration authorized; external gates remain open`
+Status: `PLAN 20 DEV HANDOFF READY — FigmaMake-only standalone boundary accepted; implementation and external gates remain open`
 Owner: project owner  
-As of: 2026-08-02
+As of: 2026-08-19 (runtime/test figures retain their stated 2026-08-02 evidence date)
 Evidence window: branch `codex/v2-financial-close-core`; see the dated reproducible commands in
 `evidence/v2/V2-DEVELOPER-TRACK-STATUS.md`. Historical baseline hashes below are not a claim that
 the current development worktree is clean.
 
 ## Executive state
 
-BRAVO retains its existing platform shell (identity, application RLS, retrieval, tools, draft
-approval, audit, checkpoints and deployment). The current direction remains a **framework-
+BRAVO retains its existing platform shell (identity, application RLS, retrieval, governed tools,
+audit, checkpoints and deployment). Historical draft/approval services are not active product
+authority under Plan 20; reusable review controls must be exposed through the new read-only
+contracts. The current direction remains a **framework-
 independent Conversation Core V2** behind that shell. Its product target is the standalone
 **BRAVO Accounting Intelligence** shell with two separately governed modules: Knowledge Chat and
 an Accounting Operations Hub (`Công việc AI`). Financial Close is one benchmark family and
@@ -32,6 +34,15 @@ RLS/audit backstops. The owner accepted the FE admission packet and recorded `FE
 for local synthetic FigmaMake three-case integration. The 24-trajectory blind evaluation and all
 production/pilot claims remain open. The Engineering Workbench and frontend tracks remain
 independent and are not evidence that conversation quality has improved.
+
+Plan 19 subsequently identified reproducible Knowledge Chat decomposition/routing/evidence defects,
+froze a 30-pair synthetic System A/B baseline and established ADR-0034 for Conversation V2
+contracts. The owner accepted the synthetic ten-transaction fixture, but independent
+accounting/BRAVO SME review and Core V2 implementation remain open. Plan 20/ADR-0035 now select the
+current shipped-product boundary: `FigmaMake_UI` only, user-supplied file evidence, no live BRAVO
+connector or ERP mutation, and a bounded benchmark-first Artifact Workspace after verified
+analysis. Current source has not yet completed that cutover/containment, so this is dev authority
+and target architecture, not runtime evidence.
 
 ## BRAVO 10 business-flow remediation and FE admission (2026-08-02)
 
@@ -133,22 +144,21 @@ No production, security, or quality claim may be made until the following eviden
 
 ## Current next step
 
-Plan 18 is technically demo-complete and is ready for owner evaluation. The completion packet is
-[`evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md`](../evidence/v2/DEMO18-FINAL-PACKET-2026-08-03.md):
-it records live Knowledge Chat POST-SSE, normal-route containment, three maker/reviewer AccountingCase
-lifecycles, synthetic-only packaging, responsive/a11y evidence, hashes and rollback. Plan 17 FEV2-10
-is therefore reconciled for the local synthetic handoff. Product work remains in `FigmaMake_UI`;
-`frontend-react` remains an unchanged comparator/rollback shell. Do not infer accounting truth or
-evidence in the browser, and do not substitute QA fixture success for a live Chat/case exit.
+Commit the Plan 19/20/ADR-0035 decision set, then begin Plan 20 WP20-00. Record a clean
+implementation baseline and Alembic source head; freeze the machine-readable keep/rename/remove/
+defer inventory and obtain a retention decision for historical draft/journal records. Next execute
+the FigmaMake production cutover and reversible API/tool containment with negative tests. Do not
+start an Office engine, prompt/model migration or new accounting case during this slice.
 
-Plan 15 still governs the deferred operator, model-owner, independent SME and manual-baseline
-evidence. Do not simulate those authorities during developer remediation, and do not use their
-absence to weaken deterministic or security gates. Legacy endpoints remain unchanged.
+After WP20-00/01/02 exit, complete the independent SME review still open for the owner-accepted
+Plan 19 fixture, implement the minimal file/evidence spine and Conversation V2 contracts, then build
+Bank Reconciliation as the first end-to-end file-backed vertical slice. Office delivery begins as a
+governed XLSX artifact after verified Bank results and a format-specific fidelity benchmark, not as
+a separate general Office Agent.
 
-For the next owner-led walkthrough, use
-[`DEMO18-OWNER-EVALUATION-RECORD-TEMPLATE.md`](../evidence/v2/DEMO18-OWNER-EVALUATION-RECORD-TEMPLATE.md)
-to record an explicit acceptance, rejection or deferral without converting developer evidence into
-an owner decision.
+Plan 18 remains technically demo-complete evidence for the older local synthetic handoff, and Plan
+15 still governs deferred external/operator/SME evidence where not superseded. Neither substitutes
+for the new Plan 20 containment, independent SME, blind quality or release gates.
 
 ## Source of truth and precedence
 
@@ -156,11 +166,16 @@ an owner decision.
 2. This file owns the current snapshot; `docs/AI-REVIEW-MANIFEST.md` owns the bounded review set.
 3. Accepted ADRs own existing platform invariants. ADR-0032 selects the primary demonstrator;
    ADR-0033 accepts the three-case scope and owner package. Its pilot target does not supersede
-   ADR-0019/0022 until a future real-data ADR and enforcement evidence exist.
+   ADR-0019/0022 until a future real-data ADR and enforcement evidence exist. ADR-0034 owns the
+   Conversation V2 contract boundary. ADR-0035 amends the current roadmap to FigmaMake-only,
+   file-evidence standalone operation with no BRAVO connector/mutation and a bounded Artifact
+   Workspace.
 4. The `plan-rebuild/04–12` documents own the original V2 decision design and backlog; Plan 16 owns
    the 2026-08-02 business-flow remediation and FE admission gate; Plan 17 owns the admitted
    FigmaMake three-case frontend execution; Plan 18 owns completion of the two-module local
-   internal-demo shell and the Plan 17 handoff exit.
+   internal-demo shell and the Plan 17 handoff exit. Plan 19 owns Knowledge Chat quality
+   remediation and frozen-baseline sequencing; Plan 20 owns the current product-completion and dev
+   handoff order.
 5. `docs/research/**`, `docs/reviews/**`, `docs/work-packages/**`, `plan-rebuild/bravogen-p0/**`,
    `file_system/**` Markdown, and archive directories are retained evidence/reference only. Do
    not treat them as current progress without fresh verification.
